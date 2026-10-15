@@ -911,6 +911,7 @@
  "raise the container memory limit or reduce the concurrent load": "eleve o limite de memória do container ou reduza a carga concorrente",
  "raise the limit, reduce parallelism/pool or optimize the queries that use the most": "aumente o limite, reduza paralelismo/pool ou otimize as queries que mais consomem",
  "recovery codes (save them; each works once):": "códigos de recuperação (guarde; cada um vale uma vez):",
+ "refused: cannot load the TLS certificate/key ({err}); the files must be readable by the user running the UI": "recusado: não foi possível carregar o certificado/chave TLS ({err}); os arquivos precisam ser legíveis pelo usuário que roda a UI",
  "refused: outside loopback use HTTPS (--tls-cert/--tls-key) or declare --behind-proxy (reverse proxy with TLS)": "recusado: fora do loopback use HTTPS (--tls-cert/--tls-key) ou declare --behind-proxy (proxy reverso com TLS)",
  "refused: to listen outside loopback, add users first (`intentflow user add NAME --role admin`)": "recusado: para escutar fora do loopback cadastre usuários antes (`intentflow user add NOME --role admin`)",
  "remove the inner ORDER BY": "remova o ORDER BY interno",

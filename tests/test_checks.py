@@ -199,3 +199,10 @@ def test_schema_drift_warns_when_head_has_no_catalog(drift, tmp_path):
     ctx = Context(project=hp, lineage=lineage.build(hp), base_project=bp, base_lineage=lineage.build(bp))
     r = [x for x in run_checks(ctx, only=["SCH"]) if x.check == "SCH003"]
     assert len(r) == 1 and r[0].evidence["missing_catalog"] == ["head"]
+
+
+def test_ui_refuses_unreadable_tls_files_with_a_clear_message(tmp_path):
+    from intentflow.web import build_server
+    bad = tmp_path / "missing.pem"
+    with pytest.raises(SystemExit, match="TLS certificate/key"):
+        build_server(str(tmp_path / "s.db"), 0, "127.0.0.1", str(bad), str(bad))

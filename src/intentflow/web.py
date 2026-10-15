@@ -525,12 +525,18 @@ def build_server(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls
             raise SystemExit(tr("refused: to listen outside loopback, add users first (`intentflow user add NAME --role admin`)"))
         if not (tls_cert and tls_key) and not behind_proxy:
             raise SystemExit(tr("refused: outside loopback use HTTPS (--tls-cert/--tls-key) or declare --behind-proxy (reverse proxy with TLS)"))
-    srv = ThreadingHTTPServer((host, port), make_handler(store_path))
+    ctx = None
     if tls_cert and tls_key:
         import ssl
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.load_cert_chain(tls_cert, tls_key)
+        try:
+            ctx.load_cert_chain(tls_cert, tls_key)
+        except (OSError, ssl.SSLError) as e:      # e.g. key mode 600 owned by another uid inside a container
+            raise SystemExit(tr("refused: cannot load the TLS certificate/key ({err}); the files must be readable by the user running the UI",
+                                err=e)) from None
+    srv = ThreadingHTTPServer((host, port), make_handler(store_path))
+    if ctx:
         srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
         srv.scheme = "https"
     else:
