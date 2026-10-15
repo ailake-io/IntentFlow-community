@@ -17,6 +17,10 @@ There are two modes, picked automatically:
 | `engineer` | Everything a viewer can + acknowledge, mark false positive, assign, comment, run checks and data diffs; with Enterprise, create/validate/approve/apply/roll back fixes |
 | `admin` | Everything + settings, policies and team management |
 
+Settings that make the server reach hosts, read paths or use environment secrets (`notify.sinks`, `*.url`, `*.host`, `*_env`, warehouse and
+orchestrator connections…) need a **global** admin. Someone who is admin of just one project can edit `policy.*`, `scan.*`, `watch.*`,
+`lineage.*` and `dbt.*`.
+
 Rules: **whoever creates a fix cannot approve it** (with more than one user; `policy.separate_approver = false` turns it off); the last active
 admin cannot be removed; a disabled user loses access immediately; every action records **who did it** in the audit trail.
 
@@ -141,6 +145,10 @@ One rule per line: `group=role` (global) or `group=role@project`. The **highest 
 are synced on every login; hand-made accounts only with `--sync-roles yes`. `--require-group yes` denies people without a mapped group. Changes go
 to the audit trail (`roles_synced`).
 
+When no global group matches, the global role falls to the floor (`sso.unmapped_role`, else `sso.default_role`, else `viewer`): leaving a
+group at the provider demotes the person at the next login or refresh. Per-project roles are managed only for the projects named in the
+group map, and an explicit per-project `none` set by an admin is never lifted by the provider.
+
 ### Single logout
 
 "Log out" on an SSO session ends the local session **and** redirects to the provider's `end_session_endpoint` with `id_token_hint`. Back-channel
@@ -194,6 +202,7 @@ Not measured with thousands of users, a high-latency remote database or several 
 ## Limits
 
 - **SSO verified against a real Keycloak 26** and in the browser. **Not** exercised with Entra ID, Okta or Google.
+- **Roles are per project**; inside one, path scopes (`intentflow access scope`, Enterprise) limit writes to folders. The scope is checked against every file a fix would change, not only the finding's file. Reading is not restricted by scope.
 - **MFA is TOTP** with single-use recovery codes; no WebAuthn. Lost device and codes: an admin runs `intentflow user mfa-disable NAME`.
 - **Login attempt limit per IP** (10/min, persistent). Behind a proxy set `INTENTFLOW_TRUSTED_PROXIES` so `X-Forwarded-For` is only accepted from them.
 - **Warehouse connection secrets** stay in server environment variables (shared by every project in the same process).

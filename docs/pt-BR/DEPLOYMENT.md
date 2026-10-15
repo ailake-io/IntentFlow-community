@@ -17,6 +17,10 @@ Há dois modos, escolhidos automaticamente:
 | `engineer` (engenheiro) | Tudo do leitor + reconhecer, marcar falso positivo, atribuir, comentar, criar/validar/aprovar/aplicar/reverter correções, rodar verificações e diff de dados |
 | `admin` | Tudo + configuração, políticas e gestão da equipe |
 
+Configurações que fazem o servidor alcançar hosts, ler caminhos ou usar segredos do ambiente (`notify.sinks`, `*.url`, `*.host`, `*_env`,
+conexões de warehouse e orquestrador…) exigem admin **global**. Quem é admin de um só projeto edita `policy.*`, `scan.*`, `watch.*`,
+`lineage.*` e `dbt.*`.
+
 Regras: **quem cria uma correção não pode aprová-la** (com mais de um usuário; desligável com `policy.separate_approver = false`);
 o último admin ativo não pode ser removido; usuário desativado perde o acesso na hora; toda ação grava o **nome de quem fez** na auditoria.
 
@@ -156,8 +160,9 @@ como lista, texto único ou caminhos (`/dados-admin`). No provedor, o cliente pr
 mapper *Group Membership*, `full path` desligado, claim `groups`).
 
 - **Quem é sincronizado:** contas criadas pelo SSO (`sso_managed`) a cada login; contas cadastradas à mão só com `--sync-roles yes`.
-- **Sem grupo global mapeado** o papel global **não** é rebaixado sozinho; use um grupo de leitura para forçar o rebaixamento.
-  Os papéis **por projeto** são substituídos pelos do login.
+- **Sem grupo global casado** o papel global cai para o piso (`sso.unmapped_role`, senão `sso.default_role`, senão `viewer`): sair de um
+  grupo no provedor rebaixa a pessoa no próximo login ou renovação. Os papéis **por projeto** só são gerenciados para os projetos citados
+  no mapa de grupos, e um `none` explícito definido por um admin nunca é levantado pelo provedor.
 - `--require-group yes`: quem não pertence a nenhum grupo mapeado é **negado**.
 - Mudanças ficam na auditoria (`roles_synced`).
 
@@ -231,7 +236,7 @@ alta, nem várias réplicas da UI (o cache e o limite de login são por processo
 - Cookies do Keycloak em desenvolvimento vêm com `Secure`; navegadores os aceitam em `127.0.0.1`/`localhost`, clientes HTTP simples não.
 - **MFA é TOTP** (apps autenticadores) com códigos de recuperação de uso único; não há WebAuthn/chaves físicas. Perdeu dispositivo e códigos: um admin
   executa `intentflow user mfa-disable NOME` e a pessoa recadastra.
-- **Papéis são por projeto**; dentro dele, escopos por caminho (`intentflow access scope`, Enterprise) limitam escritas a pastas. Leitura não é restrita por escopo.
+- **Papéis são por projeto**; dentro dele, escopos por caminho (`intentflow access scope`, Enterprise) limitam escritas a pastas: o escopo vale para todos os arquivos que uma correção alteraria, não só o do achado. Leitura não é restrita por escopo.
 - **Logout por canal de retorno (back-channel)** e renovação de grupos via refresh token estão implementados e testados com Keycloak; provedores sem refresh token só reavaliam grupos no próximo login.
 - **Limite de tentativas de login por IP** (10/min, persistente). Atrás de proxy, defina `INTENTFLOW_TRUSTED_PROXIES` (IPs/CIDRs) para
   que `X-Forwarded-For` só seja aceito desses endereços.

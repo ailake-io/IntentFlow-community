@@ -38,6 +38,7 @@ Catálogo completo: [docs/CHECKS.md](docs/pt-BR/CHECKS.md).
 ## Uso (CLI)
 
 ```bash
+# a partir do wheel de uma release (https://github.com/ailake-io/IntentFlow-community/releases) ou do código-fonte:
 python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
 
 # configuração única (no armazém; credenciais de conexão por variável de ambiente)
@@ -124,4 +125,4 @@ Os resultados históricos de integrações acima não significam que todos os se
 ## Licença
 
 Núcleo open source sob [Apache-2.0](LICENSE). SSO, governança por projeto, correções governadas, IA e integrações corporativas
-formam a edição comercial: [EDITIONS](docs/pt-BR/EDITIONS.md). [CONTRIBUTING](CONTRIBUTING.md) · [SECURITY](SECURITY.md) · [CHANGELOG](CHANGELOG.md)
+formam a edição comercial: [EDITIONS](docs/pt-BR/EDITIONS.md). Copyright (c) 2026 Thiago Egon Lange, veja [NOTICE](NOTICE). [CONTRIBUTING](CONTRIBUTING.md) · [SECURITY](SECURITY.md) · [CHANGELOG](CHANGELOG.md)

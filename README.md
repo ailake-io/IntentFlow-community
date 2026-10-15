@@ -38,6 +38,7 @@ Full catalog: [docs/CHECKS.md](docs/CHECKS.md).
 ## Usage (CLI)
 
 ```bash
+# from a release wheel (https://github.com/ailake-io/IntentFlow-community/releases) or from source:
 python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
 
 # one-time setup (in the store; connection credentials through environment variables)
@@ -119,4 +120,4 @@ real outputs of Great Expectations 1.24 and Soda 3.5 · Keycloak 26 · PostgreSQ
 ## License
 
 Open source core under [Apache-2.0](LICENSE). SSO, per-project governance, governed fixes, AI and corporate integrations form the commercial
-edition: [EDITIONS](docs/EDITIONS.md). [CONTRIBUTING](CONTRIBUTING.md) · [SECURITY](SECURITY.md) · [CHANGELOG](CHANGELOG.md)
+edition: [EDITIONS](docs/EDITIONS.md). Copyright (c) 2026 Thiago Egon Lange, see [NOTICE](NOTICE). [CONTRIBUTING](CONTRIBUTING.md) · [SECURITY](SECURITY.md) · [CHANGELOG](CHANGELOG.md)
