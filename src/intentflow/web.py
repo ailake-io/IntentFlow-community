@@ -33,9 +33,25 @@ GLOBAL_ONLY_SETTINGS = {"dbt.root", "dbt.target", "dbt.base_target", "dbt.base_r
 
 
 def _redact_dsn(spec) -> str:
-    """Registry values may be PostgreSQL DSNs with a password."""
+    """Registry values may be PostgreSQL DSNs with a password: in the authority part and/or in query parameters
+    (`?password=`, `sslpassword=`), or libpq key=value form."""
     import re
-    return re.sub(r"(://[^:/@]+):[^/]*@", r"\1:***@", str(spec))
+    from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+    text = str(spec)
+    # password up to the LAST "@" (an unescaped "/" or "@" in it must not end the redaction early)
+    text = re.sub(r"(://[^:/@\s]+):\S*@(?=[^@\s]*$)", r"\1:***@", text)
+    if "://" in text:
+        try:
+            u = urlsplit(text)
+            netloc = u.netloc
+            if "@" in netloc:
+                cred, host = netloc.rsplit("@", 1)
+                netloc = (cred.split(":", 1)[0] + ":***@" if ":" in cred else cred + "@") + host
+            qs = [(k, "***" if "pass" in k.lower() or "secret" in k.lower() else v) for k, v in parse_qsl(u.query, keep_blank_values=True)]
+            return urlunsplit((u.scheme, netloc, u.path, urlencode(qs, safe="*"), u.fragment))
+        except ValueError:
+            pass
+    return re.sub(r"((?:pass\w*|secret\w*)\s*=\s*)\S+", r"\1***", text, flags=re.I)
 
 
 def scope_ok(who: dict, project: str, finding: dict | None, role: str | None) -> bool:
@@ -292,11 +308,16 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
 
         def _drain(self) -> None:
             """After refusing a request without reading its body: closing with unread bytes makes the kernel reset the connection and
-            the client may lose the response. Read what is already queued (briefly) before the socket closes."""
+            the client may lose the response. Read what is already queued, bounded in bytes and total time (a client that keeps
+            sending must not keep this thread)."""
+            deadline, left = time.monotonic() + 0.5, 256 * 1024
             try:
-                self.connection.settimeout(0.2)
-                while self.connection.recv(65536):
-                    pass
+                while left > 0 and time.monotonic() < deadline:
+                    self.connection.settimeout(max(0.01, deadline - time.monotonic()))
+                    chunk = self.connection.recv(min(65536, left))
+                    if not chunk:
+                        break
+                    left -= len(chunk)
             except OSError:
                 pass
 

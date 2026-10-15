@@ -229,3 +229,26 @@ def test_client_ip_ignores_client_supplied_forwarded_hops(monkeypatch):
     h_headers = {"X-Forwarded-For": "6.6.6.6, 203.0.113.9"}
     assert src._client_ip(h) == "203.0.113.9"          # nginx appended the real peer; the leading value is the attacker's
     assert w._redact_dsn("postgresql://u:secret@h/db") == "postgresql://u:***@h/db"
+
+
+def test_redact_dsn_covers_odd_passwords_and_query_params():
+    from intentflow.web import _redact_dsn as r
+    assert "p%40ss" not in r("postgresql://u:p%40ss/w@h:5432/db") and "w@h" not in r("postgresql://u:p%40ss/w@h:5432/db").split("@")[0]
+    assert r("postgresql://u:p@ss@h/db") == "postgresql://u:***@h/db"
+    assert "abc" not in r("postgresql://u@h/db?password=abc") and "abc" not in r("host=h password=abc")
+    assert r("/data/crm.db") == "/data/crm.db"
+
+
+def test_drain_is_bounded_even_if_the_client_keeps_sending():
+    import socket, threading, time
+    import intentflow.web as w
+    a, b = socket.socketpair()
+    stop = threading.Event()
+    threading.Thread(target=lambda: [b.send(b"x" * 1024) or time.sleep(0.001) for _ in iter(stop.is_set, True)], daemon=True).start()
+    cls = w.make_handler("x")
+    h = cls.__new__(cls)
+    h.connection = a
+    t0 = time.monotonic()
+    h._drain()
+    stop.set()
+    assert time.monotonic() - t0 < 2

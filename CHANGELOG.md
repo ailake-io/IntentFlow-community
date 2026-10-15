@@ -4,6 +4,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-10-15
+
+### Security
+- Draining a refused request is bounded in bytes and time (a client that kept sending could hold the thread).
+- DSN redaction in `/api/projects` also covers passwords containing `/` or `@` and `password=`/`secret=` query or key=value parameters.
+
 ## [0.3.4] - 2026-10-15
 
 ### Security
