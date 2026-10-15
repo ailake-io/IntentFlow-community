@@ -36,11 +36,17 @@ def _rename_guess(old: str, candidates: list[str], bn, hn) -> tuple[str | None, 
     return (best, min(score, 1.0)) if score >= 0.6 else (None, score)
 
 
-@check("SCH001", "Schema change with impact", stage="pre-merge", emits=("SCH002",))
+@check("SCH001", "Schema change with impact", stage="pre-merge", emits=("SCH002", "SCH003"))
 def schema_drift(ctx: Context):
     if ctx.base_project is None or ctx.base_lineage is None:
         return []
     out = []
+    blind = [w for w, pr in (("base", ctx.base_project), ("head", ctx.project))
+             if pr.nodes and not any(pr.actual_columns(u) for u in pr.nodes)]
+    if blind:      # without catalog.json the diff compares nothing: say so instead of passing silently
+        out.append(Finding("SCH003", "medium", tr("Schema diff is blind: no catalog in {side}", side="+".join(blind)),
+                           tr("Run `dbt docs generate` in each version so target/catalog.json exists; without it removed or renamed columns are not detected."),
+                           [], "pre-merge", {"missing_catalog": blind}))
     for buid, huid, removed, added, changed in diff_columns(ctx.base_project, ctx.project):
         bn, hn = ctx.base_project.nodes[buid], ctx.project.nodes[huid]
         for col in removed:

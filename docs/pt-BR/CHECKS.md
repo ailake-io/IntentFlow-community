@@ -14,6 +14,7 @@ Estados: **testado** = há teste automatizado que exercita o check com um caso p
 | OL003 | Job externo lê coluna PII (ou derivada sem máscara); `pii_allowed_jobs` na política libera | pre-merge | static | external |
 | OL004 | Job Spark com nome de aplicação padrão (`pyspark_shell`): jobs distintos se misturam | pre-merge | static | external |
 | SCH002 | Mudança de tipo de coluna, com consumidores | pre-merge | static | testado |
+| SCH003 | Diff de esquema cego: falta `catalog.json` na base ou na cabeça, então renomeações/remoções não são vistas | pre-merge | static | testado |
 | DBT001 | Modelo consumido sem teste `unique` | pre-merge | static | testado |
 | DBT002 | Incremental sem `unique_key` (não idempotente). Correção por regra: a pessoa informa a chave (a UI sugere colunas `id`/`*_id`); valida formato e existência da coluna | pre-merge | static | testado |
 | DBT003 | Modelo sem dono (`meta.owner`). Correção por regra: a pessoa informa o dono | continuous | static | testado |

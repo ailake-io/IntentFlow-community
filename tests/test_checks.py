@@ -188,3 +188,14 @@ def test_secondary_finding_resolves_when_the_problem_disappears(tmp_path):
     assert len(st.findings("open")) == 1
     r = st.sync_findings([], {"DBTR002"} | set(REGISTRY["DBTR002"].emits))
     assert r["resolved"] == 1 and st.findings("open") == []
+
+
+def test_schema_drift_warns_when_head_has_no_catalog(drift, tmp_path):
+    base, head = drift
+    nocat = tmp_path / "nocat"
+    shutil.copytree(head, nocat, ignore=shutil.ignore_patterns("logs"))
+    (nocat / "target/catalog.json").unlink()
+    bp, hp = dbt_loader.load(base / "target", base), dbt_loader.load(nocat / "target", nocat)
+    ctx = Context(project=hp, lineage=lineage.build(hp), base_project=bp, base_lineage=lineage.build(bp))
+    r = [x for x in run_checks(ctx, only=["SCH"]) if x.check == "SCH003"]
+    assert len(r) == 1 and r[0].evidence["missing_catalog"] == ["head"]

@@ -2,6 +2,10 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- New check `SCH003`: when base or head has no `catalog.json`, the PR schema diff said nothing (a rename went unseen). It now reports that the diff is blind and how to fix it.
+
 ## [Unreleased]
 
 ## [0.3.1] - 2026-10-15

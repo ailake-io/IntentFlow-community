@@ -10,6 +10,7 @@ States: **tested** = there is an automated test that exercises the check with a 
 |---|---|---|---|---|
 | SCH001 | Removed/renamed column with downstream consumers; suggests the rename, shows the transitive impact and produces a fix | pre-merge | static | tested (real dbt) |
 | SCH002 | Column type change, with consumers | pre-merge | static | tested |
+| SCH003 | Schema diff blind: `catalog.json` missing in base or head, so renames/removals are not seen | pre-merge | static | tested |
 | OL001 | A job outside the SQL (Spark/Python/notebook, through OpenLineage or `intentflow.lineage.json`) reads a removed/changed column, directly or derived | pre-merge | static | tested (real Spark) |
 | OL002 | Dataset read by an external job matches more than one model (the impact silently disappears) or, with `external_warn_unmatched`, none; fix with `aliases` | pre-merge | static | tested |
 | OL003 | External job reads a PII column (or an unmasked derivative); `pii_allowed_jobs` in the policy allows it | pre-merge | static | tested |
