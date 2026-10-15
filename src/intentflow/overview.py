@@ -60,11 +60,14 @@ def build(store: Store, window_h: int = 24) -> dict:
         "checks": [{"id": c.id, "title": c.title, "stage": c.stage, "cost": c.cost, "enabled": c.id not in disabled}
                    for c in sorted(REGISTRY.values(), key=lambda c: c.id)],
         "incidents": incidents[:50], "findings": findings[:200], "pipelines": pipelines, "cluster": cluster[:50],
-        "proposals": [{k: v for k, v in p.items() if k not in ("backup",)} | {"changes": [{"file": c["file"], "diff": c["diff"]} for c in p["changes"]]}
+        "proposals": [{k: v for k, v in p.items() if k not in _HIDDEN_PROPOSAL_KEYS} | {"changes": [{"file": c["file"], "diff": c["diff"]} for c in p["changes"]]}
                       for p in props[:50]],
         "audit": store.audit_log(limit=30),
     }
 
+
+# raw backups hold whole original files (outside a viewer's write scope too); the diff is what the UI needs
+_HIDDEN_PROPOSAL_KEYS = {"backup", "backup_bytes", "project_root", "validation_request"}
 
 _CACHE: OrderedDict = OrderedDict()
 _CACHE_GUARD = threading.Lock()

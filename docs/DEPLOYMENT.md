@@ -65,8 +65,8 @@ Verified with Docker: PostgreSQL 16, the UI over TLS, a `watch` scheduler and a 
 - **Scheduler:** run `watch` as its own container with `--restart unless-stopped`. It reconnects after a database restart or crash
   (a cycle that fails is audited as `watch_error`); the UI opens a connection per request and needs no restart.
 - **Fixes (Enterprise):** the project directory must be **writable** by uid `10001` (the fix journal lives in `.intentflow-transactions`).
-  Validation needs the Docker CLI and socket, which the slim image does not have: run `fix validate` (or the UI) on a host or CI runner that has
-  Docker, and keep the container for reading and checks. Without Docker the validation fails closed and `apply` is refused.
+  Validation needs the Docker CLI and socket, which the slim image does not have: set `INTENTFLOW_VALIDATION=remote` on the UI container and run `intentflow validate-worker` on a host or CI runner that has Docker and the same
+  store (Enterprise docs: VALIDATION_RECOVERY). Without a worker or Docker the validation stays queued or fails closed, and `apply` is refused.
 - **CI gate:** `check --base` needs `catalog.json` for the head build (`dbt docs generate`); `parse` alone leaves columns unknown and the rename is not seen.
 - **Backups:** `pg_dump -Fc` and `pg_restore` into a clean database reproduce users, findings and audit.
 - **Rollback to the core:** the same store opens with the core-only image; Enterprise features switch off and the data stays.

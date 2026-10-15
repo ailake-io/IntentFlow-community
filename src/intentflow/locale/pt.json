@@ -974,6 +974,7 @@
  "the impact is on the whole model, not the column: too many or too few alarms": "o impacto é do modelo inteiro, não da coluna: alarme demais ou de menos",
  "the impact uses old reads: new or removed jobs are not reflected": "o impacto usa leituras antigas: job novo ou removido não é refletido",
  "these problems are no longer reported": "esses problemas deixam de ser reportados",
+ "this action is outside your scope (allowed folders/models)": "esta ação está fora do seu escopo (pastas/modelos permitidos)",
  "this finding is outside your scope (allowed folders/models)": "este achado está fora do seu escopo (pastas/modelos permitidos)",
  "timed out reading the request": "tempo esgotado ao ler a requisição",
  "today": "hoje",

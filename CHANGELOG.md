@@ -4,6 +4,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-10-15
+
+### Security
+- The request body is read before a database connection is taken, so slow clients can no longer hold PostgreSQL pool slots (unauthenticated exhaustion).
+- `/api/overview` no longer returns raw file backups (`backup_bytes`) or the server project path to viewers.
+- Behind a trusted proxy, the client IP is the right-most hop that is not a trusted proxy (a client could rotate a fake leading `X-Forwarded-For` value to bypass the login rate limit).
+- `/api/diff` honours write scopes; `/api/projects` redacts passwords in PostgreSQL DSNs.
+- Settings that make the server read a path (`dbt.root`, `dbt.target`, `dbt.base_target`, `dbt.base_root`, `lineage.declared`) and global security policy (`policy.separate_approver`, `policy.token_max_age_days`) now need a global admin; an admin of one project can no longer change them.
+
+### Fixed
+- A run whose store connection failed left `state.running` set forever; it is cleared, and also at server start.
+- PostgreSQL backups/migrations read one repeatable-read snapshot (the code was disabled); SQLite backups are created with mode 600 from the first byte; a failure while configuring a new pool connection no longer leaks its slot.
+
 ## [0.3.3] - 2026-10-15
 
 ### Fixed

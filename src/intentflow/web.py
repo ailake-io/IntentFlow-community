@@ -25,7 +25,17 @@ class _Handled(Exception):
     """The response (401/403/...) was already sent."""
 
 
-SAFE_SETTING_PREFIXES = ("policy.", "scan.", "watch.", "lineage.", "dbt.")      # tuning and the project's own dbt location
+SAFE_SETTING_PREFIXES = ("policy.", "scan.", "watch.", "lineage.", "dbt.")      # tuning a project admin may change...
+# ...except paths the server will read from (an admin of one project could point them at another project's files) and
+# security policy that applies to everyone.
+GLOBAL_ONLY_SETTINGS = {"dbt.root", "dbt.target", "dbt.base_target", "dbt.base_root", "lineage.declared",
+                        "policy.separate_approver", "policy.token_max_age_days"}
+
+
+def _redact_dsn(spec) -> str:
+    """Registry values may be PostgreSQL DSNs with a password."""
+    import re
+    return re.sub(r"(://[^:/@]+):[^/]*@", r"\1:***@", str(spec))
 
 
 def scope_ok(who: dict, project: str, finding: dict | None, role: str | None) -> bool:
@@ -233,7 +243,7 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                         return self._json(403, {"error": tr("global admin only")})
                     return self._json(200, {"users": prim.users_admin(), "projects": list(self._stores(prim))})
                 if path == "/api/projects":
-                    return self._json(200, {"projects": self._stores(prim)} if auth.allowed(auth.role_in(who, None), "users") else
+                    return self._json(200, {"projects": {n: _redact_dsn(p) for n, p in self._stores(prim).items()}} if auth.allowed(auth.role_in(who, None), "users") else
                                       {"projects": {n: "" for n in self._stores(prim) if auth.role_in(who, n) not in (None, "none")}})
                 if path.startswith("/api/notes/"):
                     return self._json(200, {"notes": st.notes(path.rsplit("/", 1)[1])})
@@ -280,23 +290,43 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             except (ValueError, KeyError, FileNotFoundError) as e:
                 return self._json(400, {"error": str(e)})
 
+        def _drain(self) -> None:
+            """After refusing a request without reading its body: closing with unread bytes makes the kernel reset the connection and
+            the client may lose the response. Read what is already queued (briefly) before the socket closes."""
+            try:
+                self.connection.settimeout(0.2)
+                while self.connection.recv(65536):
+                    pass
+            except OSError:
+                pass
+
         def _client_ip(self) -> str:
             peer = self.client_address[0]
             trusted = [x.strip() for x in os.environ.get("INTENTFLOW_TRUSTED_PROXIES", "").split(",") if x.strip()]
             if peer in trusted:
                 xff = self.headers.get("X-Forwarded-For", "")
-                if xff:
-                    return xff.split(",")[0].strip()      # first hop = original client
+                # proxies append to the header, so the first hop is client-controlled: take the right-most hop that is not a trusted proxy
+                hops = [h.strip() for h in xff.split(",") if h.strip()]
+                for hop in reversed(hops):
+                    if hop not in trusted:
+                        return hop
             return peer
 
         # ---- POST ----
         def do_POST(self):
+            self.prefetched_body = None
             self._lang()
             if not self._host_ok():
                 return self._send(403, "forbidden host", "text/plain")
             u = urlparse(self.path)
             query = dict(parse_qsl(u.query))
             parts = u.path.strip("/").split("/")
+            try:
+                self.prefetched_body = read_body(self)    # before taking a database connection: a slow client must not hold a pool slot
+            except RequestError as e:
+                self.close_connection = True
+                self._json(e.status, {"error": str(e)})
+                return self._drain()
             prim = self._store(store_path)
             try:
                 if extensions.first("web_post_raw", self, prim, parts):      # provider callbacks without the anti-CSRF header
@@ -337,9 +367,9 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     # llm.*/jev.* go through their own endpoint, which checks who may point the server at a custom AI endpoint
                     if not key or key == "projects" or key.startswith(("state.", "secret.", "sso.", "llm.", "jev.")):
                         raise ValueError(tr("invalid key"))
-                    # Connection/path keys (notify.sinks, dbt.root, *.url, *_env ...) make the server reach hosts, read paths or send
+                    # Connection/path keys (notify.sinks, dbt.root, lineage.declared, *.url, *_env ...) make the server reach hosts, read paths or send
                     # environment secrets: only a global admin, never someone who is admin of just one project.
-                    if not key.startswith(SAFE_SETTING_PREFIXES) and auth.role_in({**who, "project_roles": {}}, None) != "admin":
+                    if (not key.startswith(SAFE_SETTING_PREFIXES) or key in GLOBAL_ONLY_SETTINGS) and auth.role_in({**who, "project_roles": {}}, None) != "admin":
                         return self._json(403, {"error": tr("global admin only")})
                     if body.get("value") in (None, ""):
                         st.unset_setting(key)
@@ -443,6 +473,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
 
         def _diff(self, prim: Store, body: dict):
             who = self._need(prim, "diff")
+            if not scope_ok(who, self._project(), None, auth.role_in(who, self._project())):
+                return self._json(403, {"error": tr("this action is outside your scope (allowed folders/models)")})      # samples rows of any relation
             st = self._data(prim, who)
             from . import datadiff, warehouses
             if not (st.get_setting("warehouse.type") or st.get_setting("warehouse.duckdb") or st.get_setting("warehouse.postgres_env")):
@@ -472,20 +504,25 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
 
             def job():
                 i18n.set_request_lang(code)
-                s2 = Store(spath)
+                s2 = None
                 try:
+                    s2 = Store(spath)          # inside the try: if it fails (pool exhausted) the flag is still cleared below
                     if what == "check":
                         runner.run_check(s2)
                     else:
                         runner.collect_runs(s2)
                         runner.collect_samples(s2)
                 except Exception as e:
-                    s2.audit("system", "run_failed", {"what": what, "error": str(e)[:300]})
+                    try:
+                        (s2 or Store(spath)).audit("system", "run_failed", {"what": what, "error": str(e)[:300]})
+                    except Exception:
+                        pass
                 finally:
                     try:
-                        s2.unset_setting("state.running")
+                        (s2 or Store(spath)).unset_setting("state.running")
                     finally:
-                        s2.close()
+                        if s2 is not None:
+                            s2.close()
             threading.Thread(target=job, daemon=True).start()
             return self._json(200, {"started": what})
 
@@ -520,6 +557,7 @@ def build_server(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls
     loopback = host in ("127.0.0.1", "localhost", "::1")
     with Store(store_path) as st:
         has_users = st.has_users()
+        st.unset_setting("state.running")      # a run interrupted by a crash/restart would otherwise block new runs forever
     if not loopback:
         if not has_users:
             raise SystemExit(tr("refused: to listen outside loopback, add users first (`intentflow user add NAME --role admin`)"))

@@ -10,7 +10,10 @@ class RequestError(ValueError):
 
 
 def read_body(handler, limit: int = 1024 * 1024) -> bytes:
-    """Reject ambiguous framing before allocating/reading a client-controlled body."""
+    """Reject ambiguous framing before allocating/reading a client-controlled body.
+    A handler that already read the request (`handler.prefetched_body`) is served from that."""
+    if getattr(handler, "prefetched_body", None) is not None:
+        return handler.prefetched_body
     if handler.headers.get("Transfer-Encoding") is not None:
         raise RequestError(400, tr("Transfer-Encoding not supported"))
     lengths = handler.headers.get_all("Content-Length", [])

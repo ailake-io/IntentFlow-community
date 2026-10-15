@@ -64,8 +64,8 @@ Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor d
 - **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
   falha vai para a auditoria como `watch_error`); a UI abre uma conexão por requisição e não precisa reiniciar.
 - **Correções (Enterprise):** o diretório do projeto precisa ser **gravável** pelo uid `10001` (o journal fica em `.intentflow-transactions`).
-  A validação precisa do Docker CLI e do socket, que a imagem enxuta não tem: rode `fix validate` (ou a UI) num host ou runner de CI com Docker e
-  deixe o contêiner para leitura e checks. Sem Docker a validação falha fechada e `apply` é recusado.
+  A validação precisa do Docker CLI e do socket, que a imagem enxuta não tem: defina `INTENTFLOW_VALIDATION=remote` no contêiner da UI e rode `intentflow validate-worker` num host ou runner de CI com Docker e o mesmo
+  armazém (docs Enterprise: VALIDATION_RECOVERY). Sem worker ou Docker a validação fica na fila ou falha fechada, e `apply` é recusado.
 - **Gate de CI:** `check --base` precisa do `catalog.json` do build da cabeça (`dbt docs generate`); só `parse` deixa as colunas desconhecidas e o rename não é visto.
 - **Backups:** `pg_dump -Fc` e `pg_restore` num banco limpo reproduzem usuários, achados e auditoria.
 - **Voltar ao núcleo:** o mesmo armazém abre com a imagem só do núcleo; as funções Enterprise desligam e os dados ficam.

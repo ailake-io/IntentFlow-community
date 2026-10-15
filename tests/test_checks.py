@@ -206,3 +206,26 @@ def test_ui_refuses_unreadable_tls_files_with_a_clear_message(tmp_path):
     bad = tmp_path / "missing.pem"
     with pytest.raises(SystemExit, match="TLS certificate/key"):
         build_server(str(tmp_path / "s.db"), 0, "127.0.0.1", str(bad), str(bad))
+
+
+def test_path_and_policy_settings_are_global_admin_only():
+    from intentflow.web import GLOBAL_ONLY_SETTINGS, SAFE_SETTING_PREFIXES
+    assert {"dbt.root", "lineage.declared", "policy.separate_approver"} <= GLOBAL_ONLY_SETTINGS
+    assert all(k.startswith(SAFE_SETTING_PREFIXES) for k in GLOBAL_ONLY_SETTINGS)      # they would otherwise have been allowed
+
+
+def test_overview_hides_raw_backups_from_viewers():
+    from intentflow.overview import _HIDDEN_PROPOSAL_KEYS
+    assert {"backup", "backup_bytes"} <= _HIDDEN_PROPOSAL_KEYS
+
+
+def test_client_ip_ignores_client_supplied_forwarded_hops(monkeypatch):
+    from types import SimpleNamespace
+    import intentflow.web as w
+    monkeypatch.setenv("INTENTFLOW_TRUSTED_PROXIES", "10.0.0.1")
+    src = w.make_handler("x")
+    h = SimpleNamespace(client_address=("10.0.0.1", 1), headers={"X-Forwarded-For": "6.6.6.6, 203.0.113.9"})
+    h.headers = SimpleNamespace(get=lambda k, d="": h_headers.get(k, d))
+    h_headers = {"X-Forwarded-For": "6.6.6.6, 203.0.113.9"}
+    assert src._client_ip(h) == "203.0.113.9"          # nginx appended the real peer; the leading value is the attacker's
+    assert w._redact_dsn("postgresql://u:secret@h/db") == "postgresql://u:***@h/db"

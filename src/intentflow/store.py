@@ -166,7 +166,11 @@ class _PgConn:
             except Exception:
                 self._sem.release()
                 raise
-        self._c.autocommit = True
+        try:
+            self._c.autocommit = True
+        except Exception:
+            self._sem.release()          # the slot would leak: __del__/close never run for a half-built object
+            raise
         self._tx = False
         self._open = True
 
@@ -439,6 +443,7 @@ class Store:
         """Consistent copy of the store. SQLite→SQLite uses the backup API; any other pair uses `copy_store`
         (PostgreSQL→SQLite file is a portable logical backup). Returns the copied rows or, for a file, its size in bytes."""
         if self.backend == "sqlite" and not _is_pg(dest):
+            os.close(os.open(dest, os.O_CREAT | os.O_WRONLY, 0o600))      # owner-only from the first byte (holds token hashes)
             out = sqlite3.connect(dest)
             try:
                 self.con.backup(out)
@@ -446,6 +451,8 @@ class Store:
                 out.close()
             os.chmod(dest, 0o600)    # holds token hashes and metadata: only the owner reads it
             return os.path.getsize(dest)
+        if not _is_pg(dest) and not os.path.exists(dest):
+            os.close(os.open(dest, os.O_CREAT | os.O_WRONLY, 0o600))
         n = copy_store(self, Store(dest))
         if not _is_pg(dest) and os.path.exists(dest):
             os.chmod(dest, 0o600)
@@ -849,11 +856,22 @@ TABLES = ("findings", "history", "samples", "runs", "proposals", "audit", "ol_jo
 
 def copy_store(src: "Store", dst: "Store", clear: bool = True) -> int:
     """Copy every table from `src` to `dst` (SQLite→PostgreSQL migration, logical backup, restore).
-    Reads `src` in a consistent snapshot. Returns the total number of rows."""
+    Reads `src` in one consistent snapshot (a single repeatable-read transaction on PostgreSQL). Returns the total number of rows."""
+    if src.backend != "postgres":
+        return _copy_rows(src, dst, clear)
+    c = src.con._c
+    c.autocommit = False
+    try:
+        c.cursor().execute("set transaction isolation level repeatable read read only")     # first statement of the transaction
+        return _copy_rows(src, dst, clear)
+    finally:
+        c.rollback()
+        c.autocommit = True
+
+
+def _copy_rows(src: "Store", dst: "Store", clear: bool) -> int:
     q = lambda c: f'"{c}"' if c in ("end", "user") else c    # noqa: E731
     total = 0
-    if src.backend == "postgres":
-        src.con.execute("begin isolation level repeatable read read only") if False else None
     if clear:
         for t in reversed(TABLES):
             dst.con.execute(f"delete from {t}")
