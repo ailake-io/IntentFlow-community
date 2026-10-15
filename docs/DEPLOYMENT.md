@@ -54,6 +54,23 @@ Behind a proxy, set the public host in `INTENTFLOW_ALLOWED_HOSTS=intentflow.exam
 - **Several projects:** one store per project (`--store` or `INTENTFLOW_STORE`) and one UI per store; serving several projects from one
   server with per-project roles is Enterprise (below).
 
+## Container deployment checklist (verified in a production-like run)
+
+Verified with Docker: PostgreSQL 16, the UI over TLS, a `watch` scheduler and a webhook receiver on one network, 50 concurrent users, restarts and
+`kill -9` of the database, `pg_dump`/`pg_restore`, and a rename caught by `check --base` (exit 1).
+
+- **Build:** `docker build --network=host -t intentflow:0.3.0 .` if your Docker DNS cannot reach PyPI during the build.
+- **Store and secrets:** `IF_DB_URL` and `INTENTFLOW_SECRET_KEY` as environment variables (use your secret manager); `--store env:IF_DB_URL`.
+- **TLS files** must be readable by uid `10001` (the image user), including their directory. Otherwise the UI exits with `PermissionError`.
+- **Scheduler:** run `watch` as its own container with `--restart unless-stopped`. It reconnects after a database restart or crash
+  (a cycle that fails is audited as `watch_error`); the UI opens a connection per request and needs no restart.
+- **Fixes (Enterprise):** the project directory must be **writable** by uid `10001` (the fix journal lives in `.intentflow-transactions`).
+  Validation needs the Docker CLI and socket, which the slim image does not have: run `fix validate` (or the UI) on a host or CI runner that has
+  Docker, and keep the container for reading and checks. Without Docker the validation fails closed and `apply` is refused.
+- **CI gate:** `check --base` needs `catalog.json` for the head build (`dbt docs generate`); `parse` alone leaves columns unknown and the rename is not seen.
+- **Backups:** `pg_dump -Fc` and `pg_restore` into a clean database reproduce users, findings and audit.
+- **Rollback to the core:** the same store opens with the core-only image; Enterprise features switch off and the data stays.
+
 ## E-mail notifications (SMTP)
 
 `email` output (IntentFlow keeps only variable names): `SMTP_HOST`, `SMTP_PORT` and, if the relay authenticates, `SMTP_USER` and `SMTP_PASSWORD`.

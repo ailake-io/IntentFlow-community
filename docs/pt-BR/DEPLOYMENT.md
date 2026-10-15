@@ -53,6 +53,23 @@ Atrás de proxy, informe o host público em `INTENTFLOW_ALLOWED_HOSTS=intentflow
 - **Idioma:** `INTENTFLOW_LANG=pt` deixa a CLI e os achados do `watch` em português; a UI segue o navegador e o seletor de cada pessoa.
 - **Vários projetos:** um armazém por projeto (`--store` ou `INTENTFLOW_STORE`); suba uma UI por armazém. Vários projetos num servidor, com papel por projeto, é Enterprise (abaixo).
 
+## Checklist de implantação em contêiner (verificado numa execução simulando produção)
+
+Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor de webhook numa rede, 50 usuários simultâneos, reinício e
+`kill -9` do banco, `pg_dump`/`pg_restore` e um rename pego por `check --base` (saída 1).
+
+- **Build:** `docker build --network=host -t intentflow:0.3.0 .` se o DNS do Docker não alcança o PyPI durante o build.
+- **Armazém e segredos:** `IF_DB_URL` e `INTENTFLOW_SECRET_KEY` como variáveis de ambiente (use seu cofre); `--store env:IF_DB_URL`.
+- **Arquivos TLS** precisam ser legíveis pelo uid `10001` (usuário da imagem), inclusive o diretório. Senão a UI sai com `PermissionError`.
+- **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
+  falha vai para a auditoria como `watch_error`); a UI abre uma conexão por requisição e não precisa reiniciar.
+- **Correções (Enterprise):** o diretório do projeto precisa ser **gravável** pelo uid `10001` (o journal fica em `.intentflow-transactions`).
+  A validação precisa do Docker CLI e do socket, que a imagem enxuta não tem: rode `fix validate` (ou a UI) num host ou runner de CI com Docker e
+  deixe o contêiner para leitura e checks. Sem Docker a validação falha fechada e `apply` é recusado.
+- **Gate de CI:** `check --base` precisa do `catalog.json` do build da cabeça (`dbt docs generate`); só `parse` deixa as colunas desconhecidas e o rename não é visto.
+- **Backups:** `pg_dump -Fc` e `pg_restore` num banco limpo reproduzem usuários, achados e auditoria.
+- **Voltar ao núcleo:** o mesmo armazém abre com a imagem só do núcleo; as funções Enterprise desligam e os dados ficam.
+
 ## Notificações por e-mail (SMTP)
 
 Sink `email` (`intentflow` guarda só nomes de variáveis): `SMTP_HOST`, `SMTP_PORT`, e, se o relay autentica, `SMTP_USER` e `SMTP_PASSWORD`.

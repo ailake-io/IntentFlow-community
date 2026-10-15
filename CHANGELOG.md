@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-15
+
+### Fixed
+- `watch` no longer exits when the database connection dies (restart, failover): it reopens the store on the next cycle.
+
+### Docs
+- Container deployment checklist from a production-like run.
+
 ## [0.3.0] - 2026-10-14
 
 ### Security

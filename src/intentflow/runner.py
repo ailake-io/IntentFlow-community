@@ -219,7 +219,17 @@ def watch(store: Store, interval_s: float = 300, iterations: int | None = None, 
                 proj = dbt_loader.load(target)
                 notify.send(store, incidents.group(store.findings("open"), proj))
         except Exception as e:     # a bad cycle does not take the scheduler down
-            store.audit("system", "watch_error", {"error": str(e)[:300]})
+            try:
+                store.audit("system", "watch_error", {"error": str(e)[:300]})
+            except Exception:      # the connection itself died (database restart/failover): reopen it for the next cycle
+                try:
+                    store.close()
+                except Exception:
+                    pass
+                try:
+                    store = Store(store.spec)
+                except Exception:
+                    pass           # database still down: try again next cycle
         n += 1
         if iterations is None or n < iterations:
             sleep(max(0.0, interval_s - (time.time() - t0)))
