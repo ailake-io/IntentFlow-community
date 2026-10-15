@@ -1,2 +1,2 @@
 """IntentFlow: a control layer over dbt, Airflow, Kestra and warehouses."""
-__version__ = "0.3.2"
+__version__ = "0.3.3"

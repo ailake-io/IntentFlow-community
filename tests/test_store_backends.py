@@ -184,3 +184,23 @@ def test_cli_backup_and_migrate_store(tmp_path, capsys):
     assert cli.main(["migrate-store", src, dst]) == 1                     # destination with data: refused
     assert cli.main(["migrate-store", src, dst, "--overwrite"]) == 0
     assert Store(dst).get_setting("x") == 1
+
+
+def test_pool_drops_connections_killed_by_a_server_restart(tmp_path):
+    """Regression: after the server killed every backend, the next requests kept drawing dead pooled connections."""
+    if not pg_available():
+        pytest.skip("local PostgreSQL unavailable")
+    import psycopg2
+    from urllib.parse import urlsplit
+    from conftest import PG_ADMIN
+    dsn = new_db(tmp_path, backend="postgres")
+    stores = [Store(dsn) for _ in range(4)]
+    for s in stores:
+        s.close()                                   # four idle connections now sit in the pool
+    c = psycopg2.connect(PG_ADMIN)
+    c.autocommit = True
+    c.cursor().execute("select pg_terminate_backend(pid) from pg_stat_activity where datname=%s", (urlsplit(dsn).path[1:],))
+    c.close()
+    s = Store(dsn)
+    assert s.has_users() is False                   # would raise OperationalError with a dead pooled connection
+    s.close()

@@ -4,6 +4,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-15
+
+### Fixed
+- PostgreSQL pool: after the server was killed or restarted, requests kept drawing dead pooled connections (`server closed the connection unexpectedly`, empty replies from the UI) until the pool drained. Idle connections are now pinged on checkout and dropped when dead.
+
 ## [0.3.2] - 2026-10-15
 
 - New check `SCH003`: when base or head has no `catalog.json`, the PR schema diff said nothing (a rename went unseen). It now reports that the diff is blind and how to fix it.

@@ -159,9 +159,7 @@ class _PgConn:
         if not self._sem.acquire(timeout=60):
             raise RuntimeError(tr("PostgreSQL connection pool exhausted"))
         try:
-            self._c = self._q.get_nowait()
-            if self._c.closed:
-                raise Exception("fechada")
+            self._c = self._pooled()
         except Exception:
             try:
                 self._c = psycopg2.connect(dsn, connect_timeout=10)
@@ -171,6 +169,22 @@ class _PgConn:
         self._c.autocommit = True
         self._tx = False
         self._open = True
+
+    def _pooled(self):
+        """Next live idle connection. A pooled one may be dead (server restarted/killed): ping it, drop it and try the next."""
+        while True:
+            c = self._q.get_nowait()          # queue.Empty when none left: caller opens a new connection
+            try:
+                if not c.closed:
+                    with c.cursor() as cur:
+                        cur.execute("select 1")
+                    return c
+            except Exception:
+                pass
+            try:
+                c.close()
+            except Exception:
+                pass
 
     @property
     def in_transaction(self) -> bool:
