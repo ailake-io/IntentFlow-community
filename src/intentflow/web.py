@@ -25,6 +25,9 @@ class _Handled(Exception):
     """The response (401/403/...) was already sent."""
 
 
+SAFE_SETTING_PREFIXES = ("policy.", "scan.", "watch.", "lineage.", "dbt.")      # tuning and the project's own dbt location
+
+
 def scope_ok(who: dict, project: str, finding: dict | None, role: str | None) -> bool:
     """Write scope: if the person has patterns for the project, they only act on findings whose file/nodes match one."""
     if role == "admin":
@@ -334,6 +337,10 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     # llm.*/jev.* go through their own endpoint, which checks who may point the server at a custom AI endpoint
                     if not key or key == "projects" or key.startswith(("state.", "secret.", "sso.", "llm.", "jev.")):
                         raise ValueError(tr("invalid key"))
+                    # Connection/path keys (notify.sinks, dbt.root, *.url, *_env ...) make the server reach hosts, read paths or send
+                    # environment secrets: only a global admin, never someone who is admin of just one project.
+                    if not key.startswith(SAFE_SETTING_PREFIXES) and auth.role_in({**who, "project_roles": {}}, None) != "admin":
+                        return self._json(403, {"error": tr("global admin only")})
                     if body.get("value") in (None, ""):
                         st.unset_setting(key)
                     else:
