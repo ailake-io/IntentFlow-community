@@ -4,6 +4,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-14
+
+### Security
+- `/api/settings`: connection keys (`notify.sinks`, `*.url`, `*_env`, …) require a global admin; project admins keep `policy.`, `scan.`, `watch.`, `lineage.` and `dbt.`.
+
 ### Added
 - English as the main language, with a Portuguese translation of the CLI, UI, findings and docs (`INTENTFLOW_LANG`, browser language, UI selector).
 - Open core: Apache-2.0 license, extension point (`intentflow.extensions`), [EDITIONS](docs/EDITIONS.md); `intentflow --version`.
