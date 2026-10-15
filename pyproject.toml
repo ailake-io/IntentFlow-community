@@ -5,7 +5,8 @@ description = "Control layer for data pipelines: column lineage, preventive chec
 requires-python = ">=3.11"
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Thiago Egon Lange" }]
 classifiers = ["Programming Language :: Python :: 3", "Topic :: Database"]
 dependencies = ["sqlglot>=25", "pyyaml>=6", "duckdb>=1.0"]
 
