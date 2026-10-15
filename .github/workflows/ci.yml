@@ -1,0 +1,90 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    # Whole suite with the extras that need no external service; real-service tests are skipped.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -e ".[dev,postgres,secrets,lint,mysql,warehouses]"
+      - run: pytest -q -p no:cacheprovider
+
+  integration:
+    # Real PostgreSQL store and SMTP (tests skip themselves when the service is not configured).
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: intentflow-test
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.20
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+        ports: ["1025:1025", "8025:8025"]
+    env:
+      INTENTFLOW_TEST_BACKEND: postgres
+      INTENTFLOW_TEST_PG_ADMIN: postgresql://postgres:intentflow-test@127.0.0.1:55432/postgres
+      INTENTFLOW_PG_URL: postgresql://postgres:intentflow-test@127.0.0.1:55432/postgres
+      INTENTFLOW_MAILPIT_PLAIN: 127.0.0.1:1025:8025
+      INTENTFLOW_SECRET_KEY: ci-only-key-not-a-secret-0123456789abcdef   # a PostgreSQL store requires the key through a variable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev,postgres,secrets,lint,mysql,warehouses]"
+      - run: pytest -q -p no:cacheprovider -rs
+
+  spark:
+    # Real Spark + openlineage-spark emitting to the receiver (Maven Central, pinned version).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,postgres,secrets,lint,mysql,warehouses]" pyspark==3.5.3
+      - run: curl -fsSLo "$RUNNER_TEMP/ol-spark.jar" https://repo1.maven.org/maven2/io/openlineage/openlineage-spark_2.12/1.24.2/openlineage-spark_2.12-1.24.2.jar
+      - run: pytest -q -p no:cacheprovider -rs tests/test_spark_real.py
+        env:
+          INTENTFLOW_SPARK_PYTHON: python
+          INTENTFLOW_OL_SPARK_JAR: ${{ runner.temp }}/ol-spark.jar
+          INTENTFLOW_SPARK_MASTER: local-cluster[1,1,1024]      # master e executor em JVMs separadas
+
+  dbt-ol:
+    # Real dbt-ol (openlineage-dbt) emitting to the receiver; separate venv because openlineage-dbt requires dbt-core < 1.11.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,postgres,secrets,lint,mysql,warehouses]"
+      - run: python -m venv "$RUNNER_TEMP/dbtol" && "$RUNNER_TEMP/dbtol/bin/pip" install -q openlineage-dbt dbt-duckdb "dbt-core>=1.8,<1.11"
+      - run: pytest -q -p no:cacheprovider -rs tests/test_dbt_ol_real.py
+        env:
+          INTENTFLOW_DBT_OL_BIN: ${{ runner.temp }}/dbtol/bin

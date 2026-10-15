@@ -1,0 +1,10 @@
+name: it_fail
+uuid: it_fail
+type: python
+blocks:
+- uuid: boom_loader
+  name: boom_loader
+  type: data_loader
+  language: python
+  upstream_blocks: []
+  downstream_blocks: []

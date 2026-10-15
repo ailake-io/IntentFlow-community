@@ -1,0 +1,10 @@
+name: it_ok
+uuid: it_ok
+type: python
+blocks:
+- uuid: ok_loader
+  name: ok_loader
+  type: data_loader
+  language: python
+  upstream_blocks: []
+  downstream_blocks: []

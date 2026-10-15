@@ -1,0 +1,8 @@
+gateways:
+  local:
+    connection:
+      type: duckdb
+      database: shop.duckdb
+default_gateway: local
+model_defaults:
+  dialect: duckdb

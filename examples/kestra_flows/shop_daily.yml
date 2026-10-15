@@ -1,0 +1,15 @@
+id: shop_daily
+namespace: company.shop
+tasks:
+  - id: dbt
+    type: io.kestra.plugin.dbt.cli.DbtCLI
+    commands:
+      - dbt build --select +customers
+    env:
+      WAREHOUSE_PASSWORD: "s3cr3t-hardcoded"
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 2 * * *"
+    backfill:
+      start: "2022-01-01T00:00:00Z"

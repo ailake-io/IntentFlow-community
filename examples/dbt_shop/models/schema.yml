@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_customers
+    description: "Clientes brutos padronizados"
+    meta: {owner: dados@exemplo.com}
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: email
+        meta: {pii: true}
+  - name: stg_orders
+    meta: {owner: dados@exemplo.com}
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+  - name: stg_payments
+    meta: {owner: dados@exemplo.com}
+  - name: customers
+    description: "Uma linha por cliente"
+    meta: {owner: dados@exemplo.com}
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+  - name: orders
+    meta: {owner: dados@exemplo.com}
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+  - name: daily_revenue
+  - name: customer_contacts

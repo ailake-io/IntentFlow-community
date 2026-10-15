@@ -1,0 +1,50 @@
+[project]
+name = "intentflow"
+dynamic = ["version"]
+description = "Control layer for data pipelines: column lineage, preventive checks, orchestrator visibility and impact of external jobs"
+requires-python = ">=3.11"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Database"]
+dependencies = ["sqlglot>=25", "pyyaml>=6", "duckdb>=1.0"]
+
+[project.optional-dependencies]
+postgres = ["psycopg2-binary"]
+snowflake = ["snowflake-connector-python"]
+bigquery = ["google-cloud-bigquery"]
+databricks = ["databricks-sql-connector"]
+kafka = ["kafka-python-ng"]
+lint = ["sqlfluff"]
+aws = ["boto3"]
+jev = ["typesafe-sdk"]
+mysql = ["pymysql"]
+secrets = ["cryptography"]
+lakehouse = ["deltalake", "pyiceberg"]
+warehouses = ["trino", "clickhouse-connect"]
+dev = [
+    "pytest",
+    "dbt-core",
+    "dbt-duckdb",
+    "moto[glue]",
+]
+
+[project.scripts]
+intentflow = "intentflow.cli:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "intentflow.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+intentflow = ["web.html", "locale/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

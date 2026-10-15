@@ -1,0 +1,144 @@
+{
+ "dialect": "duckdb",
+ "models": [
+  {
+   "fqn": "\"shop\".\"shop\".\"raw_customers\"",
+   "name": "shop.raw_customers",
+   "kind": "SEED",
+   "dialect": "duckdb",
+   "sql": null,
+   "columns": {
+    "id": "INT",
+    "name": "TEXT",
+    "email": "TEXT",
+    "country": "TEXT"
+   },
+   "depends_on": [],
+   "owner": null,
+   "description": null,
+   "column_descriptions": {},
+   "grain": [
+    "id"
+   ],
+   "audits": [],
+   "tags": [],
+   "cron": "@daily",
+   "path": "examples/sqlmesh_shop/models/raw_customers.sql",
+   "python": false
+  },
+  {
+   "fqn": "\"shop\".\"shop\".\"raw_orders\"",
+   "name": "shop.raw_orders",
+   "kind": "SEED",
+   "dialect": "duckdb",
+   "sql": null,
+   "columns": {
+    "id": "INT",
+    "customer_id": "INT",
+    "amount": "DECIMAL(10, 2)",
+    "status": "TEXT",
+    "ordered_at": "DATE"
+   },
+   "depends_on": [],
+   "owner": null,
+   "description": null,
+   "column_descriptions": {},
+   "grain": [
+    "id"
+   ],
+   "audits": [],
+   "tags": [],
+   "cron": "@daily",
+   "path": "examples/sqlmesh_shop/models/raw_orders.sql",
+   "python": false
+  },
+  {
+   "fqn": "\"shop\".\"shop\".\"fct_orders\"",
+   "name": "shop.fct_orders",
+   "kind": "FULL",
+   "dialect": "duckdb",
+   "sql": "SELECT \"o\".\"id\" AS \"order_id\", \"o\".\"customer_id\" AS \"customer_id\", \"o\".\"amount\" AS \"amount\", \"o\".\"status\" AS \"status\", \"o\".\"ordered_at\" AS \"ordered_at\", \"c\".\"country\" AS \"country\" FROM \"shop\".\"shop\".\"raw_orders\" AS \"o\" LEFT JOIN \"shop\".\"shop\".\"stg_customers\" AS \"c\" ON \"c\".\"customer_id\" = \"o\".\"customer_id\" WHERE \"o\".\"status\" <> 'cancelled'",
+   "columns": {
+    "order_id": "INT",
+    "customer_id": "INT",
+    "amount": "DECIMAL(10, 2)",
+    "status": "TEXT",
+    "ordered_at": "DATE",
+    "country": "TEXT"
+   },
+   "depends_on": [
+    "\"shop\".\"shop\".\"raw_orders\"",
+    "\"shop\".\"shop\".\"stg_customers\""
+   ],
+   "owner": "data-platform",
+   "description": null,
+   "column_descriptions": {},
+   "grain": [
+    "order_id"
+   ],
+   "audits": [],
+   "tags": [],
+   "cron": "@daily",
+   "path": "examples/sqlmesh_shop/models/fct_orders.sql",
+   "python": false
+  },
+  {
+   "fqn": "\"shop\".\"shop\".\"revenue_by_country\"",
+   "name": "shop.revenue_by_country",
+   "kind": "FULL",
+   "dialect": "duckdb",
+   "sql": "SELECT \"fct_orders\".\"country\" AS \"country\", SUM(\"fct_orders\".\"amount\") AS \"revenue\", COUNT(*) AS \"orders\" FROM \"shop\".\"shop\".\"fct_orders\" AS \"fct_orders\" WHERE \"fct_orders\".\"status\" = 'paid' GROUP BY \"fct_orders\".\"country\"",
+   "columns": {
+    "country": "TEXT",
+    "revenue": "DECIMAL(10, 2)",
+    "orders": "BIGINT"
+   },
+   "depends_on": [
+    "\"shop\".\"shop\".\"fct_orders\""
+   ],
+   "owner": "finance",
+   "description": null,
+   "column_descriptions": {},
+   "grain": [
+    "country"
+   ],
+   "audits": [],
+   "tags": [],
+   "cron": "@daily",
+   "path": "examples/sqlmesh_shop/models/revenue_by_country.sql",
+   "python": false
+  },
+  {
+   "fqn": "\"shop\".\"shop\".\"stg_customers\"",
+   "name": "shop.stg_customers",
+   "kind": "VIEW",
+   "dialect": "duckdb",
+   "sql": "SELECT \"raw_customers\".\"id\" AS \"customer_id\", LOWER(\"raw_customers\".\"name\") AS \"name\", LOWER(\"raw_customers\".\"email\") AS \"email\", \"raw_customers\".\"country\" AS \"country\" FROM \"shop\".\"shop\".\"raw_customers\" AS \"raw_customers\"",
+   "columns": {
+    "customer_id": "INT",
+    "name": "VARCHAR",
+    "email": "VARCHAR",
+    "country": "TEXT"
+   },
+   "depends_on": [
+    "\"shop\".\"shop\".\"raw_customers\""
+   ],
+   "owner": "data-platform",
+   "description": "Clientes limpos",
+   "column_descriptions": {
+    "email": "E-mail do cliente (PII)"
+   },
+   "grain": [
+    "customer_id"
+   ],
+   "audits": [
+    "not_null",
+    "unique_values"
+   ],
+   "tags": [],
+   "cron": "@daily",
+   "path": "examples/sqlmesh_shop/models/stg_customers.sql",
+   "python": false
+  }
+ ]
+}

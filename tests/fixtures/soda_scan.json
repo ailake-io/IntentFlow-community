@@ -1,0 +1,236 @@
+{
+ "definitionName": "Soda Core CLI",
+ "defaultDataSource": "shop",
+ "dataTimestamp": "2026-10-12T12:05:42+00:00",
+ "scanStartTimestamp": "2026-10-12T12:05:42+00:00",
+ "scanEndTimestamp": "2026-10-12T12:05:42+00:00",
+ "hasErrors": false,
+ "hasWarnings": false,
+ "hasFailures": true,
+ "metrics": [
+  {
+   "identity": "metric-Soda Core CLI-shop-fct_orders-status-invalid_count-e568dc87",
+   "metricName": "invalid_count",
+   "value": 1
+  },
+  {
+   "identity": "metric-Soda Core CLI-shop-fct_orders-amount-min",
+   "metricName": "min",
+   "value": -5.0
+  },
+  {
+   "identity": "metric-Soda Core CLI-shop-fct_orders-row_count",
+   "metricName": "row_count",
+   "value": 4
+  },
+  {
+   "identity": "metric-Soda Core CLI-shop-fct_orders-order_id-duplicate_count",
+   "metricName": "duplicate_count",
+   "value": 1
+  },
+  {
+   "identity": "metric-Soda Core CLI-shop-fct_orders-amount-missing_count",
+   "metricName": "missing_count",
+   "value": 1
+  }
+ ],
+ "checks": [
+  {
+   "identity": "c2143e3f",
+   "identities": {
+    "v1": "6b5df48c",
+    "v2": "bd3fa520",
+    "v3": "c2143e3f"
+   },
+   "migratedIdentities": null,
+   "name": "row_count > 0",
+   "type": "generic",
+   "definition": "checks for fct_orders:\n  row_count > 0",
+   "resourceAttributes": [],
+   "location": {
+    "filePath": "checks.yml",
+    "line": 2,
+    "col": 5
+   },
+   "dataSource": "shop",
+   "table": "fct_orders",
+   "column": null,
+   "metrics": [
+    "metric-Soda Core CLI-shop-fct_orders-row_count"
+   ],
+   "outcome": "pass",
+   "diagnostics": {
+    "blocks": [],
+    "value": 4,
+    "fail": {
+     "lessThanOrEqual": 0.0
+    }
+   },
+   "source": "soda-core"
+  },
+  {
+   "identity": "3e2a5357",
+   "identities": {
+    "v1": "ea4ff617",
+    "v2": "bb11753a",
+    "v3": "3e2a5357"
+   },
+   "migratedIdentities": null,
+   "name": "missing_count(amount) = 0",
+   "type": "generic",
+   "definition": "checks for fct_orders:\n  missing_count(amount) = 0",
+   "resourceAttributes": [],
+   "location": {
+    "filePath": "checks.yml",
+    "line": 3,
+    "col": 5
+   },
+   "dataSource": "shop",
+   "table": "fct_orders",
+   "column": "amount",
+   "metrics": [
+    "metric-Soda Core CLI-shop-fct_orders-amount-missing_count"
+   ],
+   "outcome": "fail",
+   "diagnostics": {
+    "blocks": [
+     {
+      "type": "failedRowsAnalysis",
+      "title": "Failed Rows Analysis",
+      "failingRowsQueryName": "3.shop.fct_orders.amount.failed_rows[missing_count].failing_sql",
+      "passingRowsQueryName": "3.shop.fct_orders.amount.failed_rows[missing_count].passing_sql",
+      "totalFailingRows": 1,
+      "sampleRowCount": 1
+     }
+    ],
+    "value": 1,
+    "fail": {
+     "greaterThan": 0.0,
+     "lessThan": 0.0
+    }
+   },
+   "source": "soda-core"
+  },
+  {
+   "identity": "7ea8a737",
+   "identities": {
+    "v1": "38139275",
+    "v2": "61b946ed",
+    "v3": "7ea8a737"
+   },
+   "migratedIdentities": null,
+   "name": "amount non-negative",
+   "type": "generic",
+   "definition": "checks for fct_orders:\n  - min(amount) >= 0:\n      name: amount non-negative\n",
+   "resourceAttributes": [],
+   "location": {
+    "filePath": "checks.yml",
+    "line": 5,
+    "col": 5
+   },
+   "dataSource": "shop",
+   "table": "fct_orders",
+   "column": "amount",
+   "metrics": [
+    "metric-Soda Core CLI-shop-fct_orders-amount-min"
+   ],
+   "outcome": "fail",
+   "diagnostics": {
+    "blocks": [],
+    "value": -5.0,
+    "fail": {
+     "lessThan": 0.0
+    }
+   },
+   "source": "soda-core"
+  },
+  {
+   "identity": "a4e0e1f9",
+   "identities": {
+    "v1": "d2d3dd19",
+    "v2": "710f9240",
+    "v3": "a4e0e1f9"
+   },
+   "migratedIdentities": null,
+   "name": "duplicate_count(order_id) = 0",
+   "type": "generic",
+   "definition": "checks for fct_orders:\n  duplicate_count(order_id) = 0",
+   "resourceAttributes": [],
+   "location": {
+    "filePath": "checks.yml",
+    "line": 4,
+    "col": 5
+   },
+   "dataSource": "shop",
+   "table": "fct_orders",
+   "column": "order_id",
+   "metrics": [
+    "metric-Soda Core CLI-shop-fct_orders-order_id-duplicate_count"
+   ],
+   "outcome": "fail",
+   "diagnostics": {
+    "blocks": [
+     {
+      "type": "failedRowsAnalysis",
+      "title": "Failed Rows Analysis",
+      "failingRowsQueryName": "2.shop.fct_orders.order_id.duplicate_count.failing_sql",
+      "passingRowsQueryName": "2.shop.fct_orders.order_id.duplicate_count.passing_sql",
+      "totalFailingRows": 1,
+      "sampleRowCount": 2
+     }
+    ],
+    "value": 1,
+    "fail": {
+     "greaterThan": 0.0,
+     "lessThan": 0.0
+    }
+   },
+   "source": "soda-core"
+  },
+  {
+   "identity": "69323948",
+   "identities": {
+    "v1": "eec36f52",
+    "v2": "e6058bf4",
+    "v3": "69323948"
+   },
+   "migratedIdentities": null,
+   "name": "invalid_count(status) = 0",
+   "type": "generic",
+   "definition": "checks for fct_orders:\n  - invalid_count(status) = 0:\n      valid values: [paid, refunded]\n",
+   "resourceAttributes": [],
+   "location": {
+    "filePath": "checks.yml",
+    "line": 7,
+    "col": 5
+   },
+   "dataSource": "shop",
+   "table": "fct_orders",
+   "column": "status",
+   "metrics": [
+    "metric-Soda Core CLI-shop-fct_orders-status-invalid_count-e568dc87"
+   ],
+   "outcome": "fail",
+   "diagnostics": {
+    "blocks": [
+     {
+      "type": "failedRowsAnalysis",
+      "title": "Failed Rows Analysis",
+      "failingRowsQueryName": "4.shop.fct_orders.status.failed_rows[invalid_count].failing_sql",
+      "passingRowsQueryName": "4.shop.fct_orders.status.failed_rows[invalid_count].passing_sql",
+      "totalFailingRows": 1,
+      "sampleRowCount": 1
+     }
+    ],
+    "value": 1,
+    "fail": {
+     "greaterThan": 0.0,
+     "lessThan": 0.0
+    }
+   },
+   "source": "soda-core"
+  }
+ ],
+ "metadata": [],
+ "sourceOwner": "soda-core"
+}

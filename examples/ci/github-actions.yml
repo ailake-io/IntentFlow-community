@@ -1,0 +1,19 @@
+# Exemplo: rodar o IntentFlow em cada PR (copie para .github/workflows/intentflow.yml).
+name: intentflow
+on: pull_request
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install intentflow dbt-duckdb
+      - run: dbt build && dbt docs generate
+      - name: Checks preventivos
+        run: |
+          intentflow check --target target --airflow-dags dags --kestra-flows flows \
+            --format github --fail-on high
+      - name: Comentário no PR
+        if: always()
+        run: intentflow check --target target --format markdown > report.md

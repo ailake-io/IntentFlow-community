@@ -1,0 +1,22 @@
+id: gated_dbt
+namespace: company.shop
+concurrency: {limit: 1, behavior: QUEUE}
+tasks:
+  - id: gate
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands: ["intentflow gate --stage pre-run --fail-on critical"]
+    retry: {type: constant, interval: PT1M, maxAttempt: 2}
+    timeout: PT10M
+  - id: dbt
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands: ["dbt build"]
+    retry: {type: constant, interval: PT1M, maxAttempt: 2}
+    timeout: PT1H
+errors:
+  - id: alert
+    type: io.kestra.plugin.core.log.Log
+    message: "pipeline falhou: {{ execution.id }}"
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 2 * * *"

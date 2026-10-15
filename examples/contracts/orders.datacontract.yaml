@@ -1,0 +1,20 @@
+dataContractSpecification: 1.1.0
+id: urn:datacontract:shop:orders
+info:
+  title: Orders
+  version: 1.0.0
+  owner: data-platform
+models:
+  fct_orders:
+    fields:
+      order_id:
+        type: integer
+        required: true
+        unique: true
+      amount:
+        type: decimal
+        required: true
+      status:
+        type: string
+      discount:
+        type: decimal

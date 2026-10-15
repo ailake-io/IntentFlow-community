@@ -1,0 +1,4 @@
+id,customer_id,amount,status,ordered_at
+1,1,100.5,paid,2026-01-01
+2,1,20.0,refunded,2026-01-02
+3,2,55.0,paid,2026-01-03

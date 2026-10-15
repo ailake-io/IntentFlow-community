@@ -1,0 +1,4 @@
+lab:
+  target: dev
+  outputs:
+    dev: {type: duckdb, path: target/lab.duckdb, threads: 1}

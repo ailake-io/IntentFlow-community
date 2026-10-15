@@ -1,0 +1,8 @@
+version: 2
+seeds:
+  - name: dup_keys
+    columns:
+      - name: id
+        tests:
+          - unique:
+              config: {severity: warn}

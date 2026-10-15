@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IntentFlow</title>
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#fff;--panel2:#f0f2f5;--line:#e3e6eb;--fg:#15191e;--mut:#5d6672;--faint:#8a93a0;
+  --acc:#4f46e5;--acc-fg:#fff;--acc-soft:#eef0ff;
+  --crit:#b42318;--crit-bg:#fee4e2;--high:#c4320a;--high-bg:#ffead5;--med:#a15c07;--med-bg:#fef0c7;--low:#175cd3;--low-bg:#d1e9ff;--info:#475467;--info-bg:#eaecf0;
+  --ok:#067647;--ok-bg:#d1fadf;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --diff-add:#e6f6ec;--diff-del:#fdecea;--radius:12px}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1216;--panel:#171b21;--panel2:#1d222a;--line:#2a313b;--fg:#e8eaee;--mut:#a3acb8;--faint:#7c8695;
+  --acc:#8b8cff;--acc-fg:#10121a;--acc-soft:#232650;
+  --crit:#ff8a80;--crit-bg:#3d1714;--high:#ffa062;--high-bg:#3d2312;--med:#f5c453;--med-bg:#382b0c;--low:#7db4ff;--low-bg:#14263f;--info:#b4bcc8;--info-bg:#262c35;
+  --ok:#5fd68e;--ok-bg:#0f2f1e;--shadow:none;--diff-add:#10301f;--diff-del:#3a1714}}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100%}
+.app.login{grid-template-columns:minmax(0,1fr)}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;padding:4px 8px 14px}
+.logo i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acc),#a855f7);display:inline-block}
+nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:8px;color:var(--mut);text-decoration:none;font-weight:500;cursor:pointer}
+nav a:hover{background:var(--panel2);color:var(--fg)}nav a.on{background:var(--acc-soft);color:var(--acc)}
+nav .cnt{font-size:12px;background:var(--panel2);padding:1px 8px;border-radius:99px;color:var(--mut)}
+nav a.on .cnt{background:var(--panel);color:var(--acc)}nav .cnt.hot{background:var(--crit-bg);color:var(--crit)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:8px}
+.side-foot small{color:var(--faint)}
+main{padding:28px 36px 60px;max-width:1240px;width:100%;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:0}
+.sub{color:var(--mut);margin:0 0 22px}
+.btn{display:inline-block;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:7px 12px;border-radius:8px;font-weight:500}
+.btn:hover{background:var(--panel2)}.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-fg)}.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{padding:4px 9px;font-size:12.5px}.btn.ghost{border-color:transparent;background:transparent;color:var(--mut)}.btn[disabled]{opacity:.5;cursor:default}
+.btn.danger{color:var(--crit)}
+.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr))}
+.card:has(table){overflow-x:auto}
+.card{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.kpi{display:flex;flex-direction:column;gap:2px;cursor:pointer}.kpi:hover{border-color:var(--acc)}
+.kpi .n{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}.kpi .l{color:var(--mut)}.kpi .d{font-size:12.5px;color:var(--faint)}
+.sev{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.sev::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.sev.critical{color:var(--crit);background:var(--crit-bg)}.sev.high{color:var(--high);background:var(--high-bg)}.sev.medium{color:var(--med);background:var(--med-bg)}
+.sev.low{color:var(--low);background:var(--low-bg)}.sev.info{color:var(--info);background:var(--info-bg)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.pill.success,.pill.applied{color:var(--ok);background:var(--ok-bg)}.pill.failed,.pill.invalid{color:var(--crit);background:var(--crit-bg)}
+.pill.running,.pill.queued,.pill.pending{color:var(--med);background:var(--med-bg)}.pill.approved{color:var(--low);background:var(--low-bg)}
+.pill.other,.pill.rejected,.pill.rolled_back{color:var(--info);background:var(--info-bg)}
+.stripe{border-left:4px solid var(--line)}.stripe.critical{border-left-color:var(--crit)}.stripe.high{border-left-color:var(--high)}.stripe.medium{border-left-color:var(--med)}
+.stripe.low{border-left-color:var(--low)}.stripe.info{border-left-color:var(--faint)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:10px 12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}.item>div:first-child{flex:1 1 260px;min-width:0}
+.item .t{font-weight:600}.item .m{color:var(--mut);font-size:13px;margin-top:2px}
+.meta{display:flex;gap:6px 14px;flex-wrap:wrap;color:var(--mut);font-size:12.5px;margin-top:6px}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--panel2);border:1px solid var(--line);padding:1px 7px;border-radius:6px;color:var(--mut)}
+table{border-collapse:collapse;width:100%}th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);text-align:left;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}
+tr.row:hover{background:var(--panel2)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--panel);padding:5px 11px;border-radius:99px;font-weight:500;color:var(--mut)}
+.chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acc)}
+input[type=text],input[type=search],input[type=password],select{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input:focus,select:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 3px var(--acc-soft)}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden}.bar i{display:block;height:100%;border-radius:99px;background:var(--ok);transition:width .4s}
+.bar i.warn{background:var(--med)}.bar i.bad{background:var(--crit)}
+.empty{text-align:center;padding:36px 16px;color:var(--mut)}.empty b{display:block;color:var(--fg);font-size:15px;margin-bottom:4px}
+.detail{background:var(--panel2);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13px}
+.detail dt{color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-top:8px}.detail dd{margin:2px 0 0}
+pre{margin:0;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.diff{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:8px}
+.diff div{padding:1px 10px;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap}.diff .a{background:var(--diff-add)}.diff .d{background:var(--diff-del)}.diff .h{color:var(--faint)}
+.steps{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+.step{display:flex;align-items:center;gap:6px;color:var(--faint);font-size:12.5px}.step b{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;background:var(--panel2);font-size:11px}
+.step.done{color:var(--ok)}.step.done b{background:var(--ok-bg)}.step.now{color:var(--acc);font-weight:600}.step.now b{background:var(--acc);color:var(--acc-fg)}
+.step+.step::before{content:"›";margin-right:6px;color:var(--faint)}
+.form{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.field label{display:block;font-weight:600;margin-bottom:4px}.field small{display:block;color:var(--faint);margin-top:4px}.field input{width:100%}
+.welcome{background:linear-gradient(135deg,var(--acc-soft),var(--panel));border:1px solid var(--line);border-radius:16px;padding:26px}
+.welcome ol{margin:12px 0 18px;padding-left:20px;color:var(--mut)}.welcome li{margin:4px 0}
+.toast{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:9}
+.toast div{background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:in .2s}
+.toast .err{background:var(--crit);color:#fff}
+@keyframes in{from{transform:translateY(8px);opacity:0}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:10}
+.modal>div{background:var(--panel);border-radius:14px;padding:22px;max-width:460px;width:92%;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+main{min-width:0}
+input[type=search]{flex:1 1 200px;min-width:0}
+@media(max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  aside{position:static;height:auto;flex-direction:column;align-items:stretch;padding:12px;gap:8px;border-right:0;border-bottom:1px solid var(--line)}
+  .logo{padding:0}
+  nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  nav a{white-space:nowrap;flex:0 0 auto}
+  .side-foot{margin:0;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:0}
+  .side-foot select,.side-foot #who{flex:1 1 100%}
+  main{padding:16px 14px 40px}
+  h1{font-size:19px}
+  .kpi .n{font-size:26px}
+  .toolbar select{flex:1 1 140px}
+}
+
+.lin{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+.lin .models{max-height:calc(100vh - 150px);overflow:auto;padding:8px}
+.lin .mrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left;color:var(--fg)}
+.lin .mrow:hover{background:var(--panel2)}.lin .mrow.on{background:var(--acc-soft);color:var(--acc)}
+.lin .mrow small{color:var(--faint)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:12px 0}
+.tab{border:0;background:transparent;padding:8px 12px;color:var(--mut);border-bottom:2px solid transparent;font-weight:600}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.graph{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:8px}
+.graph svg text{font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;fill:var(--fg)}
+.graph svg .sub{fill:var(--faint);font-size:10.5px}
+.graph .nd rect{fill:var(--panel2);stroke:var(--line)}.graph .nd:hover rect,.graph .nd:focus rect{stroke:var(--acc)}
+.graph .nd.center rect{fill:var(--acc-soft);stroke:var(--acc);stroke-width:2}
+.graph .nd.pii rect{stroke:var(--crit)}.graph .nd{cursor:pointer;outline:none}
+.graph path.e{fill:none;stroke:var(--faint);stroke-width:1.4}.graph path.e.derived{stroke-dasharray:5 4}.graph path.e.masked{stroke:var(--ok)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--mut);font-size:12px;margin:8px 2px}
+.colrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;width:100%;text-align:left;color:var(--fg)}
+.colrow:hover{border-color:var(--acc)}.colrow.on{border-color:var(--acc);background:var(--acc-soft)}
+.colgrid{display:grid;grid-template-columns:290px minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:1100px){.colgrid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:820px){.lin{grid-template-columns:minmax(0,1fr)}.lin .models{max-height:220px}}
+</style></head><body>
+<div class="app">
+<aside>
+  <div class="logo"><i></i>IntentFlow</div>
+  <nav id="nav" aria-label="Main navigation"></nav>
+  <div class="side-foot">
+    <button class="btn pri" id="runbtn">Check now</button>
+    <small id="lastrun">—</small>
+    <div id="who" style="display:none;margin-top:6px;font-size:12.5px;color:var(--mut)"></div>
+  </div>
+</aside>
+<main id="main" tabindex="-1"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const I18N=/*I18N*/{"lang":"en","messages":{}};
+const T=(s,v)=>{let r=I18N.messages[s]||s;if(v)r=r.replace(/\{(\w+)\}/g,(m,k)=>k in v?v[k]:m);return r};
+document.documentElement.lang=I18N.lang==='pt'?'pt-BR':'en';
+const setLang=l=>{document.cookie='if_lang='+l+';path=/;max-age=31536000;samesite=strict';location.reload()};
+const $=s=>document.querySelector(s);
+const SEV=['critical','high','medium','low','info'];
+const SEVL={critical:T("Critical"),high:T("High"),medium:T("Medium"),low:T("Low"),info:'Info'};
+const STL={success:T("Success"),failed:T("Failed"),running:T("Running"),queued:T("Queued"),other:'—',pending:T("Pending"),approved:T("Approved"),invalid:T("Invalid"),applied:T("Applied"),rejected:T("Rejected"),rolled_back:T("Rolled back")};
+const S={project:(()=>{try{return localStorage.getItem('if_project')||''}catch(e){return ''}})(),me:null,team:[],mine:false,notes:{},view:'overview',data:null,cfg:null,sev:new Set(),check:'',q:'',open:new Set(),busy:null};
+
+function h(tag,attrs,...kids){const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){if(k==='class')e.className=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?'':v)}
+  for(const c of kids.flat()){if(c==null||c===false)continue;e.append(c.nodeType?c:document.createTextNode(String(c)))}return e}
+const fmtB=b=>{const u=['B','KB','MB','GB','TB'];let i=0;while(b>=1024&&i<4){b/=1024;i++}return b.toFixed(i?1:0)+' '+u[i]};
+const ago=t=>{if(!t)return '—';const s=Math.max(0,Date.now()/1000-t);if(s<60)return T("just now");if(s<3600)return Math.floor(s/60)+T(" min ago");if(s<86400)return Math.floor(s/3600)+T(" h ago");return Math.floor(s/86400)+T(" d ago")};
+const dur=s=>s==null?'—':s<90?s.toFixed(0)+' s':(s/60).toFixed(1)+' min';
+const sev=s=>h('span',{class:'sev '+s},SEVL[s]||s);
+const pill=s=>h('span',{class:'pill '+s},STL[s]||s);
+
+function toast(msg,err){const t=h('div',{class:err?'err':''},msg);$('#toast').append(t);setTimeout(()=>t.remove(),err?6000:3200)}
+async function api(path,opt){opt=opt||{};opt.headers={...(opt.headers||{}),'X-IntentFlow-Lang':I18N.lang,...(S.project?{'X-IntentFlow-Project':S.project}:{})};const r=await fetch(path,opt);const j=await r.json();
+  if(r.status===401){S.me={user:null,auth_required:true};S.data=null;render();throw new Error(T("Log in to continue"))}
+  if(!r.ok||j.error)throw new Error(j.error||('HTTP '+r.status));return j}
+const post=(p,body)=>api(p,{method:'POST',headers:{'X-IntentFlow':'1','Content-Type':'application/json'},body:JSON.stringify(body||{})});
+function confirmBox(title,text,okLabel,onOk){const prev=document.activeElement;
+  const close=()=>{m.remove();document.removeEventListener('keydown',esc);if(prev&&prev.focus)prev.focus()};
+  const esc=e=>{if(e.key==='Escape')close()};
+  const ok=h('button',{class:'btn pri',onclick:()=>{close();onOk()}},okLabel);
+  const m=h('div',{class:'modal',role:'dialog','aria-modal':'true','aria-label':title,onclick:e=>{if(e.target===m)close()}},
+    h('div',{},h('h2',{},title),h('p',{class:'sub',style:'margin:8px 0 16px'},text),
+      h('div',{style:'display:flex;gap:8px;justify-content:flex-end'},h('button',{class:'btn',onclick:close},T("Cancel")),ok)));
+  document.body.append(m);document.addEventListener('keydown',esc);ok.focus()}
+
+S.ai=undefined;
+async function aiLoad(force){if(!has('ai')){S.ai=null;return}if(S.ai===undefined||force){S.ai=S.ai||null;try{S.ai=await api('/api/llm')}catch(e){S.ai={llm:{configured:false},jev:{configured:false,enabled:false},triage:{}}}render()}}
+async function act(label,fn,after){try{await fn();toast(label);}catch(e){toast(e.message,true)}await load();if(after)after()}
+
+/* ---------- data ---------- */
+async function loadMe(){try{const r=await fetch('/api/me');S.me=await r.json()}catch(e){S.me={user:null,auth_required:false}}}
+async function load(){
+  if(!S.me)await loadMe();
+  if(S.me.auth_required&&!S.me.user){render();return}
+  try{[S.data,S.cfg]=await Promise.all([api('/api/overview'),api('/api/settings')])}catch(e){if(S.me&&S.me.user)toast(T("Failed to load: ")+e.message,true);return}
+  if(S.me.team&&!S.team.length){try{S.team=(await api('/api/team')).team}catch(e){}}
+  render()}
+const sevCount=(f,s)=>f.filter(x=>x.severity===s).length;
+
+/* ---------- navigation ---------- */
+const VIEWS=[['overview',T("Overview")],['incidents',T("Incidents")],['findings',T("Findings")],['lineage',T("Lineage and impact")],['diff',T("Data diff")],['pipelines','Pipelines'],['cluster',T("Cluster and memory")],['integrations',T("Integrations")],['fixes',T("Fixes")],['config',T("Settings")],['team',T("Team")],['audit',T("Audit")]];
+const has=f=>!!(S.me&&S.me.features&&S.me.features.includes(f));     // Enterprise features reported by /api/me
+function langSel(){if($('#langsel'))return;$('.side-foot').append(h('select',{id:'langsel','aria-label':'Language / Idioma',onchange:e=>setLang(e.target.value)},
+  [['en','English'],['pt','Português']].map(([v,l])=>h('option',{value:v,selected:v===I18N.lang},l))))}
+function nav(){const d=S.data,n=$('#nav');n.replaceChildren();langSel();
+  const cnt={incidents:d.incidents.length,findings:d.findings.length,pipelines:d.pipelines.filter(p=>p.last_state==='failed').length,
+    fixes:d.proposals.filter(p=>['pending','approved','invalid'].includes(p.status)).length};
+  const hot={incidents:d.incidents.some(i=>['critical','high'].includes(i.severity)),pipelines:cnt.pipelines>0};
+  const isAdmin=S.me&&S.me.user&&S.me.user.role==='admin';
+  VIEWS.filter(([k])=>(k!=='team'||(S.me&&S.me.team&&isAdmin))&&(k!=='fixes'||has('fixes'))).forEach(([k,l])=>n.append(h('a',{class:S.view===k?'on':'',href:'#/'+k,'aria-current':S.view===k?'page':null,onclick:()=>{S.view=k}},h('span',{},l),
+    cnt[k]?h('span',{class:'cnt'+(hot[k]?' hot':'')},cnt[k]):null)));
+  const pj=document.getElementById('projsel');
+  if(pj){pj.remove()}
+  if(S.me&&S.me.projects&&S.me.projects.length>1){
+    const sel=h('select',{id:'projsel','aria-label':T("Project"),style:'width:100%;margin-bottom:8px',onchange:e=>{S.project=e.target.value;try{localStorage.setItem('if_project',S.project)}catch(_){ }
+      S.data=null;S.cfg=null;S.lin.models=null;S.lin.sel=null;S.teamAdmin=undefined;S.notes={};load()}},
+      S.me.projects.map(p=>h('option',{value:p.name,selected:p.name===(S.project||S.me.default_project)},p.name)));
+    document.querySelector('.side-foot').prepend(sel)}
+  const who=$('#who');
+  if(S.me&&S.me.team&&S.me.user){who.style.display='block';who.replaceChildren(h('b',{style:'color:var(--fg)'},S.me.user.name),' · '+({admin:'admin',engineer:T("engineer"),viewer:T("viewer")}[S.me.user.role]),' ',
+    h('a',{href:'#',style:'color:var(--acc)',onclick:async e=>{e.preventDefault();const r=await (await fetch('/api/logout',{method:'POST',headers:{'X-IntentFlow':'1'}})).json();if(r.logout_url){location.href=r.logout_url;return}S.me=null;S.data=null;await load()}},T("log out")),
+    S.me.user.via==='sso'?h('span',{style:'color:var(--faint)'},' · via SSO'):h('span',{},' · ',
+      h('a',{href:'#',style:'color:var(--acc)',onclick:e=>{e.preventDefault();mfaDialog()}},S.me.user.mfa?T("MFA on"):T("turn on MFA"))))}
+  else who.style.display='none';
+  const lc=S.cfg.last_check;$('#lastrun').textContent=S.cfg.running?T("Running…"):(lc?T("Last check ")+ago(lc.ts):T("No check yet"));
+  $('#runbtn').disabled=!!S.cfg.running;$('#runbtn').replaceChildren(S.cfg.running?h('span',{class:'spin'}):'',S.cfg.running?T(" Running"):T("Check now"))}
+
+let LOGIN={needCode:false};
+function loginView(){const inp=h('input',{type:'password',placeholder:T("Paste your token (if_…)"),style:'width:100%',autocomplete:'off',
+    onkeydown:e=>{if(e.key==='Enter')go()}});
+  const code=h('input',{type:'text',maxlength:'16',placeholder:T("6-digit code (or a recovery code)"),style:'width:100%;margin-top:10px',autocomplete:'one-time-code',
+    onkeydown:e=>{if(e.key==='Enter')go()}});
+  const go=async()=>{try{const r=await fetch('/api/login',{method:'POST',headers:{'X-IntentFlow':'1','X-IntentFlow-Lang':I18N.lang,'Content-Type':'application/json'},body:JSON.stringify({token:inp.value,code:code.value})});
+    const j=await r.json();
+    if(j.mfa_required&&!LOGIN.needCode){LOGIN.needCode=true;render();return}
+    if(!r.ok)throw new Error(j.error||T("login failed"));LOGIN.needCode=false;S.me=null;S.team=[];await load()}catch(e){toast(e.message,true)}};
+  const sso=S.me&&S.me.sso?h('div',{style:'margin-top:14px;padding-top:14px;border-top:1px solid var(--line)'},h('a',{class:'btn',style:'width:100%;text-align:center',href:'/auth/sso/login'},T("Log in with SSO"))):null;
+  return h('div',{style:'max-width:420px;margin:12vh auto'},h('div',{class:'logo',style:'justify-content:center;padding-bottom:6px'},h('i'),'IntentFlow'),
+    h('div',{class:'card'},h('h2',{style:'margin-bottom:4px'},T("Log in")),h('p',{class:'sub',style:'margin:0 0 14px'},LOGIN.needCode?T("This user has two-step verification."):T("Use the token your team administrator generated for you.")),
+      inp,LOGIN.needCode?code:null,h('div',{style:'margin-top:12px'},h('button',{class:'btn pri',onclick:go},T("Log in"))),sso))}
+function render(){
+  const app=document.querySelector('.app');langSel();
+  if(S.me&&S.me.auth_required&&!S.me.user){app.classList.add('login');$('aside').style.display='none';$('#main').replaceChildren(loginView());return}
+  app.classList.remove('login');$('aside').style.display='';
+  if(!S.data)return;
+  nav();const m=$('#main');
+  if(document.activeElement&&['INPUT','SELECT'].includes(document.activeElement.tagName)&&m.contains(document.activeElement))return; // do not interrupt typing
+  const v={overview,incidents,findings,lineage:lineageView,diff:diffPage,pipelines,cluster,integrations:integrationsPage,fixes,config,team:teamPage,audit}[S.view]||overview;
+  m.replaceChildren(v())}
+
+/* ---------- components ---------- */
+function empty(title,text,action){return h('div',{class:'card empty'},h('b',{},title),text,action?h('div',{style:'margin-top:14px'},action):null)}
+function header(t,s,right){return h('div',{style:'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap'},h('div',{},h('h1',{},t),h('p',{class:'sub'},s)),right||null)}
+function incidentCard(i,compact){const open=S.open.has(i.id);
+  return h('div',{class:'card stripe '+i.severity},
+    h('div',{class:'item'},h('div',{},h('div',{class:'t'},i.title),
+      h('div',{class:'meta'},sev(i.severity),h('span',{},i.findings+T(" finding(s)")),h('span',{},i.impacted+T(" affected node(s)")),
+        i.owners.length?h('span',{},T("owner: ")+i.owners.join(', ')):h('span',{style:'color:var(--faint)'},T("no owner set")))),
+      compact?h('button',{class:'btn sm',onclick:()=>{S.view='incidents';location.hash='#/incidents';render()}},T("View")):
+        h('button',{class:'btn sm',onclick:()=>{open?S.open.delete(i.id):S.open.add(i.id);render()}},open?T("Hide"):T("Details"))),
+    !compact&&open?h('div',{class:'list',style:'margin-top:12px'},S.data.findings.filter(f=>f.incident===i.id||true).filter(f=>i.finding_ids.includes(f.id)).map(f=>findingRow(f,true))):null)}
+function recommendation(f){return (f.evidence||{}).recommendation}
+function triageChips(f){const t=(S.ai&&S.ai.triage||{})[f.id];if(!t)return null;const pc=v=>v==null?'—':Math.round(v*100)+'%';
+  const fp=t.likely_false_positive;
+  return h('div',{class:'meta',style:'margin-top:4px'},h('span',{class:'tag',title:T("Jev decision (")+(t.model||'')+')'},'Jev'),
+    fp!=null&&fp>=0.5?h('span',{class:'pill pending',title:T("probability of a false positive")},T("likely false positive ")+pc(fp)):h('span',{class:'tag'},'real '+pc(t.real_issue)),
+    t.urgency_label?h('span',{class:'tag'},T("urgency: ")+t.urgency_label):null,
+    t.fix_path?h('span',{class:'tag',title:T("suggested fix path")},T("path: ")+t.fix_path.replaceAll('_',' ')):null)}
+function findingRow(f,inline){const open=S.open.has('f'+f.id);
+  const ev=f.evidence||{};
+  if(S.ai===undefined)aiLoad();
+  const ai=S.ai&&S.ai.llm&&S.ai.llm.configured,jv=S.ai&&S.ai.jev&&S.ai.jev.configured;
+  const actions=h('div',{style:'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end'},
+    f.fix&&has('fixes')?h('button',{class:'btn sm pri',onclick:()=>act(T("Proposal created — see Fixes"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/fix`),()=>{S.view='fixes';location.hash='#/fixes';render()})},T("Create fix")):null,
+    jv&&has('ai')?h('button',{class:'btn sm',title:T("Quick decision with Jev: real? false positive? urgency? which path?"),onclick:()=>act(T("Triage done"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/triage`),()=>aiLoad(true))},T("Triage")):null,
+    has('fixes')&&(ai||f.check_id==='DBT003'||f.check_id==='DBT002')?h('button',{class:'btn sm',title:T("Shows the suggestion with the diff and asks whether you want to apply it"),onclick:()=>suggestModal(f)},T("Suggest fix")):null,
+    h('button',{class:'btn sm',onclick:()=>{open?S.open.delete('f'+f.id):S.open.add('f'+f.id);render()}},open?T("Hide"):T("Details")));
+  const head=h('div',{class:'item'},
+    h('div',{style:'min-width:0'},h('div',{class:'t'},f.title),
+      h('div',{class:'meta'},sev(f.severity),h('span',{class:'tag'},f.check_id),h('span',{},f.stage),ev.owner?h('span',{},T("owner: ")+ev.owner):null),triageChips(f)),
+    actions);
+  const detail=open?h('div',{class:'detail'},
+    h('div',{},f.detail||'—'),
+    recommendation(f)?h('dl',{},h('dt',{},T("Recommendation")),h('dd',{},recommendation(f))):null,
+    h('dl',{},h('dt',{},T("Affected nodes")),h('dd',{},f.nodes.length?f.nodes.map(n=>h('span',{class:'tag',style:'margin-right:4px'},n.split('.').slice(-1)[0])):'—')),
+    ev.suggested_sql?h('dl',{},h('dt',{},T("Suggested SQL")),h('dd',{},h('pre',{},ev.suggested_sql))):null,
+    assignBox(f),notesBox(f),
+    h('div',{style:'display:flex;gap:6px;margin-top:12px'},
+      h('button',{class:'btn sm',onclick:()=>act(T("Finding acknowledged"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/ack`))},T("Acknowledge")),
+      h('button',{class:'btn sm',onclick:()=>act(T("Marked as a false positive"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/false-positive`))},T("It is a false positive")))):null;
+  return h('div',{class:'card stripe '+f.severity,style:inline?'box-shadow:none':''},head,detail)}
+
+/* ---------- views ---------- */
+function overview(){const d=S.data,f=d.findings,c=d.cluster.filter(x=>x.ratio!=null).sort((a,b)=>b.ratio-a.ratio);
+  if(!S.cfg.settings['dbt.target'])return welcome();
+  const crit=sevCount(f,'critical')+sevCount(f,'high'),fail=d.pipelines.filter(p=>p.last_state==='failed'),run=d.pipelines.filter(p=>p.last_state==='running');
+  const worst=c[0];
+  return h('div',{},
+    header(T("Overview"),crit?T("{n} high or critical problem(s) need attention before reaching production.",{n:crit}):T("No high-severity problem open. ✅")),
+    h('div',{class:'grid g4'},
+      kpi(T("Open incidents"),d.incidents.length,T("{n} findings grouped by root cause",{n:f.length}),'incidents',crit?'high':null),
+      kpi(T("High or critical severity"),crit,T("{c} critical · {h} high",{c:sevCount(f,'critical'),h:sevCount(f,'high')}),'findings',crit?'critical':null),
+      kpi(T("Failing pipelines"),fail.length,T("{r} running · {n} monitored",{r:run.length,n:d.pipelines.length}),'pipelines',fail.length?'high':null),
+      kpi(T("Highest memory use"),worst?Math.round(worst.ratio*100)+'%':'—',worst?`${worst.scope}`:T("no samples"),'cluster',worst&&worst.ratio>=.8?'high':null),
+      kpi(T("Fixes in progress"),d.summary.fixes_pending,T("{n} applied",{n:d.summary.fixes_applied}),'fixes')),
+    h('div',{class:'grid g2',style:'margin-top:18px'},
+      h('div',{},h('div',{class:'head'},h('h2',{},T("Needs attention")),h('a',{class:'btn sm ghost',href:'#/incidents',onclick:()=>S.view='incidents'},T("View all"))),
+        d.incidents.length?h('div',{class:'list'},d.incidents.slice(0,4).map(i=>incidentCard(i,true))):empty(T("All good"),T("No open incident."))),
+      h('div',{},h('div',{class:'head'},h('h2',{},'Pipelines'),h('a',{class:'btn sm ghost',href:'#/pipelines',onclick:()=>S.view='pipelines'},T("View all"))),
+        d.pipelines.length?h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('tbody',{},d.pipelines.slice(0,6).map(p=>h('tr',{},
+          h('td',{},h('div',{class:'t'},p.pipeline),h('div',{class:'m',style:'color:var(--faint);font-size:12px'},p.system)),h('td',{},pill(p.last_state)),h('td',{style:'color:var(--mut)'},dur(p.last_duration))))))):
+          empty(T("No runs collected"),T("Set up Airflow/Kestra in Settings and click Check now.")))),
+    dbtCard(d));}
+function dbtCard(d){const r=d.dbt_run;if(!r)return null;
+  const names={success:T("success"),pass:T("passed"),warn:T("warning"),fail:T("failed"),error:T("error"),skipped:T("skipped")};
+  const cls={success:'success',pass:'success',warn:'pending',fail:'failed',error:'failed',skipped:'other'};
+  const pills=Object.entries(r.counts).map(([k,v])=>h('span',{class:'pill '+(cls[k]||'other'),style:'margin-right:6px'},`${v} ${names[k]||k}`));
+  const bad=r.failing.slice(0,5).map(x=>h('div',{style:'margin-top:6px'},h('span',{class:'pill '+(x.status==='warn'?'pending':'failed'),style:'margin-right:6px'},names[x.status]||x.status),h('b',{},x.name),
+    x.failures?h('span',{style:'color:var(--mut)'},T(" — {n} row(s)",{n:x.failures})):null));
+  const slow=r.slowest.length?h('div',{style:'margin-top:12px;color:var(--mut);font-size:12.5px'},T("Slowest: ")+r.slowest.slice(0,3).map(x=>`${x.name} ${x.time}s`).join(' · ')):null;
+  return h('div',{class:'card',style:'margin-top:18px'},h('div',{class:'head'},h('h2',{},T("Last dbt run ({command})",{command:r.command||'?'})),h('span',{style:'color:var(--faint);font-size:12.5px'},r.elapsed!=null?r.elapsed.toFixed(1)+' s':'')),
+    h('div',{},pills),bad,slow)}
+function kpi(label,n,d,view,tone){const go=()=>{S.view=view;location.hash='#/'+view;render()};
+  const c=h('div',{class:'card kpi',role:'link',tabindex:'0','aria-label':label+': '+n,onclick:go,onkeydown:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}},
+  h('div',{class:'l'},label),h('div',{class:'n',style:tone?`color:var(--${tone==='critical'?'crit':tone})`:''},String(n)),h('div',{class:'d'},d));return c}
+function welcome(){const inp=h('input',{type:'text',placeholder:T("/path/to/project/target"),style:'width:100%;max-width:520px'});
+  return h('div',{},header(T("Welcome to IntentFlow"),T("Find problems in your pipelines before they reach production.")),
+    h('div',{class:'welcome'},h('h2',{style:'font-size:18px'},T("Start in 1 minute")),
+      h('ol',{},h('li',{},T("In your dbt project run "),h('span',{class:'tag'},'dbt build && dbt docs generate')),
+        h('li',{},T("Enter the "),h('span',{class:'tag'},'target/'),T(" directory below (it has manifest.json and catalog.json)")),
+        h('li',{},T("Click "),h('b',{},T("Run the first check")))),
+      h('div',{style:'display:flex;gap:8px;flex-wrap:wrap'},inp,
+        h('button',{class:'btn pri',onclick:()=>{if(!inp.value.trim())return toast(T("Enter the target/ directory"),true);
+          act(T("Check started"),async()=>{await post('/api/settings',{key:'dbt.target',value:inp.value.trim()});await post('/api/run/check')})}},T("Run the first check"))),
+      h('p',{style:'color:var(--faint);margin:14px 0 0;font-size:12.5px'},T("Everything stays on your machine. Secrets are never stored — only environment variable names."))))}
+function incidents(){const d=S.data;
+  return h('div',{},header(T("Incidents"),T("Findings grouped by root cause: fix the origin and the rest go away with it.")),
+    d.incidents.length?h('div',{class:'list'},d.incidents.map(i=>incidentCard(i,false))):empty(T("No open incident"),T("Click Check now to refresh.")))}
+function findings(){const d=S.data;
+  let fl=d.findings.filter(x=>(!S.sev.size||S.sev.has(x.severity))&&(!S.check||x.check_id===S.check)&&(!S.q||(x.title+x.detail+x.check_id).toLowerCase().includes(S.q.toLowerCase())));
+  const checks=[...new Set(d.findings.map(x=>x.check_id))].sort();
+  const q=h('input',{type:'search',placeholder:T("Search by model, table or text…"),value:S.q,oninput:e=>{
+    S.q=e.target.value;clearTimeout(S.t);S.t=setTimeout(()=>{$('#main').replaceChildren(findings());const n=$('#main input[type=search]');if(n){n.focus();n.setSelectionRange(S.q.length,S.q.length)}},150)}});
+  const sel=h('select',{onchange:e=>{S.check=e.target.value;render()}},h('option',{value:''},T("All checks")),checks.map(c=>h('option',{value:c,selected:c===S.check},c)));
+  const chips=SEV.map(s=>h('button',{class:'chip'+(S.sev.has(s)?' on':''),onclick:()=>{S.sev.has(s)?S.sev.delete(s):S.sev.add(s);render()}},`${SEVL[s]} · ${sevCount(d.findings,s)}`));
+  const mine=(S.me&&S.me.team&&S.me.user)?h('button',{class:'chip'+(S.mine?' on':''),onclick:()=>{S.mine=!S.mine;render()}},T("My items")):null;
+  if(S.mine&&S.me.user)fl=fl.filter(x=>x.assignee===S.me.user.name);
+  const clear=h('button',{class:'btn',onclick:()=>{S.sev.clear();S.check='';S.q='';S.mine=false;render()}},T("Clear filters"));
+  const statRows=d.check_stats.map(c=>h('tr',{},h('td',{},h('span',{class:'tag'},c.check)),h('td',{},c.total),h('td',{},c.open),h('td',{},c.resolved),
+    h('td',{},c.false_positive),h('td',{},c.fp_rate==null?'—':Math.round(c.fp_rate*100)+'%'),
+    h('td',{},c.suggest_disable?h('span',{class:'sev high'},T("consider turning off")):'')));
+  const statsHead=h('tr',{},['Check','Total',T("Open"),T("Resolved"),T("False positives"),T("Rate"),''].map(t=>h('th',{},t)));
+  const stats=d.check_stats.length?h('div',{style:'margin-top:26px'},
+    h('div',{class:'head'},h('h2',{},T("Precision per check")),h('small',{style:'color:var(--faint)'},T("based on the \"false positives\" you marked"))),
+    h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('thead',{},statsHead),h('tbody',{},statRows)))):null;
+  return h('div',{},header(T("Findings"),T("{shown} of {total} shown. Click \"Details\" to see the recommendation.",{shown:fl.length,total:d.findings.length})),
+    h('div',{class:'toolbar'},mine,chips,sel,q),
+    fl.length?h('div',{class:'list'},fl.map(f=>findingRow(f))):empty(T("Nothing with these filters"),T("Adjust the search or clear the filters."),clear),
+    stats)}
+function pipelines(){const d=S.data,rows=d.pipelines;
+  const collect=h('button',{class:'btn',onclick:()=>act(T("Collection started"),()=>post('/api/run/runs'))},T("Collect now"));
+  const link=p=>p.url?h('a',{href:p.url,target:'_blank',rel:'noopener',style:'color:var(--acc);font-weight:600;text-decoration:none'},p.pipeline):h('b',{},p.pipeline);
+  const trs=rows.map(p=>h('tr',{class:'row'},h('td',{},link(p)),h('td',{},p.system),h('td',{},pill(p.last_state)),h('td',{},p.runs),
+    h('td',{style:p.failed?'color:var(--crit);font-weight:600':''},p.failed),h('td',{},dur(p.last_duration)),h('td',{style:'color:var(--mut)'},ago(p.last_start))));
+  const heads=['Pipeline',T("System"),T("State"),T("Runs"),T("Failures"),T("Last duration"),T("Last start")].map(t=>h('th',{},t));
+  const table=h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('thead',{},h('tr',{},heads)),h('tbody',{},trs)));
+  const toConfig=h('a',{class:'btn pri',href:'#/config',onclick:()=>{S.view='config'}},T("Go to Settings"));
+  const tags=xs=>xs.map(x=>h('span',{class:'tag',style:'margin-right:4px'},x));
+  const olRows=d.openlineage.map(j=>h('tr',{},h('td',{},h('b',{},j.job)),h('td',{},tags(j.inputs)),h('td',{},tags(j.outputs))));
+  const ol=d.openlineage.length?h('div',{style:'margin-top:24px'},h('h2',{style:'margin-bottom:10px'},T("Jobs seen through OpenLineage")),
+    h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('thead',{},h('tr',{},['Job',T("Inputs"),T("Outputs")].map(t=>h('th',{},t)))),h('tbody',{},olRows)))):null;
+  return h('div',{},header('Pipelines',T("Runs collected from Airflow, Kestra and OpenLineage."),collect),
+    rows.length?table:empty(T("No run collected"),T("Enter the Airflow or Kestra URL in Settings, or send OpenLineage events."),toConfig),ol)}
+function cluster(){const d=S.data,rows=d.cluster;
+  const mem=rows.filter(x=>x.metric==='memory_bytes'),other=rows.filter(x=>x.metric!=='memory_bytes');
+  const label={queued:T("queued tasks"),pool_slots_used:T("slots in use"),oom_killed:T("killed by OOM"),spilled_bytes:T("spill to disk")};
+  const gauges=mem.map(x=>{const r=x.ratio||0,cls=r>=.85?'bad':r>=.7?'warn':'';
+    const pct=h('div',{style:'font-size:20px;font-weight:700'+(cls==='bad'?';color:var(--crit)':'')},Math.round(r*100)+'%');
+    return h('div',{class:'card'},
+      h('div',{class:'head'},h('div',{},h('div',{class:'t'},x.scope),h('div',{style:'color:var(--faint);font-size:12px'},x.source)),pct),
+      h('div',{class:'bar'},h('i',{class:cls,style:`width:${Math.min(100,r*100)}%`})),
+      h('div',{style:'color:var(--mut);margin-top:8px;font-size:13px'},T("{used} of {limit}",{used:fmtB(x.value),limit:x.limit?fmtB(x.limit):'—'})))});
+  const otherRows=other.map(x=>{
+    const val=x.metric.includes('bytes')?fmtB(x.value):String(x.value)+(x.limit?` / ${x.limit}`:'');
+    return h('tr',{},h('td',{},x.source),h('td',{},h('b',{},x.scope)),h('td',{style:'color:var(--mut)'},label[x.metric]||x.metric),h('td',{},val))});
+  const otherBlock=other.length?h('div',{style:'margin-top:22px'},h('h2',{style:'margin-bottom:10px'},T("Other signals")),
+    h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('tbody',{},otherRows)))):null;
+  const collect=h('button',{class:'btn',onclick:()=>act(T("Collection started"),()=>post('/api/run/runs'))},T("Collect now"));
+  return h('div',{},header(T("Cluster and memory"),T("Current use per host, container and pool. Green up to 70%, yellow up to 85%, red above."),collect),
+    mem.length?h('div',{class:'grid g2'},gauges):empty(T("No memory samples"),T("Click \"Collect now\" to sample the host and the containers.")),
+    otherBlock)}
+function diffView(t){return h('div',{class:'diff'},t.split('\n').map(l=>h('div',{class:l.startsWith('+')&&!l.startsWith('+++')?'a':l.startsWith('-')&&!l.startsWith('---')?'d':'h'},l||' ')))}
+function stepsFor(p){const idx={pending:0,rejected:0,approved:1,invalid:1,applied:3,rolled_back:3}[p.status]??0,valid=!!(p.validation&&p.validation.ok&&p.validation.isolation==='docker-offline-v1');
+  return [[T("Proposed"),0],[T("Approved"),1],[T("Validated"),2],[T("Applied"),3]].map(([l,i])=>{
+    const done=i===0||(i===1&&idx>=1)||(i===2&&(valid||idx>=3))||(i===3&&p.status==='applied');
+    const now=!done&&((i===1&&idx===0)||(i===2&&idx===1&&!valid)||(i===3&&valid&&p.status==='approved'));
+    return h('span',{class:'step'+(done?' done':now?' now':'')},h('b',{},done?'✓':i+1),l)})}
+function fixActions(p){const id=p.id,valid=!!(p.validation&&p.validation.ok&&p.validation.isolation==='docker-offline-v1'),out=[];
+  if(p.status==='pending'){
+    out.push(h('button',{class:'btn sm pri',onclick:()=>act(T("Proposal approved"),()=>post(`/api/proposals/${id}/approve`))},T("Approve")));
+    out.push(h('button',{class:'btn sm',onclick:()=>act(T("Proposal rejected"),()=>post(`/api/proposals/${id}/reject`))},T("Reject")))}
+  if(['approved','invalid'].includes(p.status)&&!valid){
+    const label=S.busy===id?h('span',{},h('span',{class:'spin'}),T(" Validating…")):T("Validate in a local container");
+    out.push(h('button',{class:'btn sm pri',onclick:()=>{S.busy=id;render();act(T("Validation finished"),()=>post(`/api/proposals/${id}/validate?mode=build`),()=>{S.busy=null})}},label))}
+  if(p.status==='approved'&&valid)
+    out.push(h('button',{class:'btn sm pri',onclick:()=>confirmBox(T("Apply the fix?"),T("The listed files will change in the project. A backup is kept and rollback stays available."),T("Apply"),()=>act(T("Fix applied"),()=>post(`/api/proposals/${id}/apply`)))},T("Apply")));
+  if(p.status==='applied')
+    out.push(h('button',{class:'btn sm danger',onclick:()=>confirmBox(T("Roll back the fix?"),T("The files go back to their content before applying."),T("Roll back"),()=>act(T("Fix rolled back"),()=>post(`/api/proposals/${id}/rollback`)))},T("Roll back")));
+  out.push(h('button',{class:'btn sm',onclick:()=>confirmBox(T("Recover an interrupted operation?"),T("An incomplete operation will be undone. If it was already committed, only the pending recovery is closed. Later edits are preserved."),T("Recover"),()=>act(T("Recovery finished"),()=>post(`/api/proposals/${id}/recover`)))},T("Recover operation")));
+  return out}
+function aiBoxOf(p){return p.origin==='llm'?h('div',{class:'detail'},
+    h('div',{style:'display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px'},h('span',{class:'pill pending'},T("Suggested by AI")),
+      h('span',{class:'tag'},(p.llm&&p.llm.provider||'')+' / '+(p.llm&&p.llm.model||'')),
+      p.confidence!=null?h('span',{class:'tag',title:T("Value self-reported by the model; it is not calibrated and does not mean it is right")},T("declared confidence (not calibrated) ")+Math.round(p.confidence*100)+'%'):null,
+      p.policy?h('span',{class:'pill '+(p.policy.needs_extra_review?'failed':'success')},p.policy.needs_extra_review?T("extra review: ")+p.policy.reason:T("low risk (Jev)")):null),
+    h('div',{},p.explanation||'—'),
+    p.risk?h('div',{style:'color:var(--mut);font-size:12.5px;margin-top:6px'},T("Jev: changes semantics {sem}% · risk {risk} · unrelated logic {unrel}%",{sem:Math.round((p.risk.changes_semantics||0)*100),risk:p.risk.risk==null?'—':[T("low"),T("medium"),T("high")][Math.max(0,Math.min(2,Math.round(p.risk.risk)))],unrel:Math.round((p.risk.touches_unrelated_logic||0)*100)})):null,
+    h('div',{style:'color:var(--faint);font-size:12px;margin-top:6px'},T("Generated by a model: read the diff. Nothing is applied without your approval and the sandbox validation."))):null}
+function fixCard(p){const valid=!!(p.validation&&p.validation.ok&&p.validation.isolation==='docker-offline-v1');
+  const top=h('div',{class:'item'},h('div',{},h('div',{class:'t'},p.summary),h('div',{class:'meta'},pill(p.status),h('span',{class:'tag'},p.id))),
+    h('div',{style:'display:flex;gap:6px;flex-wrap:wrap'},fixActions(p)));
+  const val=p.validation?h('div',{style:'margin:6px 0',class:'pill '+(valid?'success':'failed')},T("Validation ({mode}): {result}",{mode:p.validation.mode+(p.validation.adapter?' · '+p.validation.adapter+' local':''),result:valid?T("passed"):T("failed")})):null;
+  const out=p.validation&&!valid?h('div',{class:'detail'},h('pre',{},p.validation.output)):null;
+  const warn=p.warnings&&p.warnings.length?h('div',{class:'detail',style:'color:var(--med)'},p.warnings.join('\n')):null;
+  const aiBox=aiBoxOf(p);
+  const diffs=p.changes.map(c=>h('div',{},h('div',{style:'margin-top:8px;color:var(--mut);font-size:12.5px'},c.file.split('/').slice(-2).join('/')),diffView(c.diff)));
+  return h('div',{class:'card'},top,aiBox,h('div',{class:'steps'},stepsFor(p)),val,out,warn,diffs)}
+function suggestModal(f){
+  const prev=document.activeElement;let timer=null,m;
+  const close=()=>{clearInterval(timer);m.remove();document.removeEventListener('keydown',esc);if(prev&&prev.focus)prev.focus()};
+  const esc=e=>{if(e.key==='Escape')close()};
+  const box=h('div',{style:'max-width:780px;max-height:88vh;overflow:auto'});
+  m=h('div',{class:'modal',role:'dialog','aria-modal':'true','aria-label':T("Fix suggestion"),onclick:e=>{if(e.target===m)close()}},box);
+  const set=(...k)=>box.replaceChildren(...k.filter(Boolean));
+  const btns=(...b)=>h('div',{style:'display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap'},...b);
+  const title=h('h2',{},f.title);
+  const sub=t=>h('p',{class:'sub',style:'margin:6px 0 10px'},t);
+  const errView=msg=>set(title,h('div',{class:'detail',style:'color:var(--crit,#c0392b);white-space:pre-wrap'},msg),
+    btns(h('button',{class:'btn',onclick:close},T("Close")),h('button',{class:'btn pri',onclick:start},T("Try again"))));
+  async function showProposal(res){
+    if(res.source==='skipped'||!res.proposal){set(title,sub(res.note||T("Nothing to suggest for this finding.")),btns(h('button',{class:'btn',onclick:close},T("Close")),
+      h('button',{class:'btn pri',onclick:()=>start(true)},T("Ask anyway"))));return}
+    await load();const p=(S.data.proposals||[]).find(x=>x.id===res.proposal);
+    if(!p){errView(T("The proposal was created (")+res.proposal+T(") but did not show up in the list; see Fixes."));return}
+    const status=h('div',{style:'margin-top:10px;color:var(--mut)'});
+    const apply=h('button',{class:'btn pri',onclick:async()=>{
+      apply.disabled=true;discard.disabled=true;
+      try{status.textContent=T("Approving…");await post(`/api/proposals/${p.id}/approve`);
+        const mode=p.policy&&p.policy.needs_extra_review?'build':'parse';
+        status.textContent=T("Validating in the sandbox (dbt {mode})… it may take a moment",{mode});
+        const v=await post(`/api/proposals/${p.id}/validate?mode=${mode}`);
+        if(!(v.validation&&v.validation.ok)){set(title,h('div',{class:'detail',style:'color:var(--med)'},T("The validation failed; nothing changed in the project.")),
+          h('pre',{class:'detail'},(v.validation&&v.validation.output)||''),btns(h('button',{class:'btn',onclick:()=>{close();load()}},T("Close"))));return}
+        status.textContent=T("Applying…");await post(`/api/proposals/${p.id}/apply`);await load();
+        set(title,h('div',{class:'pill success'},T("Fix applied")),sub(T("A backup was kept; you can roll back in Fixes.")),
+          btns(h('button',{class:'btn pri',onclick:close},T("Close"))))}
+      catch(e){status.textContent='';apply.disabled=false;discard.disabled=false;toast(e.message,true)}}},T("Apply fix"));
+    const discard=h('button',{class:'btn',onclick:async()=>{try{await post(`/api/proposals/${p.id}/reject`);await load();close()}catch(e){toast(e.message,true)}}},T("Discard"));
+    set(title,sub(p.summary),aiBoxOf(p)||(p.explanation?h('div',{class:'detail'},p.explanation):null),
+      p.warnings&&p.warnings.length?h('div',{class:'detail',style:'color:var(--med)'},p.warnings.join('\n')):null,
+      ...p.changes.map(c=>h('div',{},h('div',{style:'margin-top:8px;color:var(--mut);font-size:12.5px'},c.file.split('/').slice(-2).join('/')),diffView(c.diff))),
+      h('p',{style:'margin-top:12px;font-weight:600'},T("Apply this fix to the project?")),status,
+      btns(h('button',{class:'btn',onclick:()=>{close();S.view='fixes';location.hash='#/fixes';render()}},T("See in Fixes")),discard,apply))}
+  async function poll(){
+    try{const j=await post(`/api/findings/${encodeURIComponent(f.id)}/ai-status`);
+      if(j.state==='done'){clearInterval(timer);showProposal(j.result)}
+      else if(j.state==='error'){clearInterval(timer);errView(j.error)}
+    }catch(e){clearInterval(timer);errView(e.message)}}
+  async function start(force){
+    const t0=Date.now(),clock=h('span',{},'0 s');
+    const model=S.ai&&S.ai.llm&&S.ai.llm.model||T("model");
+    set(title,h('div',{style:'display:flex;gap:10px;align-items:center;margin:12px 0'},h('span',{class:'spin'}),h('span',{},T("Asking for the suggestion from ")+model+'… '),clock),
+      sub(T("Local models can take a few minutes. You can close this window: the suggestion keeps being generated and shows up in Fixes.")),
+      btns(h('button',{class:'btn',onclick:close},T("Close"))));
+    clearInterval(timer);
+    timer=setInterval(()=>{clock.textContent=Math.round((Date.now()-t0)/1000)+' s';if(((Date.now()-t0)/1000|0)%2===0)poll()},1000);
+    try{const j=await post(`/api/findings/${encodeURIComponent(f.id)}/fix-ai`,{force:force===true});
+      if(j.state==='error'){clearInterval(timer);errView(j.error)}}
+    catch(e){clearInterval(timer);errView(e.message)}}
+  async function startOwner(){
+    const inp=h('input',{type:'text',value:(S.me&&S.me.user&&S.me.user.name!=='local'&&S.me.user.name)||'',placeholder:T("e.g. data-team or name@company.com"),style:'width:100%'});
+    const go=async()=>{try{const j=await post(`/api/findings/${encodeURIComponent(f.id)}/owner`,{owner:inp.value});showProposal({source:'rule',proposal:j.proposal})}catch(e){errView(e.message)}};
+    set(title,sub(T("This model has no owner. Enter who should receive alerts and proposals; the suggestion shows what will be written to the file before applying.")),
+      h('label',{style:'display:block;margin-top:8px'},T("Owner (meta.owner)"),inp),
+      btns(h('button',{class:'btn',onclick:close},T("Cancel")),h('button',{class:'btn pri',onclick:go},T("Generate suggestion"))));
+    inp.focus();inp.addEventListener('keydown',e=>{if(e.key==='Enter')go()})}
+  function startKey(){
+    const cand=(f.evidence&&f.evidence.key_candidates)||[];
+    const inp=h('input',{type:'text',value:cand[0]||'',placeholder:T("e.g. order_id or order_id,line_number"),style:'width:100%'});
+    const go=async()=>{try{const j=await post(`/api/findings/${encodeURIComponent(f.id)}/unique-key`,{key:inp.value});showProposal({source:'rule',proposal:j.proposal})}catch(e){errView(e.message)}};
+    set(title,sub(T("Incremental model without unique_key: reprocessing duplicates rows. Enter the column (or columns, comma-separated) that identifies each row; the suggestion shows what will be written before applying.")),
+      cand.length?sub(T("Candidates: ")+cand.join(', ')):null,
+      h('label',{style:'display:block;margin-top:8px'},'unique_key',inp),
+      btns(h('button',{class:'btn',onclick:close},T("Cancel")),h('button',{class:'btn pri',onclick:go},T("Generate suggestion"))));
+    inp.focus();inp.addEventListener('keydown',e=>{if(e.key==='Enter')go()})}
+  document.body.append(m);document.addEventListener('keydown',esc);
+  if(f.check_id==='DBT003')startOwner();else if(f.check_id==='DBT002')startKey();else start()}
+function fixes(){const d=S.data;
+  return h('div',{},header(T("Fixes"),T("Validation in an isolated local DuckDB, human approval and change history. Use Recover operation after an interruption.")),
+    d.proposals.length?h('div',{class:'list'},d.proposals.map(fixCard)):
+      empty(T("No fix in progress"),T("When a finding has an automatic fix, the \"Create fix\" button shows up in Findings. With AI set up (Settings), \"Suggest fix\" creates a proposal for any finding on a model.")))}
+const FIELDS=[
+ [T("dbt project"),[['dbt.target',T("target/ directory"),T("manifest.json and catalog.json (after dbt build && dbt docs generate)")],['dbt.root',T("Project root"),T("Optional; default: the folder above target/")],['dbt.base_target',T("target/ of the previous version"),T("Optional; enables schema diff and impact")]]],
+ [T("Orchestrators"),[['airflow.dags',T("Airflow DAG folder"),T("For static analysis")],['kestra.flows',T("Kestra flow folder"),T("For static analysis")],['airflow.url',T("Airflow URL"),T("E.g. http://airflow:8080 (credentials: AIRFLOW_USER/AIRFLOW_PASSWORD)")],['kestra.url',T("Kestra URL"),T("Credentials: KESTRA_USER/KESTRA_PASSWORD")],['prefect.url',T("Prefect URL"),T("E.g. http://prefect:4200 (token: PREFECT_API_KEY)")],['dagster.url',T("Dagster URL"),T("E.g. http://dagster:3000")],['dq.results',T("Quality results (Great Expectations / Soda)"),T("Folder, file or glob of .json; several comma-separated")],['warehouse.type',T("Warehouse type"),T("duckdb | postgres | redshift | trino | clickhouse | snowflake | bigquery | databricks (credentials through environment variables)")],['contracts.dir',T("Data contracts (folder or file)"),T("Data Contract Specification or ODCS v3 (.yaml)")],['kafka.bootstrap','Kafka (bootstrap servers)',T("host:9092[,host2:9092] — consumer lag")],['kafka.schema_registry','Schema Registry',T("E.g. http://registry:8081")],['kafka_connect.url',T("Kafka Connect URL (Debezium)"),T("E.g. http://connect:8083")],['flink.url',T("Flink URL"),T("E.g. http://flink:8081")],['luigi.url',T("Luigi URL"),T("E.g. http://luigid:8082")],['mlflow.url',T("MLflow URL"),T("E.g. http://mlflow:5000 (MLFLOW_TRACKING_TOKEN)")],['rundeck.url',T("Rundeck URL"),T("RUNDECK_TOKEN; project in rundeck.project")],['rundeck.project',T("Rundeck project"),'default'],['scan.include_packages',T("Also check models from packages (true/false)"),T("Default: only the root project; packages (dbt_utils, project-evaluator…) are left out")],['lint.enabled',T("SQL lint (SQLFluff): true/false"),T("Slower; results cached by SQL hash. pip install intentflow[lint]")],['lakehouse.tables',T("Delta/Iceberg tables"),T("Comma-separated paths (Delta: folder with _delta_log; Iceberg: metadata.json)")],['elementary.schema',T("Elementary schema"),T("E.g. analytics_elementary (uses the configured warehouse)")],['catalog.glue',T("Catalog: AWS Glue (true/false)"),T("Watches the table schemas of the Glue Data Catalog (uses aws.region)")],['catalog.unity',T("Catalog: Unity Catalog (host)"),T("E.g. adb-123.azuredatabricks.net (DATABRICKS_TOKEN)")],['catalog.include',T("Catalog: prefixes to watch"),T("E.g. sales., main.raw. (empty = all)")],['aws.region',T("AWS: region"),T("E.g. us-east-1 (credentials from the default boto3 chain)")],['aws.glue','AWS Glue (true/false)',T("Job runs")],['aws.stepfunctions','AWS Step Functions (true/false)',''],['aws.athena','AWS Athena (true/false)',T("Queries as runs")],['azure.data_factory',T("Azure Data Factory (resource)"),T("subscription/resourceGroup/factory — token in AZURE_TOKEN")],['kubernetes.enabled',T("Monitor Kubernetes (true/false)"),T("Uses the server's kubectl; memory needs the metrics-server")],['kubernetes.context',T("kubectl context"),T("Optional")],['kubernetes.namespace',T("Namespace (empty = all)"),T("Optional")],['prometheus.url',T("Prometheus URL"),T("E.g. http://prometheus:9090 (memory of containers and nodes)")],['dbt_cloud.account_id','dbt Cloud: account id',T("Token in DBT_CLOUD_TOKEN")],['dbt_cloud.job_id','dbt Cloud: job id',T("Job that produces manifest/catalog/run_results")],['dbt_cloud.host','dbt Cloud: host',T("cloud.getdbt.com (or your tenant's)")],['argo.url',T("Argo Workflows URL"),T("E.g. https://argo:2746 (ARGO_TOKEN)")],['argo.namespace',T("Argo namespace"),'argo'],['mage.url',T("Mage URL"),T("E.g. http://mage:6789")],['spark.url',T("Spark URL (UI/History Server)"),T("E.g. http://driver:4040")],['databricks.jobs_host',T("Databricks host (Jobs)"),T("E.g. adb-123.azuredatabricks.net (token: DATABRICKS_TOKEN)")],['airbyte.url',T("Airbyte URL"),T("E.g. http://airbyte:8000 (AIRBYTE_TOKEN or AIRBYTE_USER/AIRBYTE_PASSWORD)")],['fivetran.url',T("Fivetran API URL"),'https://api.fivetran.com (FIVETRAN_API_KEY/FIVETRAN_API_SECRET)']]],
+ [T("Warehouse (probes)"),[['warehouse.duckdb',T("DuckDB file"),T("Duplicate, volume and cost probes")],['warehouse.postgres_env',T("Variable holding the PostgreSQL URL"),T("Enter only the variable NAME, never the URL")]]],
+ [T("Policies"),[['policy.pii_allowed_models',T("Models allowed to contain PII"),T("Comma-separated")]]]];
+function config(){const s=S.cfg.settings;const sinks=s['notify.sinks']||[],routes=s['notify.routes']||[];
+  const field=([k,l,hint])=>{let v=s[k];if(Array.isArray(v))v=v.join(', ');
+    const i=h('input',{type:'text',value:v==null?'':v,placeholder:T("not set"),onchange:e=>act(T("Saved: ")+l,()=>post('/api/settings',{key:k,value:e.target.value}))});
+    return h('div',{class:'field'},h('label',{},l),i,h('small',{},hint))};
+  const run=h('button',{class:'btn pri',disabled:!!S.cfg.running,onclick:()=>act(T("Check started"),()=>post('/api/run/check'))},T("Save and check now"));
+  const groups=FIELDS.map(([t,fs])=>h('div',{class:'card',style:'margin-bottom:14px'},h('h2',{style:'margin-bottom:12px'},t),h('div',{class:'form'},fs.map(field))));
+  const routeTags=name=>routes.filter(r=>r.sink===name).map(r=>{
+    const parts=[r.owner&&(T("owner=")+r.owner),r.min_severity&&('≥ '+r.min_severity),r.check_prefix&&(r.check_prefix+'*')].filter(Boolean);
+    return h('span',{class:'tag',style:'margin-right:4px'},parts.join(' ')||T("all"))});
+  const sinkRows=sinks.map(x=>h('tr',{},h('td',{},h('b',{},x.name)),h('td',{},x.type),h('td',{style:'color:var(--mut)'},x.url_env||x.to||x.repo||''),h('td',{},routeTags(x.name))));
+  const hint=h('p',{style:'color:var(--faint);font-size:12.5px;margin:10px 0 0'},T("Add through the CLI: "),
+    h('span',{class:'tag'},'intentflow notify add-sink dados --type slack --url-env SLACK_URL'),' e ',h('span',{class:'tag'},'intentflow notify route dados --min-severity high'));
+  const notif=h('div',{class:'card'},h('h2',{style:'margin-bottom:8px'},T("Notifications")),
+    sinks.length?h('table',{},h('tbody',{},sinkRows)):h('p',{style:'color:var(--mut);margin:0'},T("No output configured.")),hint);
+  const d=S.data;
+  const dis=new Set(s['policy.disabled_checks']||[]);
+  const toggle=c=>{const on=!dis.has(c.id);const cb=h('input',{type:'checkbox',checked:on,onchange:e=>{const nx=new Set(s['policy.disabled_checks']||[]);e.target.checked?nx.delete(c.id):nx.add(c.id);
+      act((e.target.checked?T("On: "):T("Off: "))+c.id,()=>post('/api/settings',{key:'policy.disabled_checks',value:[...nx].sort().length?[...nx].sort():null}))}});
+    return h('tr',{},h('td',{},cb),h('td',{},h('span',{class:'tag'},c.id)),h('td',{},c.title),h('td',{style:'color:var(--mut)'},c.stage),h('td',{style:'color:var(--mut)'},c.cost))};
+  const checksCard=h('div',{class:'card',style:'margin-top:14px'},h('h2',{style:'margin-bottom:6px'},'Checks'),
+    h('p',{style:'color:var(--mut);margin:0 0 8px'},T("Turn off what is noise in your context. The false positive rate shows up in Findings.")),
+    h('table',{},h('thead',{},h('tr',{},[T("On"),'Id',T("Description"),T("Stage"),T("Cost")].map(t=>h('th',{},t)))),h('tbody',{},(d.checks||[]).map(toggle))));
+  const pol=h('div',{class:'card',style:'margin-top:14px'},h('h2',{style:'margin-bottom:6px'},T("SLA and freshness per pipeline")),
+    d.pipelines.length?h('table',{},h('thead',{},h('tr',{},['Pipeline',T("SLA (minutes)"),T("No success for more than (hours)")].map(t=>h('th',{},t)))),
+      h('tbody',{},d.pipelines.map(p=>{const key=p.system+':'+p.pipeline,sla=(s['policy.sla.'+key]||{}).minutes,age=s['policy.max_age_hours.'+key];
+        const mk=(val,k,conv)=>h('input',{type:'text',value:val==null?'':val,placeholder:'—',style:'width:120px',onchange:e=>act(T("Saved"),()=>post('/api/settings',{key:k,value:e.target.value.trim()?conv(e.target.value.trim()):null}))});
+        return h('tr',{},h('td',{},h('b',{},p.pipeline),h('div',{style:'color:var(--faint);font-size:12px'},p.system)),h('td',{},mk(sla,'policy.sla.'+key,v=>({minutes:parseFloat(v)}))),h('td',{},mk(age,'policy.max_age_hours.'+key,v=>parseFloat(v))))}))):
+      h('p',{style:'color:var(--mut);margin:0'},T("Collect runs to set an SLA per pipeline.")));
+  if(S.ai===undefined)aiLoad();
+  return h('div',{},header(T("Settings"),T("Stored locally. Secrets: only environment variable names; AI keys, if stored here, are encrypted."),run),has('ai')?aiCard():null,groups,pol,checksCard,notif)}
+S.aiDraft={};
+function aiCard(){const a=S.ai;const D=S.aiDraft;const dv=(k,def)=>(k in D?D[k]:def);const keep=(el,k)=>{const f=()=>{D[k]=el.type==='checkbox'?el.checked:el.value};el.addEventListener('input',f);el.addEventListener('change',f);return el};
+  if(!a)return h('div',{class:'card',style:'margin-bottom:14px'},h('h2',{},T("AI to suggest fixes")),h('span',{class:'spin'}));
+  const L=a.llm,J=a.jev,P=L.providers||{};
+  const curProv=dv('ai_provider',L.provider||'');
+  const prov=keep(h('select',{id:'ai_provider',onchange:e=>{const m=(P[e.target.value]||{});$('#ai_model').value=m.default_model||'';$('#ai_base').value=m.default_base_url||'';D.ai_model=$('#ai_model').value;D.ai_base=$('#ai_base').value;$('#ai_model_list').replaceChildren()}},
+    h('option',{value:''},T("— choose —")),...Object.entries(P).map(([k,v])=>h('option',{value:k,selected:k===curProv},v.label))),'ai_provider');
+  const model=keep(h('input',{id:'ai_model',type:'text',value:dv('ai_model',L.model||''),placeholder:T("e.g. claude-sonnet-5-5, gpt-4o-mini, qwen2.5:3b"),list:'ai_model_list'}),'ai_model');
+  const base=keep(h('input',{id:'ai_base',type:'text',value:dv('ai_base',L.base_url||''),placeholder:T("provider default; for a local model e.g. http://127.0.0.1:11434/v1")}),'ai_base');
+  const key=keep(h('input',{id:'ai_key',type:'password',autocomplete:'off',value:dv('ai_key',''),placeholder:L.key_source==='env'?T("set through an environment variable"):L.key_source==='stored'?T("•••••• stored (encrypted); type to replace"):(P[L.provider]&&P[L.provider].needs_key===false?T("not needed for a local model"):T("paste the key here"))}),'ai_key');
+  const keyNote=L.key_source==='env'?T("The key comes from the server's environment variable."):L.key_source==='stored'?T("Key stored encrypted in the store. It is never shown or sent back."):
+    (L.can_store_key?T("The key will be stored encrypted. Prefer an environment variable in production."):T("Storing the key here requires INTENTFLOW_SECRET_KEY on the server; for now use the provider's environment variable."));
+  const body=()=>({provider:$('#ai_provider').value,model:$('#ai_model').value.trim(),base_url:$('#ai_base').value.trim(),...($('#ai_key').value?{api_key:$('#ai_key').value}:{})});
+  const jprov=keep(h('select',{id:'jv_provider'},h('option',{value:''},T("— off —")),...Object.entries(J.providers||{}).map(([k,v])=>h('option',{value:k,selected:k===dv('jv_provider',J.provider||'')},v.label))),'jv_provider');
+  const jmodel=keep(h('input',{id:'jv_model',type:'text',value:dv('jv_model',J.model||''),placeholder:T("provider default")}),'jv_model');
+  const jkey=keep(h('input',{id:'jv_key',type:'password',autocomplete:'off',value:dv('jv_key',''),placeholder:J.key_source==='env'?T("set through an environment variable"):J.key_source==='stored'?T("•••••• stored (encrypted)"):T("paste the key here")}),'jv_key');
+  const jon=keep(h('input',{id:'jv_on',type:'checkbox',checked:dv('jv_on',!!J.enabled)}),'jv_on');
+  const status=(ok,t)=>h('span',{class:'pill '+(ok?'success':'pending'),style:'margin-left:8px'},t);
+  const save=async()=>{try{const b=body(),jb={provider:$('#jv_provider').value,model:$('#jv_model').value.trim(),enabled:$('#jv_on').checked,...($('#jv_key').value?{api_key:$('#jv_key').value}:{})};
+      S.ai=await api('/api/llm',{method:'POST',headers:{'Content-Type':'application/json','X-IntentFlow':'1'},body:JSON.stringify({...b,jev:jb})});S.ai.triage=(S.ai.triage||{});toast(T("AI settings saved"));S.aiDraft={};await aiLoad(true)}catch(e){toast(e.message,true)}};
+  const call=async(path,b,ok)=>{try{const r=await api(path,{method:'POST',headers:{'Content-Type':'application/json','X-IntentFlow':'1'},body:JSON.stringify(b)});ok(r)}catch(e){toast(e.message,true)}};
+  return h('div',{class:'card',style:'margin-bottom:14px'},
+    h('h2',{style:'margin-bottom:4px'},T("AI to suggest fixes"),L.configured?status(true,T("configured")):status(false,T("not configured"))),
+    h('p',{style:'color:var(--mut);margin:0 0 12px'},T("An LLM proposes the edit; it becomes a proposal with a diff and goes through human approval, sandbox validation and rollback, like any fix.")),
+    h('div',{class:'form'},h('div',{class:'field'},h('label',{},T("Provider")),prov),h('div',{class:'field'},h('label',{},T("Model")),model,h('datalist',{id:'ai_model_list'})),
+      h('div',{class:'field'},h('label',{},T("Base URL (optional)")),base),h('div',{class:'field'},h('label',{},T("API key")),key,h('small',{},keyNote))),
+    h('div',{style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'},
+      h('button',{class:'btn',onclick:()=>call('/api/llm/models',body(),r=>{$('#ai_model_list').replaceChildren(...r.models.map(m=>h('option',{value:m})));toast(r.models.length+T(" model(s) found"))})},T("List models")),
+      h('button',{class:'btn',onclick:()=>call('/api/llm/test',body(),r=>toast(T("Connection ok ({model}, {s}s): {text}",{model:r.model,s:r.seconds,text:r.text})))},T("Test connection")),
+      L.key_source==='stored'?h('button',{class:'btn danger',onclick:()=>call('/api/llm',{clear_key:true},async()=>{toast(T("Key removed"));await aiLoad(true)})},T("Remove stored key")):null),
+    h('div',{style:'margin-top:16px;padding-top:14px;border-top:1px solid var(--line)'},
+      h('h2',{style:'margin-bottom:4px;font-size:15px'},T("Decisions with Jev"),J.configured&&J.enabled?status(true,T("on")):status(false,T("off"))),
+      h('p',{style:'color:var(--mut);margin:0 0 10px'},T("Decision model (TypeSafe): returns a choice/score with a probability, not text. Finding triage (real? false positive? urgency? which path?), ")+
+        T("avoids calling the LLM when the fix is mechanical and scores the risk of the generated edit.")),
+      h('div',{class:'form'},h('div',{class:'field'},h('label',{},T("Access")),jprov),h('div',{class:'field'},h('label',{},T("Model")),jmodel),
+        h('div',{class:'field'},h('label',{},T("Key")),jkey),h('div',{class:'field'},h('label',{},T("Use in triage and the risk gate")),jon)),
+      h('div',{style:'display:flex;gap:8px;margin-top:10px'},
+        h('button',{class:'btn',onclick:()=>call('/api/jev/test',{provider:$('#jv_provider').value,model:$('#jv_model').value.trim(),...($('#jv_key').value?{api_key:$('#jv_key').value}:{})},r=>toast(`Jev ok (${r.model}, ${r.seconds}s)`))},T("Test Jev")))),
+    h('div',{style:'margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'},
+      h('small',{style:'color:var(--faint)'},T("Sent to the provider: the affected model's SQL, column names/types, the finding text. Never data rows.")),
+      h('button',{class:'btn pri',onclick:save},T("Save AI"))))}
+function audit(){const a=[...S.data.audit].reverse();
+  return h('div',{},header(T("Audit"),T("Who did what: settings, approvals, applies, rollbacks and checks.")),
+    a.length?h('div',{class:'card',style:'padding:6px 10px'},h('table',{},h('thead',{},h('tr',{},[T("When"),T("Who"),T("Event"),T("Detail")].map(t=>h('th',{},t)))),
+      h('tbody',{},a.map(x=>h('tr',{},h('td',{style:'color:var(--mut);white-space:nowrap'},new Date(x.ts*1000).toLocaleString()),h('td',{},x.actor),h('td',{},h('span',{class:'tag'},x.event)),h('td',{style:'color:var(--mut);word-break:break-word'},x.detail)))))):
+      empty(T("No events yet"),T("Actions show up here.")))}
+
+
+/* ---------- lineage and impact ---------- */
+S.lin={models:null,sel:null,detail:null,col:null,colData:null,tab:'model',q:'',loading:false,err:null};
+async function linLoadModels(){S.lin.loading=true;try{S.lin.models=await api('/api/lineage/models');S.lin.err=null}catch(e){S.lin.err=e.message;S.lin.models=[]}S.lin.loading=false;render()}
+async function linSelect(name,col){S.lin.sel=name;S.lin.col=col||null;S.lin.colData=null;S.lin.detail=null;S.lin.loading=true;render();
+  try{S.lin.detail=await api('/api/lineage/model?model='+encodeURIComponent(name)+'&depth=2');
+    if(col){S.lin.tab='column';S.lin.colData=await api('/api/lineage/column?model='+encodeURIComponent(name)+'&column='+encodeURIComponent(col)+'&depth=3')}
+    S.lin.err=null}catch(e){S.lin.err=e.message}
+  S.lin.loading=false;render()}
+async function linColumn(col){S.lin.col=col;S.lin.tab='column';S.lin.colData=null;render();
+  try{S.lin.colData=await api('/api/lineage/column?model='+encodeURIComponent(S.lin.sel)+'&column='+encodeURIComponent(col)+'&depth=3')}catch(e){toast(e.message,true)}
+  render()}
+const SVGNS='http://www.w3.org/2000/svg';
+function sv(tag,attrs,...kids){const e=document.createElementNS(SVGNS,tag);for(const [k,v] of Object.entries(attrs||{}))e.setAttribute(k,v);for(const c of kids)if(c!=null)e.append(c.nodeType?c:document.createTextNode(String(c)));return e}
+function drawGraph(nodes,edges,onPick){
+  const W=210,H=46,GX=96,GY=14,PAD=14;
+  const levels=[...new Set(nodes.map(n=>n.level))].sort((a,b)=>a-b);
+  const byLv=Object.fromEntries(levels.map(l=>[l,nodes.filter(n=>n.level===l).sort((a,b)=>a.label.localeCompare(b.label))]));
+  const maxN=Math.max(...levels.map(l=>byLv[l].length));
+  const height=PAD*2+maxN*(H+GY)-GY,width=PAD*2+levels.length*W+(levels.length-1)*GX;
+  const pos={};levels.forEach((l,xi)=>{const col=byLv[l],off=(maxN-col.length)*(H+GY)/2;col.forEach((n,yi)=>{pos[n.id]={x:PAD+xi*(W+GX),y:PAD+off+yi*(H+GY)}})});
+  const svg=sv('svg',{width,height,viewBox:`0 0 ${width} ${height}`,role:'img'});
+  svg.append(sv('defs',{},sv('marker',{id:'ar',viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'},sv('path',{d:'M0 0L10 5L0 10z',fill:'currentColor',style:'color:var(--faint)'}))));
+  edges.forEach(e=>{const a=pos[e.src],b=pos[e.dst];if(!a||!b)return;const x1=a.x+W,y1=a.y+H/2,x2=b.x,y2=b.y+H/2,mx=(x1+x2)/2;
+    svg.append(sv('path',{d:`M${x1} ${y1}C${mx} ${y1} ${mx} ${y2} ${x2-2} ${y2}`,class:'e'+(e.kind==='derived'?' derived':'')+(e.masked?' masked':''),'marker-end':'url(#ar)'}))});
+  nodes.forEach(n=>{const p=pos[n.id];const g=sv('g',{class:'nd'+(n.center?' center':'')+(n.pii?' pii':''),transform:`translate(${p.x},${p.y})`,tabindex:'0',role:'button','aria-label':n.label});
+    g.append(sv('rect',{width:W,height:H,rx:9}),sv('text',{x:12,y:19},n.label.length>28?n.label.slice(0,27)+'…':n.label),
+      sv('text',{x:12,y:34,class:'sub'},(n.sub||'').length>34?n.sub.slice(0,33)+'…':(n.sub||'')));
+    if(n.pii)g.append(sv('text',{x:W-34,y:19,style:'fill:var(--crit);font-weight:700'},'PII'));
+    g.append(sv('title',{},n.label+(n.sub?' — '+n.sub:'')));
+    if(onPick&&!n.center){const fire=()=>onPick(n);g.addEventListener('click',fire);g.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();fire()}})}
+    svg.append(g)});
+  return h('div',{class:'graph'},svg)}
+function lineageView(){const L=S.lin;
+  if(!S.cfg.settings['dbt.target'])return h('div',{},header(T("Lineage and impact"),T("See where each column comes from and what breaks if it changes.")),
+    empty(T("Set up the dbt project"),T("Enter the target/ directory in Settings."),h('a',{class:'btn pri',href:'#/config'},T("Go to Settings"))));
+  if(L.models===null&&!L.loading){linLoadModels()}
+  const q=h('input',{type:'search',placeholder:T("Search model…"),value:L.q,oninput:e=>{L.q=e.target.value;clearTimeout(L.t);L.t=setTimeout(()=>{render();const n=document.querySelector('.lin input[type=search]');if(n){n.focus();n.setSelectionRange(L.q.length,L.q.length)}},120)},style:'width:100%;margin-bottom:8px'});
+  const list=(L.models||[]).filter(m=>!L.q||m.name.toLowerCase().includes(L.q.toLowerCase())).slice(0,300).map(m=>
+    h('button',{class:'mrow'+(L.sel===m.name?' on':''),onclick:()=>linSelect(m.name)},
+      h('span',{style:'min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'},m.name,m.pii?h('span',{class:'tag',style:'margin-left:6px;color:var(--crit)'},'PII'):null),
+      m.worst?sev(m.worst):h('small',{},m.type==='model'?m.downstream+' ↓':m.type)));
+  const side=h('div',{class:'card models'},q,L.models===null||L.loading&&!L.models?h('div',{class:'empty'},h('span',{class:'spin'})):list.length?list:h('div',{class:'empty'},T("No model")));
+  let main;
+  if(L.err)main=empty(T("Could not load the lineage"),L.err);
+  else if(!L.sel)main=empty(T("Pick a model"),T("Select on the left to see dependencies, columns and impact."));
+  else if(!L.detail)main=h('div',{class:'card empty'},h('span',{class:'spin'}));
+  else main=lineageDetail();
+  return h('div',{},header(T("Lineage and impact"),T("Where each column comes from and what breaks if it changes. Click a node to navigate.")),h('div',{class:'lin'},side,main))}
+function lineageDetail(){const L=S.lin,d=L.detail;
+  const info=h('div',{class:'card'},h('div',{class:'item'},h('div',{},h('div',{class:'t',style:'font-size:17px'},d.name),
+    h('div',{class:'meta'},h('span',{class:'tag'},d.type),d.materialized?h('span',{class:'tag'},d.materialized):null,
+      d.owner?h('span',{},T("owner: ")+d.owner):h('span',{style:'color:var(--faint)'},T("no owner")),h('span',{},d.columns.length+T(" columns")),h('span',{},d.tests.length+T(" model tests")))),
+    d.path?h('span',{class:'tag'},d.path):null),d.description?h('p',{style:'color:var(--mut);margin:8px 0 0'},d.description):null);
+  const tabs=h('div',{class:'tabs'},h('button',{class:'tab'+(L.tab==='model'?' on':''),onclick:()=>{L.tab='model';render()}},T("Models")),
+    h('button',{class:'tab'+(L.tab==='column'?' on':''),onclick:()=>{L.tab='column';render()}},T("Columns and impact")));
+  const legend=h('div',{class:'legend'},h('span',{},T("── direct")),h('span',{},T("- - derived (function/aggregation)")),h('span',{style:'color:var(--ok)'},T("── masked (hash)")),h('span',{style:'color:var(--crit)'},'PII'));
+  let body;
+  if(L.tab==='model'){
+    const g=d.graph;body=h('div',{},legend,drawGraph(g.nodes.map(n=>({id:n.id,level:n.level,label:n.name,sub:n.type+(n.owner?' · '+n.owner:''),center:n.id===g.center})),g.edges,n=>linSelect(n.label)))}
+  else{
+    const rows=d.columns.map(c=>h('button',{class:'colrow'+(L.col===c.name?' on':''),onclick:()=>linColumn(c.name)},
+      h('span',{},h('b',{},c.name),h('span',{style:'color:var(--faint);margin-left:8px'},c.type),c.pii?h('span',{class:'tag',style:'margin-left:6px;color:var(--crit)'},'PII'):null),
+      h('span',{style:'color:var(--faint);font-size:12px'},c.tests.length?c.tests.join(', '):T("no test"))));
+    const cols=h('div',{class:'list'},rows);
+    let right=h('div',{class:'card empty'},T("Pick a column to see origin and impact."));
+    if(L.col&&!L.colData)right=h('div',{class:'card empty'},h('span',{class:'spin'}));
+    if(L.col&&L.colData){const g=L.colData.graph,im=L.colData.impact;
+      const imp=h('div',{class:'card',style:'margin-top:14px'},h('div',{class:'head'},h('h2',{},T("If {column} changes",{column:d.name+'.'+L.col})),
+          h('span',{class:'sev '+(im.count?'high':'info')},im.count+T(" affected model(s)"))),
+        im.count?h('table',{},h('thead',{},h('tr',{},[T("Model"),T("Distance"),T("Columns"),T("Owner"),T("Tests")].map(t=>h('th',{},t)))),
+          h('tbody',{},im.affected.map(r=>h('tr',{},h('td',{},h('a',{href:'#',style:'color:var(--acc);font-weight:600;text-decoration:none',onclick:e=>{e.preventDefault();linSelect(r.name,r.columns[0])}},r.name)),
+            h('td',{},r.distance),h('td',{},r.columns.map(c=>h('span',{class:'tag',style:'margin-right:4px'},c))),h('td',{},r.owner||'—'),h('td',{},r.tests))))):
+          h('p',{style:'color:var(--mut);margin:0'},T("No known downstream consumer.")),
+        im.owners.length?h('p',{style:'color:var(--mut);margin:10px 0 0'},T("Notify: ")+im.owners.join(', ')):null);
+      right=h('div',{},legend,drawGraph(g.nodes.map(n=>({id:n.id,level:n.level,label:n.model+'.'+n.column,sub:n.type,pii:n.pii,center:n.id===g.center})),g.edges,
+        n=>{const i=n.label.lastIndexOf('.');linSelect(n.label.slice(0,i),n.label.slice(i+1))}),imp)}
+    body=h('div',{class:'colgrid'},cols,right)}
+  return h('div',{},info,tabs,body)}
+
+
+/* ---------- data diff ---------- */
+S.diff={base:'',head:'',key:'',res:null,busy:false,err:null};
+async function runDiff(){const D=S.diff;D.busy=true;D.err=null;D.res=null;render();
+  try{D.res=await post('/api/diff',{base:D.base,head:D.head,key:D.key,sample:5})}catch(e){D.err=e.message}
+  D.busy=false;render()}
+function diffPage(){const D=S.diff;
+  const inp=(k,ph,label)=>h('div',{class:'field'},h('label',{},label),h('input',{type:'text',value:D[k],placeholder:ph,oninput:e=>{D[k]=e.target.value}}));
+  const form=h('div',{class:'card'},h('div',{class:'form'},inp('base','prod.orders',T("Base relation (before)")),inp('head','dev.orders',T("New relation (after)")),inp('key','order_id',T("Key (comma-separated columns)"))),
+    h('div',{style:'margin-top:14px'},h('button',{class:'btn pri',disabled:D.busy,onclick:runDiff},D.busy?h('span',{},h('span',{class:'spin'}),T(" Comparing…")):T("Compare"))),
+    h('p',{style:'color:var(--faint);font-size:12.5px;margin:10px 0 0'},T("The comparison runs inside your warehouse (configured DuckDB or PostgreSQL). Only counts and a sample of rows leave it.")));
+  let out=null;
+  if(D.err)out=h('div',{class:'card',style:'margin-top:14px;border-color:var(--crit)'},h('b',{style:'color:var(--crit)'},T("Could not compare")),h('p',{style:'margin:6px 0 0'},D.err));
+  if(D.res){const r=D.res;
+    const stat=(l,v,tone)=>h('div',{class:'card kpi',style:'cursor:default'},h('div',{class:'l'},l),h('div',{class:'n',style:tone?`color:var(--${tone})`:''},String(v)));
+    const cols=Object.entries(r.changed_by_column);
+    const smp=r.samples.length?h('div',{class:'card',style:'margin-top:14px;padding:6px 10px'},h('table',{},h('thead',{},h('tr',{},Object.keys(r.samples[0]).map(k=>h('th',{},k)))),
+      h('tbody',{},r.samples.map(s=>h('tr',{},Object.values(s).map(v=>h('td',{},String(v))))))) ):null;
+    out=h('div',{style:'margin-top:14px'},
+      r.identical?h('div',{class:'card',style:'border-color:var(--ok)'},h('b',{style:'color:var(--ok)'},T("✓ No differences")),h('p',{style:'margin:6px 0 0;color:var(--mut)'},T("{n} identical rows.",{n:r.rows.base}))):
+      h('div',{class:'grid g4'},stat(T("Rows (base → new)"),`${r.rows.base} → ${r.rows.head}`),stat(T("Only in base"),r.only_in_base,r.only_in_base?'high':null),stat(T("Only in new"),r.only_in_head,r.only_in_head?'med':null),
+        stat(T("Changed rows"),r.changed_rows,r.changed_rows?'med':null),stat(T("Duplicated keys (base/new)"),`${r.duplicate_keys.base} / ${r.duplicate_keys.head}`,r.duplicate_keys.head?'high':null)),
+      r.schema.added.length||r.schema.removed.length||r.schema.type_changed.length?h('div',{class:'card',style:'margin-top:14px'},h('b',{},T("Schema changes")),
+        h('p',{style:'margin:6px 0 0;color:var(--mut)'},T("+ {added}  ·  − {removed}  ·  type: {changed}",{added:r.schema.added.join(', ')||'—',removed:r.schema.removed.join(', ')||'—',changed:r.schema.type_changed.map(t=>t.join(' ')).join('; ')||'—'}))):null,
+      cols.length?h('div',{class:'card',style:'margin-top:14px;padding:6px 10px'},h('table',{},h('thead',{},h('tr',{},[T("Column"),T("Changed rows")].map(t=>h('th',{},t)))),
+        h('tbody',{},cols.map(([c,n])=>h('tr',{},h('td',{},h('b',{},c)),h('td',{},n)))))):null,smp)}
+  return h('div',{},header(T("Data diff"),T("Compare two versions of a table before promoting a change: new, removed and changed rows.")),form,out)}
+
+
+function assignBox(f){if(!(S.me&&S.me.team))return null;
+  const sel=h('select',{onchange:e=>act(T("Assigned"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/assign`,{assignee:e.target.value||null}))},
+    h('option',{value:''},T("no assignee")),S.team.map(n=>h('option',{value:n,selected:n===f.assignee},n)));
+  return h('dl',{},h('dt',{},T("Assignee")),h('dd',{},sel))}
+function notesBox(f){if(!(S.me&&S.me.team))return null;
+  if(S.notes[f.id]===undefined){S.notes[f.id]=null;api('/api/notes/'+encodeURIComponent(f.id)).then(r=>{S.notes[f.id]=r.notes;render()}).catch(()=>{S.notes[f.id]=[]})}
+  const list=S.notes[f.id]||[];
+  const ta=h('input',{type:'text',placeholder:T("Comment…"),style:'width:100%',onkeydown:e=>{if(e.key==='Enter'&&e.target.value.trim()){const t=e.target.value;
+      act(T("Comment saved"),()=>post(`/api/findings/${encodeURIComponent(f.id)}/note`,{text:t}),()=>{S.notes[f.id]=undefined;render()})}}});
+  return h('dl',{},h('dt',{},T("Comments")),h('dd',{},list.map(n=>h('div',{style:'margin:4px 0'},h('b',{},n.author),' ',h('span',{style:'color:var(--faint);font-size:12px'},ago(n.ts)),h('div',{},n.text))),ta))}
+function teamPage(){const st=S.teamAdmin;
+  if(st===undefined){S.teamAdmin=null;api('/api/users').then(r=>{S.teamAdmin=r.users;S.teamProjects=r.projects;S.teamSso=r.sso;render()}).catch(e=>{S.teamAdmin=[];toast(e.message,true)})}
+  const users=S.teamAdmin||[];
+  const reload=()=>{S.teamAdmin=undefined;S.team=[];load()};
+  const call=(body,msg)=>act(msg,()=>post('/api/users',body),reload);
+  const rows=users.map(u=>{
+    const role=h('select',{onchange:e=>call({action:'role',name:u.name,role:e.target.value},T("Role updated"))},['viewer','engineer','admin'].map(r=>h('option',{value:r,selected:r===u.role},{admin:'admin',engineer:T("engineer"),viewer:T("viewer")}[r])));
+    return h('tr',{},h('td',{},h('b',{},u.name)),h('td',{},role),h('td',{},u.disabled?h('span',{class:'pill failed'},T("disabled")):h('span',{class:'pill success'},T("active"))),
+      h('td',{},u.mfa?h('span',{class:'pill success'},'MFA'):h('span',{style:'color:var(--faint)'},'—')),
+      h('td',{},expiryCell(u.token_expires)),
+      h('td',{style:'color:var(--mut)'},u.last_seen?ago(u.last_seen):T("never")),
+      h('td',{},h('button',{class:'btn sm',onclick:async()=>{try{const r=await post('/api/users',{action:'rotate',name:u.name});tokenModal(u.name,r.token)}catch(e){toast(e.message,true)}}},T("New token")),' ',
+        h('button',{class:'btn sm '+(u.disabled?'':'danger'),onclick:()=>call({action:u.disabled?'enable':'disable',name:u.name},u.disabled?T("Enabled"):T("Disabled"))},u.disabled?T("Enable"):T("Disable"))))});
+  const nm=h('input',{type:'text',placeholder:T("name (e.g. maria)"),style:'width:200px'}),rl=h('select',{},['viewer','engineer','admin'].map(r=>h('option',{value:r,selected:r==='engineer'},{admin:'admin',engineer:T("engineer"),viewer:T("viewer")}[r])));
+  const ex=h('select',{title:T("Token validity")},[['',T("token without expiry")],['30',T("expires in 30 days")],['90',T("expires in 90 days")],['365',T("expires in 1 year")]].map(([v,l])=>h('option',{value:v},l)));
+  const add=h('div',{style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px'},nm,rl,ex,h('button',{class:'btn pri',onclick:async()=>{
+      try{const r=await post('/api/users',{action:'add',name:nm.value.trim(),role:rl.value,expires_days:ex.value||null});tokenModal(nm.value.trim(),r.token);reload()}catch(e){toast(e.message,true)}}},T("Add person")));
+  const projs=(S.teamProjects||[]).filter(p=>p!==S.me.default_project);
+  const projRoles=users.length&&projs.length?h('div',{class:'card',style:'margin-top:14px;padding:6px 10px'},h('h2',{style:'padding:8px 0 4px'},T("Role per project")),
+    h('table',{},h('thead',{},h('tr',{},[h('th',{},T("Person")),...projs.map(p=>h('th',{},p))])),
+      h('tbody',{},users.map(u=>h('tr',{},h('td',{},h('b',{},u.name)),...projs.map(p=>{
+        const cur=(u.project_roles||{})[p]||'inherit';
+        const sel=h('select',{onchange:e=>call({action:'project_role',name:u.name,project:p,role:e.target.value==='inherit'?null:e.target.value},T("Project role updated"))},
+          [['inherit',T("inherits (")+({admin:'admin',engineer:T("engineer"),viewer:T("viewer")}[u.role])+')'],['none',T("no access")],['viewer',T("viewer")],['engineer',T("engineer")],['admin','admin']].map(([v,l])=>h('option',{value:v,selected:v===cur},l)));
+        return h('td',{},sel)}))))) ):null;
+  const allp=S.teamProjects||[];
+  const scopeCard=users.length&&allp.length?h('div',{class:'card',style:'margin-top:14px;padding:6px 10px'},h('h2',{style:'padding:8px 0 2px'},T("Scope per folder (write)")),
+    h('p',{style:'color:var(--mut);margin:0 0 8px;font-size:12.5px'},T("Comma-separated patterns (e.g. models/marts/*, models/crm/**). Empty = no restriction. Limits who can create/approve/apply fixes and act on findings; reading stays open.")),
+    h('table',{},h('thead',{},h('tr',{},[h('th',{},T("Person")),...allp.map(p=>h('th',{},p))])),
+      h('tbody',{},users.filter(u=>u.role!=='admin').map(u=>h('tr',{},h('td',{},h('b',{},u.name)),...allp.map(p=>{
+        const cur=((u.scopes||{})[p]||[]).join(', ');
+        const i=h('input',{type:'text',value:cur,placeholder:T("no restriction"),style:'width:100%;min-width:150px',
+          onchange:e=>call({action:'scope',name:u.name,project:p,patterns:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)},T("Scope updated"))});
+        return h('td',{},i)})))))):null;
+  const sso=S.teamSso||{};
+  const sf=(k,l,ph)=>{const i=h('input',{type:'text',value:Array.isArray(sso[k])?sso[k].join(', '):(sso[k]==null?'':String(sso[k])),placeholder:ph||'',style:'width:100%'});i.dataset.k=k;return h('div',{class:'field'},h('label',{},l),i)};
+  const ssoCard=h('div',{class:'card',style:'margin-top:14px'},h('h2',{style:'margin-bottom:4px'},T("Single sign-on (SSO / OpenID Connect)")),
+    h('p',{style:'color:var(--mut);margin:0 0 10px'},T("Works with OIDC providers (Keycloak, Entra ID, Okta, Google…). The client secret lives in a server environment variable.")),
+    h('div',{class:'form',id:'ssoform'},sf('issuer','Issuer',T("https://login.example.com/realms/data")),sf('client_id','Client ID','intentflow'),
+      sf('client_secret_env',T("Variable holding the client secret"),'INTENTFLOW_SSO_SECRET'),sf('default_role',T("Role of first-time users"),'viewer'),
+      sf('allowed_domains',T("Allowed e-mail domains"),T("example.com, other.com")),sf('auto_provision',T("Create the user on first login? (true/false)"),'false'),
+      sf('group_claim',T("Claim with the groups"),'groups'),sf('require_group',T("Deny people without a mapped group? (true/false)"),'false'),sf('sync_roles',T("Apply groups to users added by hand? (true/false)"),'false')),
+    h('div',{class:'field',style:'margin-top:10px'},h('label',{},T("Groups → roles (one rule per line)")),
+      (()=>{const t=h('textarea',{id:'gmap',rows:'4',style:'width:100%;font:13px ui-monospace,monospace',placeholder:'dados-admin=admin\ncrm-eng=engineer@crm\ndados-leitura=viewer'},((sso.group_map||[]).map(m=>`${m.group}=${m.role}${m.project?'@'+m.project:''}`).join('\n')));return t})()),
+    h('div',{style:'margin-top:12px'},h('button',{class:'btn pri',onclick:async()=>{const body={};document.querySelectorAll('#ssoform input').forEach(i=>{let v=i.value.trim();
+        if(['auto_provision','require_group','sync_roles'].includes(i.dataset.k))v=v==='true'?true:(v===''?'':false);body[i.dataset.k]=v});
+        body.group_map=document.getElementById('gmap').value.trim();
+        try{await post('/api/sso',body);toast(T("SSO saved"));S.teamAdmin=undefined;load()}catch(e){toast(e.message,true)}}},T("Save SSO"))));
+  const roles=h('div',{class:'card',style:'margin-top:14px'},h('h2',{style:'margin-bottom:6px'},T("What each role can do")),
+    h('table',{},h('tbody',{},[[T("Viewer"),T("See everything: findings, lineage, pipelines, audit.")],[T("Engineer"),T("Everything a viewer can + acknowledge, false positive, assign, comment, create/validate/approve/apply fixes, run checks and diffs.")],
+      ['Admin',T("Everything + settings, policies and team management.")]].map(([a,b])=>h('tr',{},h('td',{},h('b',{},a)),h('td',{style:'color:var(--mut)'},b))))),
+    h('p',{style:'color:var(--faint);font-size:12.5px;margin:10px 0 0'},T("Whoever creates a fix cannot approve it (separation of duties). Each action is in the Audit log with the name of who did it.")));
+  return h('div',{},header(T("Team"),T("People with access and what each one can do.")),
+    h('div',{class:'card',style:'padding:6px 10px'},users.length?h('table',{},h('thead',{},h('tr',{},[T("Name"),T("Role"),T("State"),'MFA',T("Token expires"),T("Last access"),''].map(t=>h('th',{},t)))),h('tbody',{},rows)):h('div',{class:'empty'},h('span',{class:'spin'}))),
+    add,has('project_roles')?projRoles:null,has('project_roles')?scopeCard:null,has('sso')?ssoCard:null,roles)}
+function expiryCell(t){if(!t)return h('span',{style:'color:var(--faint)'},T("never"));
+  const d=Math.ceil((t-Date.now()/1000)/86400);
+  return d<0?h('span',{class:'pill failed'},T("expired")):h('span',{class:'pill '+(d<=7?'pending':'success')},d===0?T("today"):T("in {n} d",{n:d}))}
+function recoveryModal(codes,after){const txt=codes.join('\n');
+  const m=h('div',{class:'modal',role:'dialog','aria-modal':'true'},h('div',{},h('h2',{},T("Recovery codes")),
+    h('p',{class:'sub',style:'margin:8px 0'},T("Each code works once and replaces the app if you lose your phone. Keep them in a password manager: they will not be shown again.")),
+    h('pre',{style:'padding:10px;background:var(--panel2);border-radius:8px;user-select:all;columns:2'},txt),
+    h('div',{style:'display:flex;gap:8px;justify-content:flex-end;margin-top:14px'},
+      h('button',{class:'btn',onclick:()=>{try{navigator.clipboard.writeText(txt);toast(T("Copied"))}catch(e){toast(T("Select and copy by hand"),true)}}},T("Copy")),
+      h('button',{class:'btn pri',onclick:()=>{m.remove();if(after)after()}},T("I saved the codes")))));document.body.append(m)}
+function tokenModal(name,token){const m=h('div',{class:'modal',role:'dialog','aria-modal':'true'},h('div',{},h('h2',{},T("Token for ")+name),
+    h('p',{class:'sub',style:'margin:8px 0'},T("Copy it now and send it to the person through a secure channel. It will not be shown again.")),
+    h('pre',{style:'padding:10px;background:var(--panel2);border-radius:8px;user-select:all'},token),
+    h('div',{style:'display:flex;justify-content:flex-end;margin-top:14px'},h('button',{class:'btn pri',onclick:()=>m.remove()},T("I copied it")))));document.body.append(m)}
+
+
+function mfaDialog(){
+  if(S.me.user.mfa){const code=h('input',{type:'text',placeholder:T("Current code"),maxlength:'6',style:'width:100%'});
+    const m=h('div',{class:'modal',role:'dialog','aria-modal':'true',onclick:e=>{if(e.target===m)m.remove()}},h('div',{},h('h2',{},T("Two-step verification on")),
+      h('p',{class:'sub',style:'margin:8px 0'},T("To turn it off or generate new recovery codes (the old ones stop working), enter the current authenticator code.")),code,
+      h('div',{style:'display:flex;gap:8px;justify-content:flex-end;margin-top:14px'},h('button',{class:'btn',onclick:()=>m.remove()},T("Close")),
+        h('button',{class:'btn',onclick:async()=>{try{const r=await post('/api/mfa',{action:'recovery',code:code.value});m.remove();recoveryModal(r.recovery_codes)}catch(e){toast(e.message,true)}}},T("Generate new codes")),
+        h('button',{class:'btn danger',onclick:async()=>{try{await post('/api/mfa',{action:'disable',code:code.value});m.remove();S.me=null;await load();toast(T("MFA disabled"))}catch(e){toast(e.message,true)}}},T("Disable")))));
+    document.body.append(m);return}
+  post('/api/mfa',{action:'begin'}).then(r=>{const code=h('input',{type:'text',placeholder:T("6-digit code"),maxlength:'6',style:'width:100%;margin-top:10px'});
+    const m=h('div',{class:'modal',role:'dialog','aria-modal':'true'},h('div',{},h('h2',{},T("Turn on two-step verification")),
+      h('p',{class:'sub',style:'margin:8px 0'},T("In the authenticator app (Google Authenticator, Authy, 1Password…) add a manual account with the key below, then enter the generated code.")),
+      h('pre',{style:'padding:10px;background:var(--panel2);border-radius:8px;user-select:all'},r.secret),code,
+      h('div',{style:'display:flex;gap:8px;justify-content:flex-end;margin-top:14px'},h('button',{class:'btn',onclick:()=>m.remove()},T("Cancel")),
+        h('button',{class:'btn pri',onclick:async()=>{try{const r=await post('/api/mfa',{action:'confirm',code:code.value});m.remove();S.me=null;await load();recoveryModal(r.recovery_codes||[],()=>toast(T("MFA on: use the code at your next login")))}catch(e){toast(e.message,true)}}},T("Confirm")))));
+    document.body.append(m)}).catch(e=>toast(e.message,true))}
+
+
+/* ---------- integrations ---------- */
+function integrationsPage(){const st=S.integ;
+  if(st===undefined){S.integ=null;api('/api/integrations').then(r=>{S.integ=r;render()}).catch(e=>{S.integ={groups:[],error:e.message};render()})}
+  if(!st)return h('div',{},header(T("Integrations"),T("Everything IntentFlow reads and sends, and whether it works.")),h('div',{class:'card empty'},h('span',{class:'spin'})));
+  if(st.error)return h('div',{},header(T("Integrations"),''),empty(T("Could not load"),st.error));
+  const pill=c=>h('span',{class:'pill '+({ok:'success',warn:'pending'}[c.state]||'')},{ok:T("live"),warn:T("attention")}[c.state]||'');
+  const goCfg=()=>{location.hash='#/config'};
+  const all=st.groups.flatMap(g=>g.cards.map(c=>({...c,group:g.name})));
+  const active=all.filter(c=>c.configured),off=all.filter(c=>!c.configured);
+  const grid=cards=>h('div',{style:'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px'},cards.map(c=>
+    h('div',{class:'card stripe '+(c.state==='warn'?'medium':'low'),style:'padding:12px 14px'},
+      h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:8px'},h('b',{},c.name),pill(c)),
+      h('div',{style:'color:var(--faint);font-size:11.5px;margin-top:2px'},c.group),
+      h('div',{style:'color:var(--mut);font-size:13px;margin-top:6px'},c.summary),
+      c.state==='warn'?h('div',{style:'margin-top:8px'},h('button',{class:'btn sm',onclick:goCfg},T("Adjust"))):null)));
+  const groups=[...new Set(off.map(c=>c.group))];
+  const avail=groups.map(g=>h('div',{style:'margin-top:10px'},h('div',{style:'font-weight:600;font-size:12.5px;color:var(--mut);margin-bottom:6px'},g),
+    h('div',{style:'display:flex;flex-wrap:wrap;gap:6px'},off.filter(c=>c.group===g).map(c=>
+      h('button',{class:'btn sm',title:c.summary+(c.keys.length?' — configure: '+c.keys.join(', '):''),onclick:goCfg},'+ '+c.name)))));
+  return h('div',{},header(T("Integrations"),T("{on} of {total} on",{on:st.configured,total:st.total})+(st.warnings?T(" · {n} need attention",{n:st.warnings}):'')+'.',
+      h('button',{class:'btn',onclick:()=>{S.integ=undefined;render()}},T("Refresh"))),
+    h('h2',{style:'margin:18px 0 8px'},T("Active")),active.length?grid(active):empty(T("No integration on yet"),T("Pick one below and fill it in Settings.")),
+    h('div',{class:'card',style:'margin-top:18px'},h('h2',{style:'margin:0 0 2px'},T("Available to turn on")),
+      h('p',{class:'sub',style:'margin:0'},T("Click to open Settings; hover to see the keys of each one.")),...avail))}
+
+/* ---------- boot ---------- */
+$('#runbtn').addEventListener('click',()=>act(T("Check started"),()=>post('/api/run/check')));
+function route(){const v=(location.hash.replace('#/','')||'overview');S.view=VIEWS.some(x=>x[0]===v)?v:'overview';if(S.data)render()}
+window.addEventListener('hashchange',route);
+route();load();setInterval(load,5000);
+</script></body></html>

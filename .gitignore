@@ -1,0 +1,34 @@
+.venv/
+__pycache__/
+*.egg-info/
+.intentflow.db
+.pytest_cache/
+examples/dbt_shop/target/
+examples/dbt_shop/logs/
+
+# Estado e segredos locais
+*.db
+*.db-wal
+*.db-shm
+*.db.key
+*.duckdb
+*.duckdb.wal
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Ambientes, caches e artefatos gerados
+.bench/
+.demo/
+.ruff_cache/
+build/
+dist/
+**/.cache/
+**/target/
+**/logs/
+
+# Journal e temporários de alteração de código
+.intentflow-transactions/
+.intentflow-*.tmp

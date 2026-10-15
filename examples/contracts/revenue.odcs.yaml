@@ -1,0 +1,14 @@
+apiVersion: v3.0.0
+kind: DataContract
+id: revenue-by-country
+version: 1.0.0
+status: active
+schema:
+  - name: revenue_by_country
+    properties:
+      - name: country
+        logicalType: string
+        required: true
+        unique: true
+      - name: revenue
+        physicalType: DECIMAL(12,2)
