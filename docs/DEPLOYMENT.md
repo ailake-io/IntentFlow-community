@@ -43,6 +43,8 @@ intentflow --store ... user add ana  --role viewer
 
 Automatic refusals: listening outside loopback **without users**, or **without HTTPS/`--behind-proxy`**.
 Behind a proxy, set the public host in `INTENTFLOW_ALLOWED_HOSTS=intentflow.example.com`.
+The UI caps concurrent request handlers at 128 by default; set `INTENTFLOW_UI_MAX_WORKERS` to a value from 1 to 1024 to tune it.
+Excess connections are closed. Keep connection and rate limits enabled at the reverse proxy as well. Token login in `/?token=...` is disabled; use the login form.
 
 ## Operation
 

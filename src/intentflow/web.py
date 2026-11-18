@@ -17,8 +17,40 @@ from .store import Store
 from .http_utils import RequestError, read_body
 
 PAGE_FILE = Path(__file__).parent / "web.html"
-ThreadingHTTPServer.request_queue_size = 256      # the default (5) drops connections when many people arrive together
 DEFAULT_PROJECT = "main"
+ThreadingHTTPServer.request_queue_size = 256      # preserve the larger accept backlog for embedded/test servers too
+
+
+class BoundedThreadingHTTPServer(ThreadingHTTPServer):
+    """Thread-per-request HTTP server with a hard cap on concurrent handlers."""
+
+    daemon_threads = True
+    request_queue_size = 256
+
+    def __init__(self, server_address, RequestHandlerClass, max_workers: int = 128):
+        if not 1 <= max_workers <= 1024:
+            raise ValueError("max_workers must be between 1 and 1024")
+        self._request_slots = threading.BoundedSemaphore(max_workers)
+        super().__init__(server_address, RequestHandlerClass)
+
+    def process_request(self, request, client_address):
+        # Close excess connections instead of spawning unbounded threads or blocking the accept loop.
+        if not self._request_slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        worker = threading.Thread(target=self.process_request_thread, args=(request, client_address), daemon=True)
+        try:
+            worker.start()
+        except Exception:
+            self._request_slots.release()
+            self.handle_error(request, client_address)
+            self.shutdown_request(request)
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._request_slots.release()
 
 
 class _Handled(Exception):
@@ -224,14 +256,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             try:
                 if extensions.first("web_get", self, prim, path, q):
                     return
-                if path == "/" and "token" in q:          # legacy shortcut: set the session from a token and redirect
-                    t = q["token"]
-                    usr = prim.user_by_token(t) if prim.has_users() else None
-                    if usr and not usr.get("mfa"):
-                        return self._send(302, "", cookies=[self.session_cookie(prim.create_session(usr["name"], "token"))], location="/")
-                    if not prim.has_users() and legacy and t == legacy:
-                        return self._send(302, "", cookies=[self.session_cookie(t)], location="/")
-                    return self._send(401, tr("invalid token"), "text/plain")
+                if path == "/" and "token" in q:
+                    return self._send(401, tr("URL token login is disabled; use the login form"), "text/plain")
                 if path == "/":
                     return self._send(200, self._page(q), "text/html")
                 if path == "/api/i18n":
@@ -554,7 +580,7 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             who = self._need(prim, need)
             st = self._data(prim, who)
             actor = who["name"]
-            frec = next((x for x in st.findings(None) if x["id"] == fid), None)
+            frec = st.finding(fid)
             if not scope_ok(who, self._project(), frec, auth.role_in(who, self._project())):
                 return self._json(403, {"error": tr("this finding is outside your scope (allowed folders/models)")})
             if act == "ack":
@@ -594,7 +620,14 @@ def build_server(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls
         except (OSError, ssl.SSLError) as e:      # e.g. key mode 600 owned by another uid inside a container
             raise SystemExit(tr("refused: cannot load the TLS certificate/key ({err}); the files must be readable by the user running the UI",
                                 err=e)) from None
-    srv = ThreadingHTTPServer((host, port), make_handler(store_path))
+    try:
+        max_workers = int(os.environ.get("INTENTFLOW_UI_MAX_WORKERS", "128"))
+    except ValueError:
+        raise SystemExit(tr("INTENTFLOW_UI_MAX_WORKERS must be an integer between 1 and 1024")) from None
+    try:
+        srv = BoundedThreadingHTTPServer((host, port), make_handler(store_path), max_workers=max_workers)
+    except ValueError:
+        raise SystemExit(tr("INTENTFLOW_UI_MAX_WORKERS must be an integer between 1 and 1024")) from None
     if ctx:
         srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
         srv.scheme = "https"

@@ -36,7 +36,7 @@ def test_jwt_login_and_runs_against_real_airflow3():
 
 def test_wrong_password_gives_clear_error(monkeypatch):
     monkeypatch.setenv("AIRFLOW_PASSWORD", "errada")
-    with pytest.raises(RuntimeError, match="login no Airflow 3 falhou"):
+    with pytest.raises(RuntimeError, match="Airflow 3 login failed"):
         AirflowClient(URL, "v2").runs()
 
 

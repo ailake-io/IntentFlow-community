@@ -43,6 +43,8 @@ intentflow --store ... user add ana  --role viewer
 
 Recusas automáticas: escutar fora do loopback **sem usuários**, ou **sem HTTPS/`--behind-proxy`**.
 Atrás de proxy, informe o host público em `INTENTFLOW_ALLOWED_HOSTS=intentflow.exemplo.com`.
+O limite padrão é de 128 requisições simultâneas; configure `INTENTFLOW_UI_MAX_WORKERS` entre 1 e 1024 para ajustá-lo.
+Conexões acima do limite são encerradas. Mantenha também limites de conexão e taxa no proxy reverso. O login por token em `/?token=...` foi desativado; use o formulário.
 
 ## Operação
 

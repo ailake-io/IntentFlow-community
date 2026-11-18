@@ -804,6 +804,8 @@
  "invalid role": "papel inválido",
  "invalid role (viewer, engineer, admin)": "papel inválido (viewer, engineer, admin)",
  "invalid token": "token inválido",
+ "URL token login is disabled; use the login form": "O login por token na URL foi desativado; use o formulário de login",
+ "INTENTFLOW_UI_MAX_WORKERS must be an integer between 1 and 1024": "INTENTFLOW_UI_MAX_WORKERS deve ser um número inteiro entre 1 e 1024",
  "is warning": "em aviso",
  "job '{job}' without an application name": "job '{job}' sem nome de aplicação",
  "job '{job}': invalid SQL for the '{dialect}' dialect": "job '{job}': SQL inválido para o dialeto '{dialect}'",

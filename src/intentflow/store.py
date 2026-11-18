@@ -411,15 +411,39 @@ class Store:
              "left join (select finding_id, count(*) as note_count from notes group by finding_id) n "
              "on n.finding_id=f.id" + (" where f.status=?" if status else ""))
         rows = self.con.execute(q, (status,) if status else ()).fetchall()
-        out = []
-        for r in rows:
-            d = dict(r)
-            d["nodes"], d["evidence"] = json.loads(d["nodes"] or "[]"), json.loads(d["evidence"] or "{}")
-            d["fix"] = json.loads(d["fix"]) if d["fix"] else None
-            out.append(d)
+        out = [self._finding_row(r) for r in rows]
         order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
         out.sort(key=lambda d: (order.get(d["severity"], 9), d["id"]))
         return out
+
+    @staticmethod
+    def _finding_row(row) -> dict:
+        finding = dict(row)
+        finding["nodes"] = json.loads(finding["nodes"] or "[]")
+        finding["evidence"] = json.loads(finding["evidence"] or "{}")
+        finding["fix"] = json.loads(finding["fix"]) if finding["fix"] else None
+        return finding
+
+    def finding(self, finding_id: str) -> dict | None:
+        """Load one finding and its note count without materializing the full findings list."""
+        row = self.con.execute(
+            "select f.*, (select count(*) from notes n where n.finding_id=f.id) as notes "
+            "from findings f where f.id=?", (finding_id,)
+        ).fetchone()
+        return self._finding_row(row) if row else None
+
+    def finding_by_prefix(self, prefix: str) -> dict | None:
+        """Resolve a CLI-friendly ID prefix, retaining the same severity/ID tie-break as findings()."""
+        if not prefix:
+            return None
+        row = self.con.execute(
+            "select f.*, (select count(*) from notes n where n.finding_id=f.id) as notes "
+            "from findings f where substr(f.id, 1, ?) = ? "
+            "order by case f.severity when 'critical' then 0 when 'high' then 1 "
+            "when 'medium' then 2 when 'low' then 3 when 'info' then 4 else 9 end, f.id limit 1",
+            (len(prefix), prefix)
+        ).fetchone()
+        return self._finding_row(row) if row else None
 
     def mark_false_positive(self, finding_id: str, actor: str, reason: str = "") -> None:
         self.con.execute("update findings set status='false_positive', ack_by=?, ack_reason=? where id=?", (actor, reason, finding_id))

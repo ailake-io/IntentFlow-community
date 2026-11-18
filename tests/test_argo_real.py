@@ -18,5 +18,12 @@ def test_argo_real_workflows_are_normalized():
     assert by["it-argo-ok"].url.endswith(by["it-argo-ok"].run_id)
 
 
-def test_wrong_namespace_is_empty_not_an_error():
-    assert ArgoClient(URL, "inexistente").runs() == []
+def test_wrong_namespace_is_empty_or_forbidden_by_server_rbac():
+    # Argo servers scoped to a namespace return 403 for an inaccessible namespace.
+    # A cluster-scoped server may instead return an empty list for a missing one.
+    try:
+        runs = ArgoClient(URL, "inexistente").runs()
+    except RuntimeError as exc:
+        assert "HTTP 403" in str(exc)
+    else:
+        assert runs == []

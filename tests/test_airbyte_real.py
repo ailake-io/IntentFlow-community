@@ -22,5 +22,5 @@ def test_airbyte_real_jobs_with_client_credentials(monkeypatch):
 def test_wrong_client_secret_gives_clear_error(monkeypatch):
     monkeypatch.delenv("AIRBYTE_TOKEN", raising=False)
     monkeypatch.setenv("AIRBYTE_CLIENT_SECRET", "errado")
-    with pytest.raises(RuntimeError, match="login no Airbyte falhou"):
+    with pytest.raises(RuntimeError, match="Airbyte login failed"):
         AirbyteClient(URL).runs()

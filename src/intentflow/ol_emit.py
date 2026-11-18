@@ -43,7 +43,7 @@ def build_events(project, lineage_result, namespace: str = "intentflow", now: fl
             ds = _ds(project, d)
             cols = project.nodes[d].columns
             if cols:
-                ds["facets"] = {"schema": _facet("Schema", "1-1-1", {"fields": [{"name": c.name, "type": c.type or ""} for c in cols.values()]})}
+                ds["facets"] = {"schema": _facet("SchemaDataset", "1-1-1", {"fields": [{"name": c.name, "type": c.type or ""} for c in cols.values()]})}
             ins.append(ds)
         out = _ds(project, uid)
         fields: dict[str, dict] = {}
@@ -54,7 +54,7 @@ def build_events(project, lineage_result, namespace: str = "intentflow", now: fl
             fields[e.dst_col]["inputFields"].append({**src, "field": e.src_col, "transformations": [tr]})
         facets = {}
         if n.columns:
-            facets["schema"] = _facet("Schema", "1-1-1", {"fields": [{"name": c.name, "type": c.type or "", **({"description": c.description} if c.description else {})}
+            facets["schema"] = _facet("SchemaDataset", "1-1-1", {"fields": [{"name": c.name, "type": c.type or "", **({"description": c.description} if c.description else {})}
                                                                        for c in n.columns.values()]})
         if fields:
             facets["columnLineage"] = _facet("ColumnLineageDataset", "1-2-0", {"fields": fields})

@@ -10,7 +10,8 @@ FX = Path(__file__).parent / "fixtures/sqlmesh_shop_export.json"
 
 def _events():
     p = sqlmesh_loader.from_export(json.loads(FX.read_text()))
-    return p, ol_emit.build_events(p, lineage.build(p), now=1_800_000_000)
+    # Marquez's lineage APIs query as of the current time.
+    return p, ol_emit.build_events(p, lineage.build(p))
 
 
 def test_events_have_spec_shape_and_column_lineage():
@@ -21,7 +22,7 @@ def test_events_have_spec_shape_and_column_lineage():
     cl = rev["outputs"][0]["facets"]["columnLineage"]["fields"]
     assert cl["revenue"]["inputFields"][0]["field"] == "amount" and cl["revenue"]["transformationType"] == "TRANSFORMATION"
     assert cl["country"]["transformationType"] == "IDENTITY"
-    assert rev["outputs"][0]["facets"]["schema"]["_schemaURL"].endswith("SchemaDatasetFacet.json") or "Schema" in rev["outputs"][0]["facets"]["schema"]["_schemaURL"]
+    assert rev["outputs"][0]["facets"]["schema"]["_schemaURL"].endswith("SchemaDatasetFacet.json")
     assert [e["run"]["runId"] for e in evs] == [e["run"]["runId"] for e in _events()[1]]             # idempotente
 
 

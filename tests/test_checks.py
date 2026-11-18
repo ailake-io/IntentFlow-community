@@ -244,11 +244,24 @@ def test_drain_is_bounded_even_if_the_client_keeps_sending():
     import intentflow.web as w
     a, b = socket.socketpair()
     stop = threading.Event()
-    threading.Thread(target=lambda: [b.send(b"x" * 1024) or time.sleep(0.001) for _ in iter(stop.is_set, True)], daemon=True).start()
+    def keep_sending():
+        while not stop.is_set():
+            try:
+                b.send(b"x" * 1024)
+            except OSError:
+                return
+            stop.wait(0.001)
+    writer = threading.Thread(target=keep_sending, daemon=True)
+    writer.start()
     cls = w.make_handler("x")
     h = cls.__new__(cls)
     h.connection = a
     t0 = time.monotonic()
-    h._drain()
-    stop.set()
-    assert time.monotonic() - t0 < 2
+    try:
+        h._drain()
+        assert time.monotonic() - t0 < 2
+    finally:
+        stop.set()
+        a.close()
+        b.close()
+        writer.join(timeout=1)

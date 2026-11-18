@@ -40,5 +40,5 @@ def test_mage_runs_against_real_server(monkeypatch):
 def test_wrong_credentials_give_clear_error(monkeypatch):
     monkeypatch.setenv("MAGE_USER", "x@y.z")
     monkeypatch.setenv("MAGE_PASSWORD", "errada")
-    with pytest.raises(RuntimeError, match="login no Mage falhou|recusou"):
+    with pytest.raises(RuntimeError, match="Mage login failed|Mage refused"):
         MageClient(URL).runs()
