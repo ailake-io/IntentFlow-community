@@ -14,18 +14,35 @@ NOT_NULL_TESTS = {"not_null"}
 def contract_checks(ctx: Context):
     if not ctx.contracts or ctx.project is None:
         return []
+    def normalize(name):
+        return ".".join(part.strip('"`[]').lower() for part in name.split("."))
     by_name = {}
     for uid, n in ctx.project.nodes.items():
         if n.resource_type in ("model", "seed", "snapshot"):
-            by_name.setdefault(n.name.lower(), uid)
+            aliases = {n.name, uid}
+            parts = uid.split(".")
+            if len(parts) >= 3 and parts[0] in ("model", "seed", "snapshot"):
+                aliases.add(f"{parts[1]}.{n.name}")
+            if n.relation:
+                aliases.add(n.relation)
+            for alias in aliases:
+                by_name.setdefault(normalize(alias), set()).add(uid)
     out = []
     for c in ctx.contracts:
-        uid = by_name.get(c.name.lower())
-        if not uid:
+        candidates = sorted(by_name.get(normalize(c.name), set()))
+        if not candidates:
             out.append(Finding("CTR001", "high", tr("contract `{name}`: the model does not exist in the project", name=c.name),
                                tr("Declared in {source}; consumers expect a table that is not produced.", source=c.source), [], "pre-merge",
                                {"contract": c.source, "kind": "missing_model"}))
             continue
+        if len(candidates) > 1:
+            if "CTR001" in ctx.required_checks:
+                ctx.failed_checks.add("CTR001")
+            out.append(Finding("CTR001", "high", tr("contract `{name}`: model name is ambiguous", name=c.name),
+                               tr("Qualify the contract model with its package, full dbt id or relation; no arbitrary match is accepted."),
+                               candidates, "pre-merge", {"contract": c.source, "kind": "ambiguous_model", "candidates": candidates}))
+            continue
+        uid = candidates[0]
         n = ctx.project.nodes[uid]
         down = len(ctx.project.downstream(uid))
         have = ctx.project.actual_columns(uid) or n.columns
