@@ -74,3 +74,5 @@ A regressão automatizada com dbt real exercita sete regras com dados válidos e
 Contratos existentes em Data Contract Specification `models:` e ODCS v3 `schema:` podem declarar nomes/tipos, obrigatoriedade, unicidade e PII. Configure `contracts.dir`; CTR001 compara com o catálogo e a aplicação declarada das restrições. Não é um avaliador geral de toda expressão de qualidade ODCS/DCS. Os testes precisam executar e passar; `unique_key` é configuração, não prova executada de unicidade.
 
 Resultados GX/Soda já entram por `dq.results`; Elementary tem a integração existente. Não viram automaticamente regras dbt marcadas ou entradas desse histórico. Para obrigar disponibilidade de contratos, use preflight `--require-check CTR001`. Veja [PREFLIGHT](PREFLIGHT.md) para bloqueios, proveniência na CI e limites restantes.
+
+O modelo do contrato precisa ter correspondência inequívoca. Se vários pacotes definem orders, use sales.orders, model.sales.orders ou a relação física completa. Nome simples ambíguo gera CTR001 high; identidades semânticas pacote/modelo são mais portáveis entre ambientes que schemas físicos.

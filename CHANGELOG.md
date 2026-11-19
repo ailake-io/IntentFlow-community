@@ -9,6 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Native dbt business-rule catalog (`rules` CLI/UI), owners, impact and bounded execution history. BIZ001/BIZ002 expose missing/stale executions and owner gaps.
 
 ### Fixed
+- Reject ambiguous contract model names; accept qualified package/model ids and relations instead of validating an arbitrary same-named model.
 - Treat unknown Soda outcomes as errors instead of passing them.
 - Match logical dbt nodes across environment schemas; select secondary emitted check ids; retain caught query errors during preflight.
 - Link singular/unit test failures to dependencies and owners; configured/composite keys no longer stand in for single-column uniqueness tests in CTR001.

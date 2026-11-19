@@ -53,3 +53,24 @@ def test_incremental_key_and_composite_test_do_not_prove_column_uniqueness():
     assert any(f.evidence["kind"] == "unenforced_unique" for f in run_checks(ctx, only=["CTR001"]))
     node.tests = [{"name": "unique", "column": "order_id", "kwargs": {}}]
     assert not run_checks(ctx, only=["CTR001"])
+
+
+def test_contract_model_name_must_be_unambiguous_and_can_be_qualified():
+    from intentflow.dbt_loader import Col, DbtNode, Project
+    from intentflow.contracts import ModelContract, ColumnRule
+    nodes = {"model.sales.orders": DbtNode("model.sales.orders", "orders", "model", relation='"db"."sales"."orders"', columns={"id": Col("id", "INT")}),
+             "model.finance.orders": DbtNode("model.finance.orders", "orders", "model", relation='"db"."finance"."orders"', columns={"id": Col("id", "VARCHAR")})}
+    contract = ModelContract("orders", {"id": ColumnRule("id", type="integer")})
+    ctx = Context(project=Project(nodes), contracts=[contract])
+    findings = run_checks(ctx, only=["CTR001"])
+    assert len(findings) == 1 and findings[0].evidence["kind"] == "ambiguous_model"
+    assert set(findings[0].nodes) == set(nodes)
+    for name in ("sales.orders", "model.sales.orders", "db.sales.orders"):
+        contract.name = name
+        assert not run_checks(ctx, only=["CTR001"])
+    contract.name = "finance.orders"
+    assert run_checks(ctx, only=["CTR001"])[0].evidence["kind"] == "type_mismatch"
+    contract.name = "orders"
+    ctx.required_checks = {"CTR001"}
+    run_checks(ctx, only=["CTR001"])
+    assert "CTR001" in ctx.failed_checks and "CTR001" not in ctx.completed_checks
