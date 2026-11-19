@@ -4,7 +4,7 @@
 
 States: **tested** = there is an automated test that exercises the check with a positive case (and, where relevant, a negative one).
 
-Preserve the build's `target/run_results.json` before `dbt docs generate`: documentation generation can overwrite it. Restore the build result after generating the catalog so DBTR checks inspect the intended run. In the current implementation DBTR003 accompanies model errors; an isolated test failure can skip descendants without emitting DBTR003.
+Preserve the build's `target/run_results.json` before `dbt docs generate`: documentation generation can overwrite it. Restore the build result after generating the catalog so DBTR checks inspect the intended run. DBTR003 reports skipped models when run_results contains a model or test failure/error; warnings alone do not trigger it.
 
 ## dbt and schema
 

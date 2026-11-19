@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+### Fixed
+- Report DBTR003 for models skipped after a failing or errored dbt test, even when no model execution failed.
+
 ### Changed
 - Document current installation paths, Python CI coverage, image vulnerability findings and local validation limits.
 - Upgrade GitHub Actions to Node 24; distinguish dated test evidence from production readiness.

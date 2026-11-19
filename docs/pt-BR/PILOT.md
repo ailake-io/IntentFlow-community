@@ -9,6 +9,8 @@ Nada aqui altera o projeto nem o warehouse: tudo é leitura, exceto onde dito "c
 
 Para ensaiar sem um pipeline real, o laboratório local `../intentflow-dbt-tests` foi criado nesta máquina (projeto separado, fora deste repositório). Ele oferece `scripts/run_demo.py baseline` e `data-error`; veja seu README. Essa demonstração com dados fictícios não substitui o piloto com um pipeline do usuário. Estado e limites: [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
+Um segundo projeto local, `../intentflow-retail-pilot`, usa o dataset UCI Online Retail completo (541.909 linhas de origem), com originais preservados, regras de quarentena documentadas e cenários controlados de duplicação, volume, preço e quebra de esquema. Ele fica fora deste repositório e não é distribuído nos wheels; veja seu README e reports/REPORT.md na máquina de teste.
+
 ## 0. Pré-requisitos (10 min)
 - Projeto dbt (1.x) que compila: `dbt build && dbt docs generate` (gera `target/manifest.json` **e** `target/catalog.json`; sem o catálogo a linhagem de coluna perde precisão).
 - Python 3.11+: `pip install -e ".[dev]"` (ou instale o wheel de uma release compatível).

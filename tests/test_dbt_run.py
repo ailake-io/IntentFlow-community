@@ -62,3 +62,21 @@ def test_runner_ingests_results_once_and_exposes_summary(failing_run, tmp_path):
     from intentflow import overview
     ov = overview.build(st)
     assert ov["dbt_run"]["command"] == "build" and ov["dbt_run"]["counts"].get("fail")
+
+
+@pytest.mark.parametrize('test_status, expected_skip_finding', [('fail', True), ('error', True), ('warn', False), ('pass', False)])
+def test_skipped_models_after_test_failure_without_model_error(test_status, expected_skip_finding):
+    """dbt build skips descendants after a failed test even when no model has status error."""
+    results = {'results': [
+        {'unique_id': 'test.retail.unique_fact_key', 'status': test_status},
+        {'unique_id': 'model.retail.daily_sales', 'status': 'skipped'},
+        {'unique_id': 'test.retail.unique_daily_day', 'status': 'skipped'},
+    ]}
+    ctx = Context(dbt_results=results)
+    findings = run_checks(ctx, only=['DBTR002'])
+    assert not any(f.check == 'DBTR002' for f in findings)
+    skipped = [f for f in findings if f.check == 'DBTR003']
+    assert bool(skipped) is expected_skip_finding
+    if skipped:
+        assert skipped[0].nodes == ['model.retail.daily_sales']
+    assert {'DBTR002', 'DBTR003'} <= ctx.completed_checks

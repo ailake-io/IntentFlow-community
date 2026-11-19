@@ -9,6 +9,8 @@ Nothing here changes the project or the warehouse: everything is read-only, exce
 
 To rehearse without a real pipeline, a local lab was created on this machine at `../intentflow-dbt-tests` (a separate project outside this repository). It provides `scripts/run_demo.py baseline` and `data-error`; see its README. This demo with fictitious data does not replace a pilot on a user pipeline. Status and limits: [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
+A second local project, `../intentflow-retail-pilot`, uses the full UCI Online Retail dataset (541,909 source rows), with preserved originals, documented quarantine rules and controlled duplication, volume, pricing and schema-regression scenarios. It is separate from this repository and is not distributed in wheels; see its README and reports/REPORT.md on the test machine.
+
 ## 0. Prerequisites (10 min)
 - A dbt (1.x) project that compiles: `dbt build && dbt docs generate` (produces `target/manifest.json` **and** `target/catalog.json`; without
   the catalog column lineage loses precision).
