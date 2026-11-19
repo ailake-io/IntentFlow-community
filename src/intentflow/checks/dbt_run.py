@@ -48,7 +48,8 @@ def failed_models(ctx: Context):
         n = _node(ctx, x["unique_id"])
         out.append(Finding("DBTR002", "high", tr("{model}: run error", model=n.name if n else x["unique_id"]),
                            (x["message"] or "")[:300], [x["unique_id"]], "continuous", {"skipped_downstream": len(skipped)}))
-    if skipped and out:
+    # A failing test can block descendants even when every executed model succeeded.
+    if skipped and any(x["status"] in ("fail", "error") for x in r["results"]):
         out.append(Finding("DBTR003", "medium", tr("{n} model(s) did not run because of an upstream failure", n=len(skipped)),
                            tr("dbt skipped them; their data is out of date."), skipped[:20], "continuous", {}))
     return out

@@ -4,7 +4,7 @@
 
 Estados: **testado** = há teste automatizado que exercita o check com um caso positivo (e, onde relevante, negativo).
 
-Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a geração de documentação pode substituí-lo. Depois de gerar o catálogo, restaure o resultado do build para os checks DBTR analisarem a execução correta. No código atual, DBTR003 acompanha erros de modelos; uma falha isolada de teste pode pular descendentes sem emitir DBTR003.
+Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a geração de documentação pode substituí-lo. Depois de gerar o catálogo, restaure o resultado do build para os checks DBTR analisarem a execução correta. DBTR003 informa modelos pulados quando run_results contém falha/erro de modelo ou teste; avisos isolados não o acionam.
 
 ## dbt e esquema
 

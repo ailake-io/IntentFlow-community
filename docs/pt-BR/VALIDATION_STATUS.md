@@ -41,8 +41,16 @@ O projeto separado `../intentflow-dbt-tests` foi criado nesta máquina, fora dos
 - `data-error`: uma falha de unicidade esperada, três dependentes pulados; IntentFlow detectou DBTR001 adicional.
 - Baseline foi reexecutado ao terminar para restaurar os dados. O script usa `--full-refresh`; não o use em um banco de produção.
 - `dbt docs generate` substituiu `run_results.json` na versão utilizada. O roteiro preserva o resultado do build e o restaura depois da geração do catálogo.
-- No código atual, DBTR003 acompanha erro de modelo. Uma falha isolada de teste pode pular descendentes sem gerar DBTR003; não foi corrigido código para alterar esse comportamento.
+- A primeira rodada do laboratório expôs uma lacuna em DBTR003 após falha de teste. Uma correção Unreleased na develop agora informa esses modelos pulados, além daqueles pulados após erro de modelo.
 
 ## Ainda pendente
 
 Piloto com pipeline e dados reais de usuário; acesso ao canal privado de distribuição; provedores e integrações externas sem conta de teste; tratamento das vulnerabilidades das imagens; verificação no ambiente de produção. O catálogo [INTEGRATIONS](INTEGRATIONS.md) do Community contém resultados de rodadas anteriores, não promete cobertura de todos os serviços a cada execução da suíte.
+
+## Correções Unreleased do piloto com dados reais (develop)
+
+Um projeto local separado, `../intentflow-retail-pilot`, baixa o UCI Online Retail completo (541.909 linhas; CC BY 4.0). Preserva XLSX e hashes e distingue características naturais dos dados de falhas injetadas. A rodada final após as correções concluiu novamente todos os cenários Community, a validação isolada Enterprise pelo navegador, aplicação, rollback byte a byte e reabertura do backup SQLite. O baseline dbt terminou com 16 construções bem-sucedidas, 22 testes aprovados e 4 avisos de qualidade da origem, sem falhas ou pulos. Premissas e medições ficam no README e nos relatórios do laboratório; isso não é um piloto de produção.
+
+- Community: DBTR003 agora informa modelos pulados após falha/erro de teste, mesmo sem modelo com status error. Quatro casos de regressão reproduzem as falhas e descartam falsos alertas por warn/pass. Testes locais relacionados: 28 aprovados.
+- Enterprise: o build isolado usa seleção indireta buildable, evitando testes que referenciam irmãs não construídas. A regressão em container real também verifica que teste inválido dentro do escopo continua sendo recusado. Testes locais de validação/recuperação: 25 aprovados. O escopo é registrado no resultado; testes de irmãs fora dele não são cobertos pelo sandbox.
+- As vulnerabilidades originais da imagem Debian continuam pendentes; essas correções de código não tratam o SO base. As correções do checkout não substituem wheels de releases já publicadas.
