@@ -2,6 +2,8 @@
 
 [Português](pt-BR/ARCHITECTURE.md)
 
+Current validation evidence and remaining work: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 ## Principle
 
 A control layer **next to** the existing tools. It never runs a transformation of its own.

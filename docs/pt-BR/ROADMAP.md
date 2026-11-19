@@ -22,9 +22,13 @@ Como ligar cada serviço de nuvem: [CLOUD_SETUP](CLOUD_SETUP.md).
 | Snowflake, Databricks (SQL e Jobs), Redshift, Fivetran reais | Contas e credenciais do usuário (hoje só simulados) |
 | BigQuery real (`INFORMATION_SCHEMA.JOBS`, custo) | Projeto GCP; emulador cobre leitura/plano/diff |
 | Airbyte Cloud, Slack, GitHub, DataHub/OpenMetadata reais | Contas/tokens; Airbyte OSS, Marquez, Mattermost e SMTP já verificados |
-| dbt Cloud, PagerDuty, Opsgenie, Jira, Teams, GitLab, Bitbucket, Azure DevOps | Conta/token de teste (implementados; só servidor simulado) |
+| dbt Cloud, PagerDuty, Opsgenie, Jira, Teams, Bitbucket, Azure DevOps | Conta/token de teste (implementados; só servidor simulado) |
 | AWS (Glue, Step Functions, Athena, catálogo) e Azure Data Factory | Conta e papel somente leitura (implementados; só emulador/simulado) |
 | Correção assistida por LLM | Modelo e dados autorizados; só vale se superar a regra em casos reais |
+
+GitLab foi exercitado em instância local autohospedada numa rodada anterior; ambientes hospedados de clientes continuam não verificados.
+
+Trabalho técnico prioritário: tratar e reavaliar os CVEs Debian das imagens, automatizar auditoria recorrente de imagens/extras e estender DBTR003 para descendentes pulados após falha de teste. Veja [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
 ## O que falta e é decisão de produto
 
@@ -32,7 +36,7 @@ Já resolvido: usuários, papéis e MFA; SSO/OIDC e papéis por projeto (Enterpr
 ([DEPLOYMENT](DEPLOYMENT.md)); licença open core com o pacote Enterprise separado ([EDITIONS](EDITIONS.md)); inglês como idioma
 principal, com português.
 
-Em aberto: onde roda por padrão (notebook × servidor da equipe × nuvem hospedada); publicar o núcleo a partir de um histórico novo.
+Em aberto: onde roda por padrão (notebook × servidor da equipe × nuvem hospedada); manter releases e distribuição para clientes (o repositório público do núcleo já existe).
 
 ## Ainda não implementado (sem bloqueio externo)
 

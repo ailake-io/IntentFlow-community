@@ -2,6 +2,8 @@
 
 [English](../PILOT_OFFER.md)
 
+Estado atual de validação e pendências: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 Material comercial do piloto pago. O roteiro técnico, passo a passo, está em [PILOT](PILOT.md).
 
 ## Proposta (1 página)

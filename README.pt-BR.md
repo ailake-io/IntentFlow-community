@@ -1,5 +1,7 @@
 # IntentFlow
 
+Estado verificado, resultados de testes, auditoria de imagens e pendências: [VALIDATION_STATUS](docs/pt-BR/VALIDATION_STATUS.md).
+
 [English](README.md)
 
 **Um lugar só para os problemas de pipelines de dados — e para pegá-los antes de chegarem à produção.**
@@ -35,6 +37,8 @@ O núcleo é open source (Apache-2.0). SSO, governança por projeto, correções
 
 Catálogo completo: [docs/CHECKS.md](docs/pt-BR/CHECKS.md).
 
+Preparação completa: [INSTALLATION](docs/pt-BR/INSTALLATION.md). Os comandos abaixo pressupõem Bash/Linux e venv ativado. Para achados de execução dbt, preserve run_results do build antes de gerar docs, conforme [CHECKS](docs/pt-BR/CHECKS.md).
+
 ## Uso (CLI)
 
 ```bash
@@ -42,6 +46,7 @@ Catálogo completo: [docs/CHECKS.md](docs/pt-BR/CHECKS.md).
 python -m venv .venv && .venv/bin/python -m pip install /caminho/intentflow-*.whl
 # ou deste checkout do código-fonte:
 python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
+source .venv/bin/activate
 
 # configuração única (no armazém; credenciais de conexão por variável de ambiente)
 intentflow config set dbt.target projeto/target
@@ -88,7 +93,7 @@ aplicada), sugestões por IA, SSO e papéis por projeto.
 
 ```bash
 dbt build && dbt docs generate
-intentflow lineage-verify --target target --duckdb <arquivo.duckdb> --package <seu_pacote>
+intentflow lineage-verify --target target --duckdb warehouse.duckdb --package meu_pacote
 ```
 Perturba os dados de origem, reconstrói os modelos e compara com a linhagem estática (precisão, recall, o que a dependência indireta explica).
 Em base grande: `--sample-rows 1000` (reduz cada origem na **cópia** temporária, por hash da chave) e `--source NOME[.coluna]` (limita as origens).

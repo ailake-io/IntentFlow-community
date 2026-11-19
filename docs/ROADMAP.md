@@ -26,16 +26,20 @@ How to connect each cloud service: [CLOUD_SETUP](CLOUD_SETUP.md).
 | Real Snowflake, Databricks (SQL and Jobs), Redshift, Fivetran | User accounts and credentials (today only simulated) |
 | Real BigQuery (`INFORMATION_SCHEMA.JOBS`, cost) | GCP project; the emulator covers reads/plan/diff |
 | Real Airbyte Cloud, Slack, GitHub, DataHub/OpenMetadata | Accounts/tokens; Airbyte OSS, Marquez, Mattermost and SMTP already verified |
-| dbt Cloud, PagerDuty, Opsgenie, Jira, Teams, GitLab, Bitbucket, Azure DevOps | Test account/token (implemented; simulated server only) |
+| dbt Cloud, PagerDuty, Opsgenie, Jira, Teams, Bitbucket, Azure DevOps | Test account/token (implemented; simulated server only) |
 | AWS (Glue, Step Functions, Athena, catalog) and Azure Data Factory | Account and read-only role (implemented; emulator/simulated only) |
 | LLM-assisted fixes (Enterprise) | Authorized model and data; only worth it if it beats the rules on real cases |
+
+GitLab was exercised on a local self-hosted instance in an earlier round; hosted customer environments remain unverified.
+
+Immediate engineering work: remediate and reassess the Debian image CVEs, automate recurring image/extra audits, and extend DBTR003 to cover descendants skipped after a failing test. See [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
 ## Product decisions still open
 
 Already settled: team users, roles, MFA; SSO/OIDC and per-project roles (Enterprise); built-in HTTPS (`--tls-cert`) or behind a proxy
 ([DEPLOYMENT](DEPLOYMENT.md)); open core license ([EDITIONS](EDITIONS.md)); English first with Portuguese.
 
-Open: where it runs by default (notebook × team server × hosted cloud); publishing the core from a fresh history.
+Open: where it runs by default (notebook × team server × hosted cloud); maintaining releases and customer distribution (the public core repository already exists).
 
 ## Not implemented yet (no external blocker)
 

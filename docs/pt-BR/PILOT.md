@@ -7,9 +7,11 @@ O que já foi provado (projetos públicos) é o *motor*; o que falta provar é *
 
 Nada aqui altera o projeto nem o warehouse: tudo é leitura, exceto onde dito "cópia".
 
+Para ensaiar sem um pipeline real, o laboratório local `../intentflow-dbt-tests` foi criado nesta máquina (projeto separado, fora deste repositório). Ele oferece `scripts/run_demo.py baseline` e `data-error`; veja seu README. Essa demonstração com dados fictícios não substitui o piloto com um pipeline do usuário. Estado e limites: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 ## 0. Pré-requisitos (10 min)
 - Projeto dbt (1.x) que compila: `dbt build && dbt docs generate` (gera `target/manifest.json` **e** `target/catalog.json`; sem o catálogo a linhagem de coluna perde precisão).
-- Python 3.11+: `pip install -e ".[dev]"` (ou `pip install intentflow` quando publicado).
+- Python 3.11+: `pip install -e ".[dev]"` (ou instale o wheel de uma release compatível).
 - Opcional: DuckDB/PostgreSQL de **desenvolvimento** para sondas e diff. Nunca produção sem permissão.
 
 ## 1. Achados (20 min): `check`

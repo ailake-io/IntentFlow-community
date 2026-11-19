@@ -4,6 +4,8 @@
 
 Items marked **(Enterprise)** need IntentFlow Enterprise ([EDITIONS](EDITIONS.md)).
 
+The verification column combines historical connector runs; it is not the result of the latest CI run. Check [VALIDATION_STATUS](VALIDATION_STATUS.md) for dated results, skips and production limitations.
+
 | Integration | Use | Verification |
 |---|---|---|
 | **dbt** (core 1.12) + **DuckDB** | manifest/catalog, sandbox `parse`/`build` validation (Enterprise) | Real projects (`dbt_shop`, `dbt_lab`) in automated tests |
@@ -63,6 +65,8 @@ Items marked **(Enterprise)** need IntentFlow Enterprise ([EDITIONS](EDITIONS.md
 | **BigQuery** | `describe`, plan (dry run), data diff; `resourcesExceeded` failures | **Real emulator** (`goccy/bigquery-emulator`); `INFORMATION_SCHEMA.JOBS` only simulated |
 | **Databricks** (SQL) | `describe`, plan (`EXPLAIN COST`), diff, spill through `system.query.history` | Fake connection; **never a real account** |
 
+Run-state collection tests for Flink, Dagster or Kubernetes do not by themselves verify column-level OpenLineage emitted by those runtimes. The external-job row below has its own narrower verification scope.
+
 ### Jobs without SQL (external jobs)
 
 Column/dataset reads enter the impact (`lineage --impact`, UI) and the checks `OL001` (changed column), `OL002` (ambiguous name, with an alias
@@ -101,6 +105,8 @@ Credentials, always through the environment: `AIRFLOW_USER`/`AIRFLOW_PASSWORD` o
 `PAGERDUTY_ROUTING_KEY`, `OPSGENIE_API_KEY`, `JIRA_USER`/`JIRA_TOKEN`, `TEAMS_URL`. Nothing is written to disk; the store keeps only variable **names**.
 
 ## Turning each integration on
+
+The verification column combines historical connector runs; it is not the result of the latest CI run. Check [VALIDATION_STATUS](VALIDATION_STATUS.md) for dated results, skips and production limitations.
 
 | Integration | How |
 |---|---|

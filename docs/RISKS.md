@@ -2,6 +2,8 @@
 
 [Português](pt-BR/RISKS.md)
 
+Current validation evidence and remaining work: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 `intentflow risks --target target [--base ../main/target] [--declared intentflow.lineage.json] [--fail-on-high]` lists, **for your project**,
 what can break today without anyone being told. Each item says what it is, what breaks and how to fix it. This page is the general map.
 

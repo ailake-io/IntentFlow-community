@@ -1,5 +1,7 @@
 # IntentFlow
 
+Verified status, test results, image audit findings and remaining work: [VALIDATION_STATUS](docs/VALIDATION_STATUS.md).
+
 [Português](README.pt-BR.md)
 
 **One place for the problems of your data pipelines — and a way to catch them before they reach production.**
@@ -35,6 +37,8 @@ The core is open source (Apache-2.0). SSO, per-project governance, governed fixe
 
 Full catalog: [docs/CHECKS.md](docs/CHECKS.md).
 
+Full setup: [INSTALLATION](docs/INSTALLATION.md). The commands below assume Bash/Linux and an activated venv. For dbt runtime findings, preserve build run_results before docs generation as described in [CHECKS](docs/CHECKS.md).
+
 ## Usage (CLI)
 
 ```bash
@@ -42,6 +46,7 @@ Full catalog: [docs/CHECKS.md](docs/CHECKS.md).
 python -m venv .venv && .venv/bin/python -m pip install /path/to/intentflow-*.whl
 # or from this source checkout:
 python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
+source .venv/bin/activate
 
 # one-time setup (in the store; connection credentials through environment variables)
 intentflow config set dbt.target project/target
@@ -87,7 +92,7 @@ AI suggestions, SSO and per-project roles.
 
 ```bash
 dbt build && dbt docs generate
-intentflow lineage-verify --target target --duckdb <file.duckdb> --package <your_package>
+intentflow lineage-verify --target target --duckdb warehouse.duckdb --package my_package
 ```
 It perturbs the source data, rebuilds the models and compares with the static lineage (precision, recall, what indirect dependency explains).
 On a large database: `--sample-rows 1000` (shrinks each source in the temporary **copy**, by key hash) and `--source NAME[.column]` (limits the sources).

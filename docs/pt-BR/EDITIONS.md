@@ -36,8 +36,10 @@ diff e segurança (login, MFA, cifragem em repouso) nunca serão pagos. É pago 
 Para instalar como cliente, instale o wheel Enterprise autorizado no mesmo ambiente virtual do servidor:
 
 ```bash
-python -m pip install /caminho/intentflow_enterprise.whl
+python -m pip install /caminho/wheels/intentflow_enterprise-*.whl
 ```
+
+Use o nome real do wheel fornecido para sua release, em um ambiente virtual ativado. Se o núcleo também vier como wheel, instale os dois no mesmo comando.
 
 O instalador resolve `intentflow>=0.3.5` pelo índice configurado, a menos que já exista um núcleo compatível no ambiente. Depois configure a
 licença por `INTENTFLOW_LICENSE_FILE` ou `INTENTFLOW_LICENSE` e reinicie o processo. Para checkouts locais lado a lado, imagens de contêiner e

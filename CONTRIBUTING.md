@@ -1,9 +1,11 @@
 # Contributing
 
 ```bash
-python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
+python -m venv .venv && .venv/bin/pip install -e '.[dev,postgres,secrets,lint,mysql,warehouses]'
 .venv/bin/pytest -q            # integration tests (PostgreSQL, Spark, dbt-ol) are optional; see .github/workflows/ci.yml
 ```
+
+CI uses Python 3.11, 3.13 and 3.14; Spark and dbt-ol have separate Python 3.12 jobs. Optional services are skipped when not configured. See [validation evidence](docs/VALIDATION_STATUS.md) and [installation](docs/INSTALLATION.md).
 
 - One PR per change, with a test that fails without it.
 - No YAML of its own and no execution engine: IntentFlow reads what already exists (see [docs/DECISIONS.md](docs/DECISIONS.md)).

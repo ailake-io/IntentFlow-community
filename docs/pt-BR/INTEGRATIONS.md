@@ -2,6 +2,8 @@
 
 [English](../INTEGRATIONS.md)
 
+A coluna de verificação reúne rodadas históricas de conectores; não é o resultado da última execução da CI. Consulte [VALIDATION_STATUS](VALIDATION_STATUS.md) para resultados datados, testes ignorados e limites para produção.
+
 | Integração | Uso | Verificação |
 |---|---|---|
 | **dbt** (core 1.12) + **DuckDB** | manifest/catalog, validação `parse`/`build` em sandbox | Projetos reais (`dbt_shop`, `dbt_lab`) em teste automatizado |
@@ -52,7 +54,7 @@
 | **Dagster** (GraphQL) | execuções e estado | **Servidor real** local |
 | **Kestra** | execuções, flows; lint de flows | **Servidor real** em contêiner (`INTENTFLOW_KESTRA_URL`) |
 | **OpenLineage** (RunEvent 1.x) | execuções, entradas/saídas, linhagem de coluna; receptor HTTP `/api/v1/lineage` | Eventos conforme a especificação; **Airflow e Spark 3.5.3 reais** (`openlineage-spark` 1.24.2, aresta de coluna recebida) apontados para o receptor |
-| **Jobs sem SQL** (Spark, Python, notebooks) | leituras de coluna/dataset entram no impacto (`lineage --impact`, UI) e nos checks `OL001` (coluna alterada), `OL002` (nome ambíguo, com sugestão de alias; `external_warn_unmatched` na política inclui os ausentes), `OL003` (PII lida; `pii_allowed_jobs` libera) e `OL004` (`appName` padrão do Spark). Fontes: OpenLineage ingerido ou `intentflow.lineage.json` (`{"aliases": {...}, "jobs":[{"name","owner","reads":[{"dataset","columns","feeds":[{"dataset","columns"}]}],"writes"}]}`; sem `columns` = dataset inteiro). **Job que é SQL** traz `"sql"`/`"sql_file"` (+ `dialect`, `writes`, `params`): leituras e `feeds` saem da linhagem de coluna do SQLGlot, incluindo colunas só de JOIN/WHERE/GROUP BY (indiretas, alimentam a saída inteira); aceita scripts com vários comandos (`INSERT ... SELECT`, `CREATE TABLE AS`) e resolve `${v}`, `$v`, `{v}`, `{{ v }}`, `{{ ref() }}`, `{{ source() }}` (sem valor vira `__param_v__` e ainda casa pelo sufixo); `select *` sem esquema cai para leitura do dataset inteiro. **Job Python** traz `"py_file"`: análise estática (AST, sem executar) de PySpark/pandas: segue variáveis, encadeamentos, funções do arquivo e de módulos irmãos importados (dentro do diretório da declaração), SQL montado por concatenação/f-string/`format`, `select/withColumn/withColumnRenamed/drop/filter/join/groupBy.agg` e pandas (`df["c"] = ...`, `merge`, `rename`); filtro e junção viram dependência indireta; o que não entende (`mapInPandas`, `apply`, UDF opaca) marca a saída como conservadora, nunca some Eventos do dbt e do próprio emissor do IntentFlow não viram jobs externos (o projeto já os tem; `openlineage.keep_project_lineage` desliga). Ações do Spark são agrupadas pela aplicação (`parent` facet; outros motores: `openlineage.group_by_parent`). A mudança propaga pelas saídas dos jobs **por coluna** (com `columnLineage`, `feeds` ou SQL; saída que é nó do projeto expõe só os consumidores daquela coluna) e de forma conservadora sem isso; `lineage --coverage` lista os jobs nesse caso | **Real**: Spark (`tests/test_spark_real.py`, job `spark` no CI em `local-cluster`) e `dbt-ol` (`tests/test_dbt_ol_real.py`, job `dbt-ol`). Databricks/EMR/Kubernetes, Flink e Dagster **não testados**. Casamento pelo sufixo mais específico (3/2/1 últimos segmentos de um caminho); `lineage --unmatched` lista o que não casou e sugere; `lineage --alias DATASET=MODELO` grava o alias. PySpark 3.5 não serializa objetos Python no 3.14 |
+| **Jobs sem SQL** (Spark, Python, notebooks) | leituras de coluna/dataset entram no impacto (`lineage --impact`, UI) e nos checks `OL001` (coluna alterada), `OL002` (nome ambíguo, com sugestão de alias; `external_warn_unmatched` na política inclui os ausentes), `OL003` (PII lida; `pii_allowed_jobs` libera) e `OL004` (`appName` padrão do Spark). Fontes: OpenLineage ingerido ou `intentflow.lineage.json` (`{"aliases": {...}, "jobs":[{"name","owner","reads":[{"dataset","columns","feeds":[{"dataset","columns"}]}],"writes"}]}`; sem `columns` = dataset inteiro). **Job que é SQL** traz `"sql"`/`"sql_file"` (+ `dialect`, `writes`, `params`): leituras e `feeds` saem da linhagem de coluna do SQLGlot, incluindo colunas só de JOIN/WHERE/GROUP BY (indiretas, alimentam a saída inteira); aceita scripts com vários comandos (`INSERT ... SELECT`, `CREATE TABLE AS`) e resolve `${v}`, `$v`, `{v}`, `{{ v }}`, `{{ ref() }}`, `{{ source() }}` (sem valor vira `__param_v__` e ainda casa pelo sufixo); `select *` sem esquema cai para leitura do dataset inteiro. **Job Python** traz `"py_file"`: análise estática (AST, sem executar) de PySpark/pandas: segue variáveis, encadeamentos, funções do arquivo e de módulos irmãos importados (dentro do diretório da declaração), SQL montado por concatenação/f-string/`format`, `select/withColumn/withColumnRenamed/drop/filter/join/groupBy.agg` e pandas (`df["c"] = ...`, `merge`, `rename`); filtro e junção viram dependência indireta; o que não entende (`mapInPandas`, `apply`, UDF opaca) marca a saída como conservadora, nunca some. Eventos do dbt e do próprio emissor do IntentFlow não viram jobs externos (o projeto já os tem; `openlineage.keep_project_lineage` desliga). Ações do Spark são agrupadas pela aplicação (`parent` facet; outros motores: `openlineage.group_by_parent`). A mudança propaga pelas saídas dos jobs **por coluna** (com `columnLineage`, `feeds` ou SQL; saída que é nó do projeto expõe só os consumidores daquela coluna) e de forma conservadora sem isso; `lineage --coverage` lista os jobs nesse caso | **Real**: Spark (`tests/test_spark_real.py`, job `spark` no CI em `local-cluster`) e `dbt-ol` (`tests/test_dbt_ol_real.py`, job `dbt-ol`). Databricks/EMR/Kubernetes, Flink e Dagster **não testados**. Casamento pelo sufixo mais específico (3/2/1 últimos segmentos de um caminho); `lineage --unmatched` lista o que não casou e sugere; `lineage --alias DATASET=MODELO` grava o alias. PySpark 3.5 não serializa objetos Python no 3.14 |
 | **Docker / host** | memória, `OOMKilled` | Host real; Docker com saída simulada |
 | **Webhook estilo Slack** | saídas e rotas por dono | **Real no Mattermost** (payload aceito e renderizado); Slack de verdade não testado |
 | **E-mail (SMTP)** | STARTTLS oportunista, `ssl`, login `SMTP_USER`/`SMTP_PASSWORD`, verificação de certificado | **Real no Mailpit** (texto puro, STARTTLS com certificado autoassinado, login) |
@@ -64,7 +66,9 @@
 
 Credenciais, sempre por ambiente: `AIRFLOW_USER`/`AIRFLOW_PASSWORD` ou `AIRFLOW_TOKEN`, `KESTRA_USER`/`KESTRA_PASSWORD`,
 `INTENTFLOW_PG_URL`, `AIRBYTE_TOKEN`, `FIVETRAN_API_KEY`/`FIVETRAN_API_SECRET`, `DATABRICKS_TOKEN`, `KAFKA_USER`/`KAFKA_PASSWORD`, `SCHEMA_REGISTRY_USER`/`SCHEMA_REGISTRY_PASSWORD`, `OPENLINEAGE_API_KEY`, `TRINO_*`, `CLICKHOUSE_*`, `REDSHIFT_URL`, `ARGO_TOKEN`/`ARGO_NAMESPACE`, `MAGE_API_KEY`/`MAGE_USER`/`MAGE_PASSWORD`/`MAGE_TOKEN`, `DBT_CLOUD_TOKEN`, `GITLAB_TOKEN`, `BITBUCKET_TOKEN`, `AZURE_DEVOPS_PAT`, `PAGERDUTY_ROUTING_KEY`, `OPSGENIE_API_KEY`, `JIRA_USER`/`JIRA_TOKEN`, `TEAMS_URL`, `RUNDECK_TOKEN`, `MLFLOW_TRACKING_TOKEN`, `MYSQL_*`, `MSSQL_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, `SNOWFLAKE_*`, `BIGQUERY_PROJECT` + credenciais do Google, `DATABRICKS_*`, `GITHUB_TOKEN`, `SMTP_HOST`/`SMTP_PORT`,
-`INTENTFLOW_UI_TOKEN`. Nada é gravado em disco; o armazém guarda só **nomes** de variáveis.
+`INTENTFLOW_UI_TOKEN`. As configurações dos conectores guardam **nomes** de variáveis. Segredos de MFA/SSO e chaves de IA inseridas pela UI podem ser persistidos cifrados no armazém; veja [DEPLOYMENT](DEPLOYMENT.md).
+
+Testes de coleta de estado em Flink, Dagster ou Kubernetes não verificam, por si só, OpenLineage de coluna emitido por esses runtimes. A linha de jobs externos tem escopo de verificação próprio e mais restrito.
 
 ## Ligar cada integração
 
@@ -93,7 +97,7 @@ Credenciais, sempre por ambiente: `AIRFLOW_USER`/`AIRFLOW_PASSWORD` ou `AIRFLOW_
 
 Para ligar os que só existem em nuvem, veja [CLOUD_SETUP.md](CLOUD_SETUP.md).
 
-Não entraram: Evidently/whylogs/Pandera, Unity Catalog/Glue/Hive Metastore, Athena, Oracle, Dataform/Coalesce, BI nativo (Looker/Tableau/Power BI) — sem demanda clara ou sem ambiente para verificar.
+Não entraram: Evidently/whylogs/Pandera, Hive Metastore, Oracle, Dataform/Coalesce, BI nativo (Looker/Tableau/Power BI) — sem demanda clara ou sem ambiente para verificar.
 
 Meltano não entrou: não há API de servidor para ler execuções (o estado fica no banco de sistema do projeto).
 
@@ -112,7 +116,7 @@ Meltano não entrou: não há API de servidor para ler execuções (o estado fic
 
 ## Fora do escopo atual
 
-SQLMesh, Redshift, Fabric, Spark direto, e qualquer escrita em warehouse. Correção por LLM.
+Execução gerenciada de pipelines, Microsoft Fabric nativo e escrita automática em warehouses. SQLMesh, Redshift e Spark já têm integrações de leitura com os limites descritos na tabela. Correções por LLM fazem parte do Enterprise.
 
 ## Subir o Airflow com OpenLineage para o receptor (local)
 
