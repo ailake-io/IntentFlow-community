@@ -2,6 +2,8 @@
 
 [Português](pt-BR/PILOT_OFFER.md)
 
+Current validation evidence and remaining work: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 Sales material for the paid pilot. The technical step-by-step guide is [PILOT](PILOT.md).
 
 ## Proposal (1 page)

@@ -14,7 +14,7 @@ Há dois modos, escolhidos automaticamente:
 | Papel | Pode |
 |---|---|
 | `viewer` (leitor) | Ver achados, linhagem, pipelines, cluster, correções e auditoria |
-| `engineer` (engenheiro) | Tudo do leitor + reconhecer, marcar falso positivo, atribuir, comentar, criar/validar/aprovar/aplicar/reverter correções, rodar verificações e diff de dados |
+| `engineer` (engenheiro) | Tudo do leitor + reconhecer, marcar falso positivo, atribuir, comentar, rodar verificações e diff de dados; com Enterprise, criar/validar/aprovar/aplicar/reverter correções |
 | `admin` | Tudo + configuração, políticas e gestão da equipe |
 
 Configurações que fazem o servidor alcançar hosts, ler caminhos ou usar segredos do ambiente (`notify.sinks`, `*.url`, `*.host`, `*_env`,
@@ -87,7 +87,7 @@ Sem a biblioteca ou sem chave, a gravação de novos segredos em armazéns persi
 legíveis para migração; não são cifrados retroativamente sem `secrets migrate`. O armazém `:memory:` pode manter valores em memória sem cifragem.
 
 - **Chave:** `INTENTFLOW_SECRET_KEY` (texto longo; recomendado em produção e **obrigatório com PostgreSQL**), ou, em SQLite em arquivo, o
-  arquivo `<armazém>.key` (modo 600, criado na primeira gravação). **Guarde a chave junto do backup**: sem ela os segredos não se recuperam
+  arquivo `<armazém>.key` (modo 600, criado na inicialização do armazém em arquivo). **Guarde a chave junto do backup**: sem ela os segredos não se recuperam
   (as pessoas refazem o MFA/SSO; tokens de acesso e códigos de recuperação são hashes e não dependem dela).
 - **Armazéns antigos:** `intentflow secrets migrate` cifra o que estava em texto (idempotente). `intentflow secrets status` mostra o estado.
 - **Troca de chave:** defina a nova, rode `secrets status` (falha com "chave diferente") e peça novo MFA/SSO; não há rotação automática.
@@ -140,13 +140,9 @@ Publique a porta **só atrás de um proxy com TLS** (nginx, Caddy, Traefik).
 A imagem roda como UID/GID **10001**, sem root. Em bind mounts ou volumes antigos, prepare a propriedade/permissão de `/data` para esse usuário;
 não abra permissão global de escrita. O contexto de build exclui bancos locais, chaves, `.env` e diretórios de demonstração.
 A imagem com o lock foi construída em 13/10/2026; `intentflow --help` iniciou em container descartável sem rede e com filesystem
-read-only. A imagem ainda precisa de varredura de CVEs do sistema operacional e verificação da inicialização do servidor antes da publicação.
+read-only. A varredura Trivy de 19/11/2026 encontrou 50 ocorrências HIGH, abrangendo 13 CVEs distintos na base Debian, e nenhuma CRITICAL. Três ocorrências tinham correção indicada; não foram encontradas HIGH/CRITICAL nos pacotes Python. Ainda é necessário tratar os achados e validar a inicialização do servidor no ambiente de destino antes de produção; veja [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
-`uv.lock` inclui os extras opcionais. A auditoria de 13/10/2026 encontrou `oauthlib 3.3.1` vulnerável no extra Databricks; o
-conector `databricks-sql-connector 4.6.0` requer `oauthlib <4.0.0`, enquanto a correção indicada é `4.0.0`. A imagem padrão não
-instala o extra Databricks. Não habilite esse extra em produção até o conector liberar uma versão compatível ou a combinação ser
-atualizada e validada. A auditoria dos extras incluídos na imagem padrão (`secrets` e `postgres`) não encontrou CVEs conhecidas.
-A auditoria não substitui varredura da imagem/base OS nem automação contínua de CVEs.
+`uv.lock` inclui extras opcionais. O lock atual contém `databricks-sql-connector 4.9.0` e `oauthlib 4.0.1`; a restrição antiga `<4.0.0` e a recomendação associada à auditoria de outubro não descrevem mais esse lock. Databricks não entra na imagem padrão. Uma auditoria atual de todos os extras opcionais continua separada da varredura da imagem. A imagem não foi aprovada para produção pelos resultados acima.
 
 ## Verificação em duas etapas (MFA/TOTP)
 

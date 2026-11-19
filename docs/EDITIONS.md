@@ -36,8 +36,10 @@ diff and security (login, MFA, encryption at rest) will never be paid. What serv
 For a customer installation, install the authorized Enterprise wheel into the same virtual environment as the server:
 
 ```bash
-python -m pip install /path/to/intentflow_enterprise.whl
+python -m pip install /path/to/wheels/intentflow_enterprise-*.whl
 ```
+
+Use the real wheel filename supplied for your release, in an activated virtual environment. If the core is also provided as a wheel, install both in the same command.
 
 The installer resolves `intentflow>=0.3.5` from the configured package index unless a compatible core is already installed. Then provide the
 Enterprise license through `INTENTFLOW_LICENSE_FILE` or `INTENTFLOW_LICENSE` and restart the process. For paired source checkouts, container

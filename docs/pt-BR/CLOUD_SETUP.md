@@ -2,14 +2,16 @@
 
 [English](../CLOUD_SETUP.md)
 
-Estes serviços só existem como SaaS ou exigem conta paga. O IntentFlow tem o código para eles, **testado só com respostas simuladas**.
+Estado atual de validação e pendências: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
+Este guia cobre serviços que exigem acesso externo e suas alternativas locais. A verificação varia por integração: respostas simuladas, emuladores reais e instâncias autohospedadas estão distinguidos abaixo; caminhos de contas pagas continuam não verificados onde indicado.
 Este guia diz, para cada um: o que criar, com que permissão mínima, quais variáveis definir, como ligar no IntentFlow e como confirmar que
 funciona. Depois de rodar, **me diga o resultado** (ou abra o teste indicado): é assim que cada item sai de "simulado" para "verificado".
 
 Regras gerais:
 
-- **Credenciais só por variável de ambiente** do processo (`intentflow ui`, `watch`, CI). O armazém guarda URL e *nomes* de variável, nunca o segredo.
-- **Somente leitura.** Crie um usuário/papel dedicado só com leitura; o IntentFlow não escreve em nenhum desses serviços.
+- **Credenciais só por variável de ambiente** do processo (`intentflow ui`, `watch`, CI). As configurações dos conectores guardam URLs e *nomes* de variável. Segredos MFA/SSO e chaves opcionais de IA têm armazenamento cifrado próprio; veja DEPLOYMENT.
+- **Coleta e sondas:** use credenciais de leitura. As saídas de notificação criam comentários/alertas e `openlineage emit` envia metadados; essas operações exigem permissões próprias.
 - **Teste primeiro por CLI** (`intentflow runs`, `intentflow diff`, `intentflow check`), depois pela UI.
 - Nenhum teste automatizado de nuvem roda sem as variáveis; sem elas ele é pulado.
 
@@ -25,7 +27,7 @@ Regras gerais:
 | Fivetran | último sync por conector | simulado | [5](#5-fivetran) |
 | Airbyte Cloud | execuções de sync | **OSS (abctl) real**; Cloud só difere em URL/token, não testado | [6](#6-airbyte-cloud) |
 | dbt Cloud | execuções e artefatos | implementado; **só servidor simulado** | [7](#7-dbt-cloud) |
-| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps | alertas e comentário em PR | implementado; **só servidor simulado** | [8](#8-alertas-pagerduty-teams-jira-gitlab) |
+| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps | alertas e comentário em PR | implementado; **servidores simulados**, GitLab também em instância real local | [8](#8-alertas-pagerduty-teams-jira-gitlab) |
 | DataHub / OpenMetadata / Atlan | catálogo | emissor OpenLineage verificado no Marquez | [9](#9-catálogos) |
 | AWS (Glue, Step Functions, Athena) / Azure Data Factory | orquestração, consulta, catálogo | implementado; **AWS só em emulador**, Azure simulado | [10](#10-aws-e-azure) |
 
@@ -205,7 +207,7 @@ Todos implementados como sinks (campos e variáveis em [DEPLOYMENT](DEPLOYMENT.m
 
 ## 9. Catálogos
 
-`intentflow openlineage emit --url <base> --target <projeto>` envia a linhagem de coluna como OpenLineage. **Verificado no Marquez** (jobs,
+`intentflow openlineage emit --url <base> --target projeto/target` envia a linhagem de coluna como OpenLineage. **Verificado no Marquez** (jobs,
 grafo de datasets e `column-lineage` corretos, atravessando dois saltos).
 
 | Catálogo | Endpoint / como | Estado |
@@ -218,8 +220,8 @@ grafo de datasets e `column-lineage` corretos, atravessando dois saltos).
 **Para testar o DataHub localmente** (≈ 6–8 GB de RAM):
 ```bash
 pip install acryl-datahub && datahub docker quickstart                      # sobe GMS (:8080) e frontend (:9002)
-intentflow openlineage emit --url http://localhost:8080 --target <projeto> --dry-run     # veja os eventos
-intentflow openlineage emit --url http://localhost:8080 --target <projeto>
+intentflow openlineage emit --url http://localhost:8080 --target projeto/target --dry-run     # veja os eventos
+intentflow openlineage emit --url http://localhost:8080 --target projeto/target
 ```
 Se o endpoint responder 404, me diga a versão do DataHub e o caminho do OpenLineage dela.
 

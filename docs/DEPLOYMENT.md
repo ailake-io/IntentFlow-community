@@ -87,7 +87,7 @@ Install `pip install ".[secrets]"` and check `intentflow secrets status`. The Do
 Without the library or a key, writing new secrets to persistent stores is refused. Legacy plain-text secrets stay readable for migration.
 
 - **Key:** `INTENTFLOW_SECRET_KEY` (long text; recommended in production and **required with PostgreSQL**), or, for a SQLite file, the
-  `<store>.key` file (mode 600, created on the first write). **Keep the key with the backup**: without it the secrets cannot be recovered.
+  `<store>.key` file (mode 600, created when the file-backed store initializes). **Keep the key with the backup**: without it the secrets cannot be recovered.
 - **Old stores:** `intentflow secrets migrate` encrypts what was in plain text (idempotent).
 - **Changing the key:** set the new one, run `secrets status` (it fails with "key differs") and ask people to redo MFA/SSO.
 
@@ -133,8 +133,7 @@ docker run -d -p 127.0.0.1:8787:8787 -v if-data:/data intentflow ui --host 0.0.0
 ```
 
 Publish the port **only behind a proxy with TLS** (nginx, Caddy, Traefik). The image runs as UID/GID **10001**, without root. The build context
-excludes local databases, keys, `.env` and demo folders. The image still needs an OS CVE scan before publishing. The Databricks extra pulls a
-vulnerable `oauthlib` (the connector pins `<4.0.0`); the default image does not install it.
+excludes local databases, keys, `.env` and demo folders. The 2026-11-19 Trivy scan found 50 HIGH package occurrences covering 13 distinct CVEs in the Debian base, and no CRITICAL findings. Three occurrences had a fix indicated; no HIGH/CRITICAL Python findings were reported. Remediation and reassessment remain necessary before production; see [VALIDATION_STATUS](VALIDATION_STATUS.md). The current lock contains `databricks-sql-connector 4.9.0` and `oauthlib 4.0.1`; the October warning about the old `<4.0.0` constraint no longer describes this lock. Databricks remains outside the default image. A fresh audit of all optional extras is still separate from the image scan.
 
 ## Two-step verification (MFA/TOTP)
 

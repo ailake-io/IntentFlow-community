@@ -2,6 +2,8 @@
 
 [English](../RISKS.md)
 
+Estado atual de validação e pendências: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 `intentflow risks --target target [--base ../main/target] [--declared intentflow.lineage.json] [--fail-on-high]` lista, **para o seu projeto**,
 o que hoje pode quebrar sem ninguém ser avisado. Cada item traz: o que é, o que quebra e como corrigir. Esta página é o mapa geral.
 

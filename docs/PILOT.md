@@ -7,10 +7,12 @@ What has been proven (public projects) is the *engine*; what is left to prove is
 
 Nothing here changes the project or the warehouse: everything is read-only, except where it says "copy".
 
+To rehearse without a real pipeline, a local lab was created on this machine at `../intentflow-dbt-tests` (a separate project outside this repository). It provides `scripts/run_demo.py baseline` and `data-error`; see its README. This demo with fictitious data does not replace a pilot on a user pipeline. Status and limits: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 ## 0. Prerequisites (10 min)
 - A dbt (1.x) project that compiles: `dbt build && dbt docs generate` (produces `target/manifest.json` **and** `target/catalog.json`; without
   the catalog column lineage loses precision).
-- Python 3.11+: `pip install -e ".[dev]"` (or `pip install intentflow` once published).
+- Python 3.11+: `pip install -e ".[dev]"` (or install a compatible release wheel).
 - Optional: a **development** DuckDB/PostgreSQL for probes and diffs. Never production without permission.
 - Language: English by default; `INTENTFLOW_LANG=pt` for Portuguese.
 

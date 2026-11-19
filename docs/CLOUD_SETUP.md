@@ -2,14 +2,16 @@
 
 [Português](pt-BR/CLOUD_SETUP.md)
 
-These services only exist as SaaS or need a paid account. IntentFlow has the code for them, **tested only with simulated responses**.
+Current validation evidence and remaining work: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
+This guide covers services requiring external access and their local alternatives. Verification varies by integration: simulated responses, real emulators and self-hosted instances are distinguished below; paid-account paths remain unverified where stated.
 For each one this guide says what to create, with which minimum permission, which variables to set, how to turn it on in IntentFlow and how
 to confirm it works. Once you run it, **report the result** (or open the test mentioned): that is how each item moves from "simulated" to "verified".
 
 General rules:
 
-- **Credentials only through environment variables** of the process (`intentflow ui`, `watch`, CI). The store keeps URLs and variable *names*, never the secret.
-- **Read-only.** Create a dedicated user/role with read access only; IntentFlow writes to none of these services.
+- **Credentials only through environment variables** of the process (`intentflow ui`, `watch`, CI). Connector settings keep URLs and variable *names*. MFA/SSO secrets and optional AI keys have separate encrypted storage; see DEPLOYMENT.
+- **Collection and probes:** use read-only credentials. Notification outputs create comments/alerts and `openlineage emit` sends metadata; those operations require separate permissions.
 - **Test with the CLI first** (`intentflow runs`, `intentflow diff`, `intentflow check`), then in the UI.
 - No automated cloud test runs without the variables; without them it is skipped.
 
@@ -25,7 +27,7 @@ General rules:
 | Fivetran | last sync per connector | simulated | [5](#5-fivetran) |
 | Airbyte Cloud | sync runs | **real OSS (abctl)**; Cloud only differs in URL/token, not tested | [6](#6-airbyte-cloud) |
 | dbt Cloud | runs and artifacts | implemented; **simulated server only** | [7](#7-dbt-cloud) |
-| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps (Enterprise) | alerts and PR comments | implemented; **simulated server only** (GitLab also real) | [8](#8-alerts-enterprise) |
+| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps (Enterprise) | alerts and PR comments | implemented; **simulated servers**; GitLab also tested on a real local instance | [8](#8-alerts-enterprise) |
 | DataHub / OpenMetadata / Atlan | catalog | OpenLineage emitter verified on Marquez | [9](#9-catalogs) |
 | AWS (Glue, Step Functions, Athena) / Azure Data Factory | orchestration, queries, catalog | implemented; **AWS on the emulator only**, Azure simulated | [10](#10-aws-and-azure) |
 
@@ -97,7 +99,7 @@ The plan uses a *dry run* (bytes that would be read); the estimated cost shows u
 4. For Jobs: `CAN VIEW` on the desired jobs.
 
 **Variables:** `DATABRICKS_HOST` (without `https://`), `DATABRICKS_HTTP_PATH` (of the SQL warehouse), `DATABRICKS_TOKEN`. `pip install intentflow[databricks]`
-(note: this extra pulls a vulnerable `oauthlib`; see [DEPLOYMENT](DEPLOYMENT.md#container)).
+(the current lock uses connector 4.9.0 and oauthlib 4.0.1; optional-extra audit status is described in [DEPLOYMENT](DEPLOYMENT.md#container)).
 
 **Turn on:**
 ```bash

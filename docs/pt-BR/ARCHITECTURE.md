@@ -2,6 +2,8 @@
 
 [English](../ARCHITECTURE.md)
 
+Estado atual de validação e pendências: [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
 ## Princípio
 
 Camada de controle **ao lado** das ferramentas existentes. Nunca executa transformação própria.
