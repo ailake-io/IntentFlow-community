@@ -13,8 +13,8 @@ jobs:
       matrix:
         python: ["3.11", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -45,8 +45,8 @@ jobs:
       INTENTFLOW_MAILPIT_PLAIN: 127.0.0.1:1025:8025
       INTENTFLOW_SECRET_KEY: ci-only-key-not-a-secret-0123456789abcdef   # a PostgreSQL store requires the key through a variable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
@@ -57,12 +57,12 @@ jobs:
     # Real Spark + openlineage-spark emitting to the receiver (Maven Central, pinned version).
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -78,8 +78,8 @@ jobs:
     # Real dbt-ol (openlineage-dbt) emitting to the receiver; separate venv because openlineage-dbt requires dbt-core < 1.11.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
