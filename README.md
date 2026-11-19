@@ -38,7 +38,9 @@ Full catalog: [docs/CHECKS.md](docs/CHECKS.md).
 ## Usage (CLI)
 
 ```bash
-# from a release wheel (https://github.com/ailake-io/IntentFlow-community/releases) or from source:
+# from a release wheel (https://github.com/ailake-io/IntentFlow-community/releases):
+python -m venv .venv && .venv/bin/python -m pip install /path/to/intentflow-*.whl
+# or from this source checkout:
 python -m venv .venv && .venv/bin/pip install -e '.[dev,secrets]'
 
 # one-time setup (in the store; connection credentials through environment variables)
@@ -62,6 +64,11 @@ intentflow user add maria --role admin             # team mode: token login, rol
 # OpenLineage input (Airflow, Spark, dbt, Flink, Dagster…)
 intentflow openlineage serve --port 5000
 ```
+
+This installs the Community core only. Enterprise is a separate, private extension and requires customer access plus a valid license. Its
+package metadata requires `intentflow>=0.3.5` and `cryptography`; pip installs or reuses those dependencies when they are available from the
+configured package sources. If the Community distribution is provided as a separate wheel, install both wheels together. Enterprise registers
+through the `intentflow.extensions` entry point. See [EDITIONS](docs/EDITIONS.md) for package relationships and installation options.
 
 ### Language
 

@@ -8,7 +8,7 @@ Linhagem e impacto (UI e API), `run_results.json` do dbt, desempenho (cache, 1.0
 SLA/frescor/checks por UI, 13 novos checks, Airflow/Kestra/Prefect/Dagster reais, OpenLineage real do Airflow, dialetos de nuvem
 (fixture), concorrência do armazém, empacotamento, acessibilidade básica.
 
-CI em `.github/workflows/ci.yml` (unit em Python 3.11/3.13 + integração com PostgreSQL e Mailpit), **verde** em `ailake-io/IntentFlow-community`. Escala sintética: 5.000 modelos em 11 s (4 processos), 0,6 s com cache.
+CI em `.github/workflows/ci.yml` (unit em Python 3.11/3.13/3.14 + integração com PostgreSQL e Mailpit), **verde** em `ailake-io/IntentFlow-community`. Escala sintética: 5.000 modelos em 11 s (4 processos), 0,6 s com cache.
 
 Rodada de projetos reais (ver [BENCH_REAL_PROJECT](BENCH_REAL_PROJECT.md)): 2 projetos dbt públicos (ra_data_warehouse, dbt-project-evaluator), 7 bugs de linhagem/checks corrigidos, oráculo dinâmico (recall de impacto 100 % no nível de modelo), linhagem 19× mais rápida e paralela, `data diff` com amostragem, `--sample-rows` no oráculo, linhagem incremental por PR, IA assíncrona na UI com sugestão do dono (DBT003). Ver [CHECKS](CHECKS.md) e [INTEGRATIONS](INTEGRATIONS.md).
 

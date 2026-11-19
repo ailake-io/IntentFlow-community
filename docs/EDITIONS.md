@@ -23,9 +23,26 @@ diff and security (login, MFA, encryption at rest) will never be paid. What serv
 
 - The Enterprise package (`intentflow-enterprise`, private repository) registers itself under the `intentflow.extensions`
   entry point. The core works without it and never imports it.
+- Enterprise declares `intentflow>=0.3.5` and `cryptography` as package dependencies. Installing an authorized Enterprise wheel into the same
+  Python environment installs or reuses the Community core when it is available from the configured package sources; otherwise, install the
+  core and Enterprise wheels together. Enterprise does not bundle a second copy of the core. Its artifacts are not distributed by this public
+  repository. Customers need access to the private package or its approved wheel.
 - The license is an Ed25519-signed token checked offline (`INTENTFLOW_LICENSE` or `INTENTFLOW_LICENSE_FILE`); nothing calls home.
   Without a valid license the extension stays loaded but turns no feature on.
 - `/api/me` reports the active features; the UI hides the Enterprise screens when they are off.
+
+## Installation
+
+For a customer installation, install the authorized Enterprise wheel into the same virtual environment as the server:
+
+```bash
+python -m pip install /path/to/intentflow_enterprise.whl
+```
+
+The installer resolves `intentflow>=0.3.5` from the configured package index unless a compatible core is already installed. Then provide the
+Enterprise license through `INTENTFLOW_LICENSE_FILE` or `INTENTFLOW_LICENSE` and restart the process. For paired source checkouts, container
+images and development setup, follow the [Enterprise installation guide](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/INSTALLATION.md)
+(customer repository access required).
 
 ## Repositories
 

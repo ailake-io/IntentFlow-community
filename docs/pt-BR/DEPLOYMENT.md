@@ -125,6 +125,11 @@ Rotas em `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam
 O `Dockerfile` instala dependências Python a partir de `uv.lock` (`uv sync --locked`); mantenha o lock atualizado junto com
 `pyproject.toml`. As imagens-base de Python e uv estão fixadas por digest no Dockerfile.
 
+Esta imagem contém somente o núcleo Community; ela não instala `intentflow-enterprise`. Os recursos Enterprise exigem um artefato Enterprise
+autorizado instalado no mesmo ambiente Python do núcleo e uma licença válida no runtime. Monte uma imagem específica do cliente que instale o
+artefato autorizado durante o build; não copie a licença para a imagem. O [guia de instalação do Enterprise](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/INSTALLATION.md)
+explica dependências e implantação em contêiner (é necessário acesso ao repositório de clientes).
+
 ```bash
 docker build -t intentflow .
 docker run --rm -v if-data:/data intentflow user add maria --role admin

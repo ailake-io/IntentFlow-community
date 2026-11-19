@@ -9,7 +9,7 @@ SLA/freshness/checks in the UI, Airflow/Kestra/Prefect/Dagster for real, real Op
 store concurrency, packaging, basic accessibility, external jobs (Spark, Python, SQL) in the impact, `intentflow risks`,
 open core split (Apache-2.0 core + Enterprise extension with an offline license), English and Portuguese in CLI, UI and docs.
 
-CI in `.github/workflows/ci.yml` (unit on Python 3.11/3.13, integration with PostgreSQL and Mailpit, real Spark, real `dbt-ol`).
+CI in `.github/workflows/ci.yml` (unit on Python 3.11/3.13/3.14, integration with PostgreSQL and Mailpit, real Spark, real `dbt-ol`).
 Synthetic scale: 5,000 models in 11 s (4 processes), 0.6 s cached.
 
 Round of real projects (see [BENCH_REAL_PROJECT](BENCH_REAL_PROJECT.md)): 2 public dbt projects (ra_data_warehouse, dbt-project-evaluator),

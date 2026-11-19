@@ -121,6 +121,11 @@ Routes in `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spa
 The `Dockerfile` installs Python dependencies from `uv.lock` (`uv sync --locked`); keep the lock in sync with `pyproject.toml`. The Python and uv
 base images are pinned by digest.
 
+This image contains the Community core only; it does not install `intentflow-enterprise`. Enterprise features require an authorized Enterprise
+artifact installed into the same Python environment as the core, plus a valid runtime license. Build a customer-specific image that adds the
+authorized artifact during the image build; do not copy the license into the image. See the [Enterprise installation guide](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/INSTALLATION.md)
+for package dependencies and container deployment (customer repository access required).
+
 ```bash
 docker build -t intentflow .
 docker run --rm -v if-data:/data intentflow user add maria --role admin

@@ -23,9 +23,26 @@ diff e segurança (login, MFA, cifragem em repouso) nunca serão pagos. É pago 
 
 - O pacote Enterprise (`intentflow-enterprise`, repositório privado) se registra no entry point `intentflow.extensions`. O núcleo
   funciona sem ele e nunca o importa.
+- O Enterprise declara `intentflow>=0.3.5` e `cryptography` como dependências. Instalar um wheel Enterprise autorizado no mesmo ambiente
+  Python instala ou reutiliza o núcleo Community se ele estiver disponível nas origens configuradas; caso contrário, instale juntos os wheels
+  do núcleo e do Enterprise. O Enterprise não embute uma segunda cópia do núcleo. Seus artefatos não são distribuídos por este repositório
+  público. Clientes precisam de acesso ao pacote privado ou ao wheel aprovado.
 - A licença é um token assinado com Ed25519 e verificado offline (`INTENTFLOW_LICENSE` ou `INTENTFLOW_LICENSE_FILE`); nada é enviado
   para fora. Sem licença válida a extensão carrega, mas não liga nenhum recurso.
 - `/api/me` informa os recursos ativos; a UI esconde as telas Enterprise quando estão desligados.
+
+## Instalação
+
+Para instalar como cliente, instale o wheel Enterprise autorizado no mesmo ambiente virtual do servidor:
+
+```bash
+python -m pip install /caminho/intentflow_enterprise.whl
+```
+
+O instalador resolve `intentflow>=0.3.5` pelo índice configurado, a menos que já exista um núcleo compatível no ambiente. Depois configure a
+licença por `INTENTFLOW_LICENSE_FILE` ou `INTENTFLOW_LICENSE` e reinicie o processo. Para checkouts locais lado a lado, imagens de contêiner e
+desenvolvimento, siga o [guia de instalação do Enterprise](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/INSTALLATION.md)
+(é necessário acesso ao repositório de clientes).
 
 ## Repositórios
 
