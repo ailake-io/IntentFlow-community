@@ -51,8 +51,11 @@ def volume_anomaly(ctx: Context):
         except Exception:
             continue
         hist = [v for _, v in ctx.store.history(f"rows:{uid}")][-20:]
-        ctx.store.add_history(f"rows:{uid}", time.time(), now_rows)
+        if ctx.record_probe_history:
+            ctx.store.add_history(f"rows:{uid}", time.time(), now_rows)
         if len(hist) < 3:
+            if "PRB002" in ctx.required_checks:
+                ctx.failed_checks.add("PRB002")
             continue
         med = statistics.median(hist)
         if med > 0 and (now_rows < 0.5 * med or now_rows > 2 * med):

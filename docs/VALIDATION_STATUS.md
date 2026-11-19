@@ -41,8 +41,22 @@ The separate project `../intentflow-dbt-tests` was created on this machine outsi
 - `data-error`: one expected uniqueness failure, three skipped dependents; IntentFlow also found DBTR001.
 - Baseline was rerun at the end to restore data. The script uses `--full-refresh`; do not target a production database.
 - `dbt docs generate` overwrote `run_results.json` in the installed dbt version. The script preserves the build result and restores it after generating the catalog.
-- In the current implementation DBTR003 accompanies model errors. An isolated test failure may skip descendants without generating DBTR003; application code was not changed to alter that behavior.
+- The initial lab run exposed a DBTR003 gap after failing tests. An Unreleased correction on develop now reports these skipped models as well as those following model errors.
 
 ## Still pending
 
 A pilot on a user's real pipeline/data; customer private-distribution access; external providers/integrations without test accounts; image vulnerability remediation; target production-environment validation. Community's [INTEGRATIONS](INTEGRATIONS.md) catalog includes previous test rounds; it does not promise every service is exercised on every suite run.
+
+## Unreleased corrections from the real-data pilot (develop)
+
+A separate local project, `../intentflow-retail-pilot`, downloads the full UCI Online Retail dataset (541,909 rows; CC BY 4.0). It preserves the source XLSX and checksums and keeps natural data characteristics separate from injected failures. Before the preventive additions, the correction run repeated all Community scenarios, Enterprise browser sandbox validation, apply, byte-for-byte rollback and SQLite backup reopening. The dbt baseline completed with 16 successful builds, 22 passed tests and 4 source-quality warnings, without failures or skips. See the lab README and reports for assumptions and measured results; this is not a production pilot.
+
+- Community: DBTR003 now reports skipped models after failed/errored tests even when no model itself has status error. Four regression cases reproduce failed tests and rule out warning/pass false alarms. Local related tests: 28 passed.
+- Enterprise: the isolated build uses dbt indirect-selection buildable, avoiding tests that reference unbuilt siblings. The real-container regression also verifies that a failing in-scope test is still refused. Local validation/recovery tests: 25 passed. Selection scope is recorded in results; sibling tests outside that scope are not covered by sandbox validation.
+- The original Debian image vulnerabilities remain unresolved; these code fixes do not remediate the base OS. These checkout fixes do not replace previously published release wheels.
+
+## Preventive validation and business rules (Unreleased)
+
+The develop checkout adds the preflight full-build evidence gate and the rules CLI/UI backed by tagged native dbt tests. See [PREFLIGHT](PREFLIGHT.md) and [BUSINESS_RULES](BUSINESS_RULES.md) for scope and remaining gaps. Automated regressions cover incomplete/stale/mixed artifacts, disabled/errored checks, caught query failures, history warm-up, strict contracts, seven real-dbt business rules, source freshness with the real dbt command, and recognized/mapped/current external-quality fixtures. Partial Enterprise sandbox validation still does not replace a full target-warehouse build.
+
+The expanded retail baseline has 6 seeds, 10 models and 30 tests: 26 pass, 4 natural-data warnings and no failures/skips. Five business rules and their browser UI/history passed. The full gate still blocks preserved raw duplicate candidates; the positive preflight case uses an explicit PRB001 exception only in a separate QA store, retaining full fact-key tests.

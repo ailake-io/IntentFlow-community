@@ -188,7 +188,7 @@ async function load(){
 const sevCount=(f,s)=>f.filter(x=>x.severity===s).length;
 
 /* ---------- navigation ---------- */
-const VIEWS=[['overview',T("Overview")],['incidents',T("Incidents")],['findings',T("Findings")],['lineage',T("Lineage and impact")],['diff',T("Data diff")],['pipelines','Pipelines'],['cluster',T("Cluster and memory")],['integrations',T("Integrations")],['fixes',T("Fixes")],['config',T("Settings")],['team',T("Team")],['audit',T("Audit")]];
+const VIEWS=[['overview',T("Overview")],['incidents',T("Incidents")],['findings',T("Findings")],['rules',T("Business rules")],['lineage',T("Lineage and impact")],['diff',T("Data diff")],['pipelines','Pipelines'],['cluster',T("Cluster and memory")],['integrations',T("Integrations")],['fixes',T("Fixes")],['config',T("Settings")],['team',T("Team")],['audit',T("Audit")]];
 const has=f=>!!(S.me&&S.me.features&&S.me.features.includes(f));     // Enterprise features reported by /api/me
 function langSel(){if($('#langsel'))return;$('.side-foot').append(h('select',{id:'langsel','aria-label':'Language / Idioma',onchange:e=>setLang(e.target.value)},
   [['en','English'],['pt','Português']].map(([v,l])=>h('option',{value:v,selected:v===I18N.lang},l))))}
@@ -235,7 +235,7 @@ function render(){
   if(!S.data)return;
   nav();const m=$('#main');
   if(document.activeElement&&['INPUT','SELECT'].includes(document.activeElement.tagName)&&m.contains(document.activeElement))return; // do not interrupt typing
-  const v={overview,incidents,findings,lineage:lineageView,diff:diffPage,pipelines,cluster,integrations:integrationsPage,fixes,config,team:teamPage,audit}[S.view]||overview;
+  const v={overview,incidents,findings,rules:rulesPage,lineage:lineageView,diff:diffPage,pipelines,cluster,integrations:integrationsPage,fixes,config,team:teamPage,audit}[S.view]||overview;
   m.replaceChildren(v())}
 
 /* ---------- components ---------- */
@@ -802,6 +802,34 @@ function integrationsPage(){const st=S.integ;
     h('h2',{style:'margin:18px 0 8px'},T("Active")),active.length?grid(active):empty(T("No integration on yet"),T("Pick one below and fill it in Settings.")),
     h('div',{class:'card',style:'margin-top:18px'},h('h2',{style:'margin:0 0 2px'},T("Available to turn on")),
       h('p',{class:'sub',style:'margin:0'},T("Click to open Settings; hover to see the keys of each one.")),...avail))}
+
+/* ---------- business rules ---------- */
+function rulesPage(){
+  const key=(S.project||'main')+'|'+(S.cfg.last_check?.ts||'');
+  if(!S.rules||S.rules.key!==key){
+    S.rules={key,loading:true};
+    api('/api/rules').then(data=>{if(S.rules?.key===key){S.rules={key,...data};render()}})
+      .catch(e=>{if(S.rules?.key===key){S.rules={key,error:e.message};render()}});
+  }
+  const data=S.rules;
+  const head=header(T("Business rules"),T("Business expectations, their latest results and affected models."),
+    h('button',{class:'btn',onclick:()=>{S.rules=null;render()}},T("Refresh")));
+  if(data.loading)return h('div',{},head,h('div',{class:'card empty'},h('span',{class:'spin'})));
+  if(data.error)return h('div',{},head,empty(T("Could not load"),data.error));
+  if(!data.rules.length)return h('div',{},head,empty(T("No business rules declared"),T("Tag dbt tests with business_rule and set meta.owner. Run dbt build, then Check now.")));
+  const labels={pass:T("Passed"),success:T("Passed"),fail:T("Failed"),error:T("Error"),warn:T("Warning"),skipped:T("Not executed"),not_run:T("Not executed"),stale:T("Outdated result")};
+  const pill=status=>h('span',{class:'pill '+(['pass','success'].includes(status)?'success':['fail','error'].includes(status)?'failed':'pending')},labels[status]||status);
+  return h('div',{},head,h('p',{class:'sub'},T("Missing or outdated results do not mean a rule passed.")),data.rules.map(rule=>
+    h('div',{class:'card',style:'padding:14px;margin-bottom:10px'},
+      h('div',{style:'display:flex;justify-content:space-between;gap:10px'},h('b',{},rule.name),pill(rule.status)),
+      rule.description?h('p',{},rule.description):null,
+      h('p',{class:'sub'},T("Owner")+': '+(rule.owner||T("no owner set"))+' · '+T("Models")+': '+rule.models.join(', ')),
+      h('p',{class:'sub'},T("Affected downstream")+': '+(rule.downstream.join(', ')||'—')),
+      h('p',{class:'sub'},T("Failing rows")+': '+(rule.failures??'—')+' · '+T("Last result")+': '+(rule.generated_at?new Date(rule.generated_at).toLocaleString():'—')),
+      h('details',{},h('summary',{},T("Recent executions")+' ('+rule.history.length+')'),
+        rule.history.length?h('table',{},h('thead',{},h('tr',{},[T("Last result"),T("State"),T("Failing rows")].map(label=>h('th',{},label)))),
+          h('tbody',{},[...rule.history].reverse().map(run=>h('tr',{},h('td',{},run.generated_at?new Date(run.generated_at).toLocaleString():'—'),h('td',{},pill(run.status)),h('td',{},run.failures??'—'))))):h('p',{class:'sub'},T("History is recorded when checks run."))))));
+}
 
 /* ---------- boot ---------- */
 $('#runbtn').addEventListener('click',()=>act(T("Check started"),()=>post('/api/run/check')));

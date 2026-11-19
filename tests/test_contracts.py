@@ -25,7 +25,7 @@ def test_contract_violations_are_found_and_ranked():
     miss = kinds[("fct_orders.discount", "missing_column")]
     assert miss.severity == "critical" and miss.evidence["downstream"] == 1        # revenue_by_country consome fct_orders
     assert ("fct_orders.order_id", "unenforced_required") in kinds
-    assert ("fct_orders.order_id", "unenforced_unique") not in kinds                  # a declared grain counts as a key
+    assert ("fct_orders.order_id", "unenforced_unique") in kinds                      # a declared grain is not an executed test
     assert ("revenue_by_country.country", "unenforced_required") in kinds
     assert not any(k[0] == "fct_orders.amount" and k[1] == "type_mismatch" for k in kinds)   # DECIMAL ~ decimal
     assert not any(k[0] == "revenue_by_country.revenue" for k in kinds)
@@ -42,3 +42,14 @@ def test_family_normalisation():
     f = contracts.family
     assert f("VARCHAR(20)") == f("text") == "string" and f("BIGINT") == "integer" and f("DECIMAL(10,2)") == "number"
     assert f("timestamp with time zone") == "timestamp" and f("geometry") is None and f(None) is None
+
+
+def test_incremental_key_and_composite_test_do_not_prove_column_uniqueness():
+    from intentflow.dbt_loader import Col, DbtNode, Project
+    from intentflow.contracts import ModelContract, ColumnRule
+    node = DbtNode("model.shop.orders", "orders", "model", unique_key=["order_id", "store_id"], columns={"order_id": Col("order_id", "INT")},
+                   tests=[{"name": "unique_combination_of_columns", "column": None, "kwargs": {"combination_of_columns": ["order_id", "store_id"]}}])
+    ctx = Context(project=Project({node.unique_id: node}), contracts=[ModelContract("orders", {"order_id": ColumnRule("order_id", unique=True)})])
+    assert any(f.evidence["kind"] == "unenforced_unique" for f in run_checks(ctx, only=["CTR001"]))
+    node.tests = [{"name": "unique", "column": "order_id", "kwargs": {}}]
+    assert not run_checks(ctx, only=["CTR001"])

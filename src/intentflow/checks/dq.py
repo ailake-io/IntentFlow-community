@@ -12,14 +12,17 @@ def _index(project):
         keys = {n.name.lower()}
         if n.relation:
             parts = [p.strip('"`[]').lower() for p in n.relation.split(".")]
-            keys |= {parts[-1], ".".join(parts[-2:])}
+            keys |= {parts[-1], ".".join(parts[-2:]), ".".join(parts)}
         for k in keys:
             idx.setdefault(k, []).append(uid)
     return idx
 
 
-def _match(idx, table: str) -> str | None:
+def _match(idx, table: str, *, strict: bool = False) -> str | None:
     t = (table or "").strip('"`[]').lower().replace('"', "")
+    if strict and "." in t:
+        hit = idx.get(t)
+        return hit[0] if hit and len(set(hit)) == 1 else None
     for key in (t, t.split(".")[-1], ".".join(t.split(".")[-2:])):
         hit = idx.get(key)
         if hit and len(set(hit)) == 1:

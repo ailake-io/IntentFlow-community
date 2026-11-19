@@ -32,7 +32,9 @@ How to connect each cloud service: [CLOUD_SETUP](CLOUD_SETUP.md).
 
 GitLab was exercised on a local self-hosted instance in an earlier round; hosted customer environments remain unverified.
 
-Immediate engineering work: remediate and reassess the Debian image CVEs, automate recurring image/extra audits, and extend DBTR003 to cover descendants skipped after a failing test. See [VALIDATION_STATUS](VALIDATION_STATUS.md).
+Immediate engineering work: remediate and reassess the Debian image CVEs, automate recurring image/extra audits. See [VALIDATION_STATUS](VALIDATION_STATUS.md).
+
+DBTR003 now covers descendants skipped after test failures as an Unreleased correction on develop.
 
 ## Product decisions still open
 
@@ -55,3 +57,11 @@ ones: description/test); screen-reader accessibility review; UI view of `risks`.
 | Incidents/month from upstream changes in the user's context | ≥ 1 |
 | False positive rate per check (UI/`intentflow stats`) | < 50% to keep the CI gate on |
 | Diagnosis time saved on a real incident | measurable |
+
+## Preventive validation and business rules (Unreleased)
+
+Implemented on develop: full-build preflight evidence checks, required-check completion/error handling, native dbt revision metadata, strict required contracts, business-rule catalog/UI/history and logical-node schema matching across environments. Guides: [PREFLIGHT](PREFLIGHT.md), [BUSINESS_RULES](BUSINESS_RULES.md).
+
+Next, in order: bind external quality to source-data snapshots; review of removed/weakened rules; wider incremental/backfill/late-event fixtures; deployment enforcement and recovery drills on the actual warehouse. No promise of universal failure prediction.
+
+Optional mandatory dbt source freshness and current/mapped GX/Soda evidence are also implemented; see PREFLIGHT.

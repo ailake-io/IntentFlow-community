@@ -65,6 +65,51 @@ def cmd_check(a) -> int:
     return 0
 
 
+def cmd_preflight(a) -> int:
+    from . import preflight
+    try:
+        with _store(a) as store:
+            result = preflight.run(store, {k: getattr(a, k) for k in ("target", "base", "root", "base_root", "duckdb", "postgres_env")},
+                                   required=[x.strip() for group in a.require_check for x in group.split(",") if x.strip()],
+                                   max_age_hours=a.max_age_hours, warnings_as_errors=a.warnings_as_errors, fail_on=a.fail_on, revision=a.revision, require_freshness=a.require_source_freshness)
+    except ValueError as e:
+        err(str(e))
+        return 2
+    if a.format == "json":
+        print(json.dumps(result, indent=2, default=str))
+    else:
+        print(tr("preflight: {status}", status=tr("passed") if result["ok"] else tr("blocked")))
+        for gap in result["errors"]:
+            line = f"{gap['code']}: {gap['message']}"
+            print(f"::error::{line}" if a.format == "github" else line)
+        for f in result["findings"]:
+            line = f"[{f['severity']}] {f['check']} {f['title']}"
+            print(f"::{'error' if f['id'] in result.get('blocking_findings', []) else 'warning'}::{line}".replace("\n", " ") if a.format == "github" else line)
+        print(tr("completed checks: {n}; evidence gaps: {gaps}", n=len(result["completed_checks"]), gaps=len(result["errors"])))
+    return 0 if result["ok"] else 1
+
+
+def cmd_rules(a) -> int:
+    from . import business_rules, dbt_results, runner
+    try:
+        with _store(a) as store:
+            o = runner.resolve_options(store, {"target": a.target, "root": a.root})
+            if not o["target"]:
+                raise ValueError(tr("dbt target directory not configured (`intentflow config set dbt.target <dir>` or in the UI)"))
+            project = dbt_loader.load(o["target"], o["root"] or Path(o["target"]).parent)
+            result = business_rules.build(project, dbt_results.load(o["target"]), store, tag=None if a.all else business_rules.TAG)
+    except (ValueError, OSError) as e:
+        err(str(e))
+        return 2
+    if a.format == "json":
+        print(json.dumps(result, indent=2, default=str))
+    else:
+        for rule in result["rules"]:
+            print(f"[{rule['status']}] {rule['name']} | {rule['owner'] or '-'} | {', '.join(rule['models'])}")
+        print(result["note"])
+    return 0
+
+
 def _parse_value(v: str):
     try:
         return json.loads(v)
@@ -547,6 +592,27 @@ def main(argv=None) -> int:
     gt.add_argument("--format", choices=["text", "json", "markdown", "github"], default="text")
     gt.add_argument("--stage", default="pre-run,pre-merge")
     gt.set_defaults(fn=cmd_check, save=False, json=False)
+
+    pf = sub.add_parser("preflight", help=tr("block promotion when full dbt build evidence or required checks are incomplete"))
+    for arg in ("--target", "--base", "--root"):
+        pf.add_argument(arg, required=True)
+    for arg in ("--base-root", "--duckdb", "--postgres-env"):
+        pf.add_argument(arg)
+    pf.add_argument("--require-check", action="append", default=[], help=tr("additional required check ids, comma separated"))
+    pf.add_argument("--max-age-hours", type=float, default=24)
+    pf.add_argument("--revision", help=tr("expected INTENTFLOW_REVISION in dbt custom artifact metadata"))
+    pf.add_argument("--require-source-freshness", action="store_true", help=tr("require current sources.json evidence for every declared source SLA"))
+    pf.add_argument("--warnings-as-errors", action="store_true")
+    pf.add_argument("--fail-on", choices=SEVERITIES, default="high")
+    pf.add_argument("--format", choices=["text", "json", "github"], default="text")
+    pf.set_defaults(fn=cmd_preflight)
+
+    br = sub.add_parser("rules", help=tr("business rules declared as dbt tests, results and recent history"))
+    br.add_argument("--target")
+    br.add_argument("--root")
+    br.add_argument("--all", action="store_true", help=tr("include tests without the business_rule tag"))
+    br.add_argument("--format", choices=["text", "json"], default="text")
+    br.set_defaults(fn=cmd_rules)
 
     nt = sub.add_parser("notify", help=tr("outputs (Slack, webhook, e-mail, GitHub PR) and routes"))
     nt.add_argument("action", choices=["list", "add-sink", "route", "send"])

@@ -29,11 +29,13 @@ def _parse(n, project):
 
 def _models(ctx):
     for uid, n in ctx.project.nodes.items():
-        if n.resource_type in ("model", "snapshot") and n.compiled_code:
+        if n.resource_type in ("model", "snapshot") and n.language == "sql" and n.compiled_code:
             key = (uid, ctx.project.adapter, n.compiled_code)
             if key not in ctx.parsed_sql:
                 ctx.parsed_sql[key] = _parse(n, ctx.project)
             tree = ctx.parsed_sql[key]
+            if (tree is None or isinstance(tree, exp.Command)) and ctx.active_check in ctx.required_checks:
+                ctx.failed_checks.add(ctx.active_check)
             if tree is not None:
                 yield uid, n, tree
 

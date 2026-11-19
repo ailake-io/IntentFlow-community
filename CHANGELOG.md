@@ -4,6 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+### Added
+- Full-build `preflight` gate with optional mandatory source freshness and current/mapped GX/Soda evidence: artifact freshness/completeness, required checks, optional native dbt revision metadata and strict required contracts. Candidate probes do not train volume/null baselines.
+- Native dbt business-rule catalog (`rules` CLI/UI), owners, impact and bounded execution history. BIZ001/BIZ002 expose missing/stale executions and owner gaps.
+
+### Fixed
+- Treat unknown Soda outcomes as errors instead of passing them.
+- Match logical dbt nodes across environment schemas; select secondary emitted check ids; retain caught query errors during preflight.
+- Link singular/unit test failures to dependencies and owners; configured/composite keys no longer stand in for single-column uniqueness tests in CTR001.
+- Report DBTR003 for models skipped after a failing or errored dbt test, even when no model execution failed.
+
 ### Changed
 - Document current installation paths, Python CI coverage, image vulnerability findings and local validation limits.
 - Upgrade GitHub Actions to Node 24; distinguish dated test evidence from production readiness.

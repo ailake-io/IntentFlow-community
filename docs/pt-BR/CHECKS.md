@@ -4,7 +4,7 @@
 
 Estados: **testado** = há teste automatizado que exercita o check com um caso positivo (e, onde relevante, negativo).
 
-Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a geração de documentação pode substituí-lo. Depois de gerar o catálogo, restaure o resultado do build para os checks DBTR analisarem a execução correta. No código atual, DBTR003 acompanha erros de modelos; uma falha isolada de teste pode pular descendentes sem emitir DBTR003.
+Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a geração de documentação pode substituí-lo. Depois de gerar o catálogo, restaure o resultado do build para os checks DBTR analisarem a execução correta. DBTR003 informa modelos pulados quando run_results contém falha/erro de modelo ou teste; avisos isolados não o acionam.
 
 ## dbt e esquema
 
@@ -25,6 +25,12 @@ Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a ge
 | DBTR001 | Teste do dbt falhando/em aviso (do `run_results.json`) | continuous | statistical | testado (falha real do dbt) |
 | DBTR002/003 | Modelo com erro de execução; modelos pulados por falha a montante | continuous | statistical | testado |
 | DBTR004 | Modelo > 2× a mediana histórica de tempo | continuous | statistical | testado |
+
+## Regras de negócio e evidência de promoção
+
+BIZ001 informa execução ausente/pulada/antiga de testes dbt com tag `business_rule`; BIZ002 informa responsável ausente ou ambíguo. DBTR001 inclui testes SQL e unitários com dependências e responsável. [BUSINESS_RULES](BUSINESS_RULES.md) explica configuração, histórico e limites.
+
+`preflight` bloqueia evidência incompleta de build, checks obrigatórios desabilitados e erros de checks/consultas. CTR001 obrigatório lê contratos estritamente e eleva a falta de aplicação de unicidade/not_null a high. Chaves incrementais e testes compostos não provam unicidade de uma coluna isolada. Veja [PREFLIGHT](PREFLIGHT.md).
 
 ## SQL (AST do SQLGlot sobre o SQL compilado)
 

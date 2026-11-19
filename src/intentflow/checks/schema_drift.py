@@ -13,6 +13,10 @@ def diff_columns(base, head):
     head_by_rel = {n.relation: u for u, n in head.nodes.items() if n.relation}
     for buid, bn in base.nodes.items():
         huid = head_by_rel.get(bn.relation)
+        if huid is None and buid in head.nodes:
+            # Homologation and production normally use different databases/schemas.
+            # Stable dbt identities still identify the same logical model.
+            huid = buid
         if not huid:
             continue
         hn = head.nodes[huid]

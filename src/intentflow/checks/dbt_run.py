@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..dbt_results import median_history
+from ..business_rules import rule_owner
 from ..i18n import cat, tr
 from ..model import Finding
 from . import Context, check
@@ -18,11 +19,16 @@ def failing_tests(ctx: Context):
         return []
     out = []
     for x in r["results"]:
-        if not x["unique_id"].startswith("test.") or x["status"] not in ("fail", "error", "warn"):
+        if not x["unique_id"].startswith(("test.", "unit_test.")) or x["status"] not in ("fail", "error", "warn"):
             continue
         att, tname, col = ctx.project.tests_by_id.get(x["unique_id"], (None, x["unique_id"].split(".")[2], None))
+        definition = ctx.project.test_definitions.get(x["unique_id"], {})
+        dependencies = definition.get("models") or ([att] if att else [])
+        if att is None and dependencies:
+            att = dependencies[0]
         n = _node(ctx, att)
-        down = len(ctx.project.downstream(att)) if att in ctx.project.nodes else 0
+        downstream = {v for u in dependencies for v in ctx.project.downstream(u)} - set(dependencies)
+        down = len(downstream)
         where = f"{n.name}.{col}" if n and col else (n.name if n else x["unique_id"])
         warn = x["status"] == "warn"
         title = tr("{where}: test `{test}` is warning", where=where, test=tname) if warn else tr("{where}: test `{test}` failed", where=where, test=tname)
@@ -30,8 +36,10 @@ def failing_tests(ctx: Context):
             title = cat(title, " (", tr("{n} row(s)", n=x["failures"]), ")")
         out.append(Finding("DBTR001", "medium" if warn else ("critical" if down >= 3 else "high"), title,
                            (x["message"] or "") + (" " + tr("Affects {n} downstream model(s).", n=down) if down else ""),
-                           [att] if att else [], "continuous",
-                           {"test": tname, "status": x["status"], "failures": x["failures"], "downstream": down}))
+                           dependencies, "continuous",
+                           {"test": tname, "test_id": x["unique_id"], "status": x["status"], "failures": x["failures"], "downstream": down,
+                            **({"owner": rule_owner(ctx.project, definition)} if definition else {}),
+                            **({"business_rule": True} if "business_rule" in definition.get("tags", []) else {})}))
     return out
 
 
@@ -41,14 +49,15 @@ def failed_models(ctx: Context):
     if not r:
         return []
     out = []
-    skipped = [x["unique_id"] for x in r["results"] if x["status"] == "skipped" and not x["unique_id"].startswith("test.")]
+    skipped = [x["unique_id"] for x in r["results"] if x["status"] == "skipped" and not x["unique_id"].startswith(("test.", "unit_test."))]
     for x in r["results"]:
-        if x["unique_id"].startswith("test.") or x["status"] != "error":
+        if x["unique_id"].startswith(("test.", "unit_test.")) or x["status"] != "error":
             continue
         n = _node(ctx, x["unique_id"])
         out.append(Finding("DBTR002", "high", tr("{model}: run error", model=n.name if n else x["unique_id"]),
                            (x["message"] or "")[:300], [x["unique_id"]], "continuous", {"skipped_downstream": len(skipped)}))
-    if skipped and out:
+    # A failing test can block descendants even when every executed model succeeded.
+    if skipped and any(x["status"] in ("fail", "error") for x in r["results"]):
         out.append(Finding("DBTR003", "medium", tr("{n} model(s) did not run because of an upstream failure", n=len(skipped)),
                            tr("dbt skipped them; their data is out of date."), skipped[:20], "continuous", {}))
     return out
@@ -61,7 +70,7 @@ def slow_models(ctx: Context):
         return []
     out = []
     for x in r["results"]:
-        if x["unique_id"].startswith("test.") or x["status"] not in ("success", "pass"):
+        if x["unique_id"].startswith(("test.", "unit_test.")) or x["status"] not in ("success", "pass"):
             continue
         med, n = median_history(ctx.store, x["unique_id"])
         # the history already includes this run when recorded first; require a sample and a clear slowdown

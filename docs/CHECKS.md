@@ -4,7 +4,7 @@
 
 States: **tested** = there is an automated test that exercises the check with a positive case (and, where relevant, a negative one).
 
-Preserve the build's `target/run_results.json` before `dbt docs generate`: documentation generation can overwrite it. Restore the build result after generating the catalog so DBTR checks inspect the intended run. In the current implementation DBTR003 accompanies model errors; an isolated test failure can skip descendants without emitting DBTR003.
+Preserve the build's `target/run_results.json` before `dbt docs generate`: documentation generation can overwrite it. Restore the build result after generating the catalog so DBTR checks inspect the intended run. DBTR003 reports skipped models when run_results contains a model or test failure/error; warnings alone do not trigger it.
 
 ## dbt and schema
 
@@ -25,6 +25,12 @@ Preserve the build's `target/run_results.json` before `dbt docs generate`: docum
 | DBTR001 | dbt test failing/warning (from `run_results.json`) | continuous | statistical | tested (real dbt failure) |
 | DBTR002/003 | Model with a run error; models skipped because of an upstream failure | continuous | statistical | tested |
 | DBTR004 | Model > 2× its historical median time | continuous | statistical | tested |
+
+## Business rules and promotion evidence
+
+BIZ001 reports missing/skipped/stale execution of dbt tests tagged `business_rule`; BIZ002 reports missing or ambiguous rule ownership. DBTR001 includes singular and unit tests with dependencies and owners. [BUSINESS_RULES](BUSINESS_RULES.md) explains configuration, history and limits.
+
+`preflight` blocks incomplete full-build evidence, disabled required checks and check/query errors. Required CTR001 reads contract inputs strictly and raises missing uniqueness/not_null enforcement to high severity. Incremental keys and composite tests do not prove single-column uniqueness. See [PREFLIGHT](PREFLIGHT.md).
 
 ## SQL (SQLGlot AST over the compiled SQL)
 

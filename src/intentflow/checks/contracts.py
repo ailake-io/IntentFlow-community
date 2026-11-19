@@ -46,12 +46,17 @@ def contract_checks(ctx: Context):
                                                         actual=actual.type, expected=rule.type),
                                    tr("Contract in {source}.", source=c.source), [uid], "pre-merge",
                                    {"contract": c.source, "kind": "type_mismatch", "expected": rule.type, "actual": actual.type}))
-            ts = tested.get(col, set()) | tested.get("", set())        # column test or model test (e.g. unique combination)
-            declared_key = n.unique_key is not None and col in str(n.unique_key).lower()      # dbt unique_key / SQLMesh grain
-            if rule.unique and not (ts & UNIQUE_TESTS or declared_key):
-                out.append(Finding("CTR001", "medium", tr("{column}: the contract requires uniqueness but no test enforces it", column=f"{n.name}.{col}"),
+            ts = tested.get(col, set())
+            # A configured incremental key/grain is not a uniqueness assertion.
+            # Likewise uniqueness of (a,b) does not prove that a alone is unique.
+            single_column_unique = any(t.get("name") in UNIQUE_TESTS and
+                                       [str(c).lower() for c in (t.get("kwargs", {}).get("combination_of_columns") or [])] == [col]
+                                       for t in n.tests)
+            enforcement_severity = "high" if "CTR001" in ctx.required_checks else "medium"
+            if rule.unique and not ("unique" in ts or single_column_unique):
+                out.append(Finding("CTR001", enforcement_severity, tr("{column}: the contract requires uniqueness but no test enforces it", column=f"{n.name}.{col}"),
                                    tr("Nothing guarantees the contract's promise."), [uid], "pre-merge", {"contract": c.source, "kind": "unenforced_unique"}))
             if rule.required and not (ts & NOT_NULL_TESTS):
-                out.append(Finding("CTR001", "medium", tr("{column}: the contract requires a value but there is no `not_null` test", column=f"{n.name}.{col}"),
+                out.append(Finding("CTR001", enforcement_severity, tr("{column}: the contract requires a value but there is no `not_null` test", column=f"{n.name}.{col}"),
                                    tr("Nothing guarantees the contract's promise."), [uid], "pre-merge", {"contract": c.source, "kind": "unenforced_required"}))
     return out
