@@ -30,10 +30,11 @@ def summary(res: dict, project=None) -> dict:
         out["counts"][r["status"]] = out["counts"].get(r["status"], 0) + 1
     name = lambda u: (project.nodes[u].name if project and u in project.nodes else u.split(".")[-1])   # noqa: E731
     out["slowest"] = [{"name": name(r["unique_id"]), "time": round(r["time"], 2)}
-                      for r in sorted(res["results"], key=lambda r: -r["time"]) if not r["unique_id"].startswith("test.")][:5]
+                      for r in sorted(res["results"], key=lambda r: -r["time"]) if not r["unique_id"].startswith(("test.", "unit_test."))][:5]
     for r in res["results"]:
         if r["status"] in ("fail", "error", "warn"):
-            label = r["unique_id"].split(".")[-2] if r["unique_id"].startswith("test.") else r["unique_id"].split(".")[-1]
+            definition = project.test_definitions.get(r["unique_id"], {}) if project else {}
+            label = definition.get("name") or r["unique_id"].split(".")[-1]
             out["failing"].append({"name": label, "status": r["status"], "failures": r["failures"], "message": (r["message"] or "")[:160]})
     return out
 
@@ -43,7 +44,7 @@ def record(store, res: dict) -> bool:
     if store.get_setting("state.dbt_invocation") == res["invocation_id"]:
         return False
     for r in res["results"]:
-        if not r["unique_id"].startswith("test.") and r["status"] in ("success", "pass"):
+        if not r["unique_id"].startswith(("test.", "unit_test.")) and r["status"] in ("success", "pass"):
             store.add_history(f"dbt_time:{r['unique_id']}", __import__("time").time(), r["time"])
     store.set_setting("state.dbt_invocation", res["invocation_id"])
     return True

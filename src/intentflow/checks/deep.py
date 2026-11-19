@@ -59,7 +59,7 @@ def _join_equalities(ctx: Context, n):
 def join_type_mismatch(ctx: Context):
     out = []
     for uid, n in ctx.project.nodes.items():
-        if n.resource_type not in ("model", "snapshot") or not n.compiled_code:
+        if n.resource_type not in ("model", "snapshot") or n.language != "sql" or not n.compiled_code:
             continue
         for lu, lc, ru, rc in _join_equalities(ctx, n):
             lt = ctx.project.nodes[lu].columns.get(lc)
@@ -80,7 +80,7 @@ def join_fanout(ctx: Context):
         return []
     out, seen = [], set()
     for uid, n in ctx.project.nodes.items():
-        if n.resource_type not in ("model", "snapshot") or not n.compiled_code:
+        if n.resource_type not in ("model", "snapshot") or n.language != "sql" or not n.compiled_code:
             continue
         for lu, lc, ru, rc in _join_equalities(ctx, n):
             for side_uid, col in ((lu, lc), (ru, rc)):
@@ -125,7 +125,8 @@ def null_rate_drift(ctx: Context):
             r = float(r or 0.0)
             key = f"null:{uid}:{c}"
             hist = [v for _, v in ctx.store.history(key)][-20:]
-            ctx.store.add_history(key, time.time(), r)
+            if ctx.record_probe_history:
+                ctx.store.add_history(key, time.time(), r)
             if len(hist) >= 3:
                 med = statistics.median(hist)
                 if r - med >= 0.2 and r >= 2 * max(med, 0.01):
@@ -133,6 +134,8 @@ def null_rate_drift(ctx: Context):
                                        tr("{column}: {rate} nulls (usually {median})", column=f"{n.name}.{c}", rate=f"{r:.0%}", median=f"{med:.0%}"),
                                        tr("The null rate went up a lot; it usually means a broken upstream column, a join that does not match or a format change."),
                                        [uid] + ctx.project.downstream(uid)[:10], "pre-run", {"rate": r, "median": med, "history": len(hist)}))
+            elif "PRB003" in ctx.required_checks:
+                ctx.failed_checks.add("PRB003")
     return out
 
 
@@ -145,7 +148,7 @@ def plan_regression(ctx: Context):
     out = []
     for uid, n in ctx.project.nodes.items():
         b = base_by_rel.get(n.relation)
-        if not b or n.resource_type != "model" or not n.compiled_code or b.compiled_code == n.compiled_code:
+        if not b or n.resource_type != "model" or n.language != "sql" or not n.compiled_code or b.compiled_code == n.compiled_code:
             continue
         try:
             pb, ph = ctx.warehouse.plan(b.compiled_code), ctx.warehouse.plan(n.compiled_code)

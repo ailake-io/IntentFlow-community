@@ -65,7 +65,7 @@ def _soda(doc: dict) -> list[DQResult]:
     out = []
     for c in doc.get("checks", []):
         o = str(c.get("outcome") or "").lower()
-        status = {"pass": "pass", "fail": "fail", "warn": "warn"}.get(o, "error" if c.get("outcomeReasons") else "pass")
+        status = {"pass": "pass", "fail": "fail", "warn": "warn"}.get(o, "error")
         diag = c.get("diagnostics") or {}
         obs = {k: v for k, v in diag.items() if isinstance(v, (int, float, str)) and k in ("value", "fail", "warn")}
         out.append(DQResult("soda", c.get("table") or c.get("tableName") or "", c.get("column"), c.get("name") or str(c.get("definition") or "check").strip().splitlines()[-1].strip(" -"),

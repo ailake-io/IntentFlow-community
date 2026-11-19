@@ -32,7 +32,27 @@ def sync_dbt_cloud(store: Store) -> str:
     return r["dir"]
 
 
-def run_check(store: Store, overrides: dict | None = None, only: list[str] | None = None, stages: set[str] | None = None) -> dict:
+class _TrackedWarehouse:
+    """Remember unavailable queries even when a probe handles the exception."""
+    def __init__(self, warehouse, ctx):
+        self.warehouse, self.ctx = warehouse, ctx
+
+    def __getattr__(self, name):
+        value = getattr(self.warehouse, name)
+        if not callable(value):
+            return value
+        def call(*args, **kwargs):
+            try:
+                return value(*args, **kwargs)
+            except Exception:
+                if self.ctx.active_check:
+                    self.ctx.failed_checks.add(self.ctx.active_check)
+                raise
+        return call
+
+
+def run_check(store: Store, overrides: dict | None = None, only: list[str] | None = None, stages: set[str] | None = None,
+              required_checks: set[str] | None = None) -> dict:
     o = resolve_options(store, overrides or {})
     if not o["target"] and store.get_setting("dbt_cloud.job_id") and store.get_setting("dbt_cloud.account_id"):
         o["target"] = sync_dbt_cloud(store)
@@ -54,6 +74,8 @@ def run_check(store: Store, overrides: dict | None = None, only: list[str] | Non
         fresh = dbt_results.record(store, dres)       # timings enter the history once per invocation
         store.set_setting("state.dbt_run", dbt_results.summary(dres, project))
         _ = fresh
+        from . import business_rules
+        business_rules.record(store, project, dres)
     from . import external
     declared = store.get_setting("lineage.declared") or str(Path(o["root"] or Path(o["target"]).parent) / external.DECLARED_FILE)
     ctx = Context(project=project, external=external.load(store, declared, project), lineage=lineage, base_project=base, base_lineage=base_l, policies=store.policies(), dbt_results=dres,
@@ -61,6 +83,11 @@ def run_check(store: Store, overrides: dict | None = None, only: list[str] | Non
                   dq_results=__import__("intentflow.dq_results", fromlist=["x"]).load_all(store.get_setting("dq.results")),
                   contracts=__import__("intentflow.contracts", fromlist=["x"]).load_all(store.get_setting("contracts.dir")),
                   samples=store.recent_samples(time.time() - 24 * 3600))
+    if required_checks is not None:
+        ctx.required_checks = required_checks
+        ctx.record_probe_history = False
+        if wh is not None:
+            ctx.warehouse = _TrackedWarehouse(wh, ctx)
     ctx.runs = [Run(r["system"], r["pipeline"], r["run_id"], r["state"], r["start"], r["end"], r["duration"], r["url"]) for r in store.runs(1000)]
     try:
         findings = run_checks(ctx, only, stages=stages)
@@ -82,7 +109,8 @@ def run_check(store: Store, overrides: dict | None = None, only: list[str] | Non
     res = store.sync_findings(findings, ctx.completed_checks)
     store.set_setting("state.last_check", {"ts": time.time(), "findings": len(findings), **res, "lineage": lineage.precision_report})
     store.audit("system", "check", {"findings": len(findings), **res})
-    return {"findings": findings, "lineage": lineage.precision_report, "store": res, "project": project}
+    return {"findings": findings, "lineage": lineage.precision_report, "store": res, "project": project,
+            "completed_checks": sorted(ctx.completed_checks), "failed_checks": sorted(ctx.failed_checks)}
 
 
 def collect_runs(store: Store, airflow: str | None = None, airflow_api: str | None = None, kestra: str | None = None,

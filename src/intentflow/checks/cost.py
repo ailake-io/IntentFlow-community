@@ -15,7 +15,7 @@ def expensive_plan(ctx: Context):
     limit = int(ctx.policies.get("max_estimated_rows", 10_000_000))
     out = []
     for uid, n in ctx.project.nodes.items():
-        if n.resource_type not in ("model", "snapshot") or not n.compiled_code:
+        if n.resource_type not in ("model", "snapshot") or n.language != "sql" or not n.compiled_code:
             continue
         try:
             plan = ctx.warehouse.plan(n.compiled_code)

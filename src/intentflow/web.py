@@ -291,6 +291,16 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     return self._json(200, {"notes": st.notes(path.rsplit("/", 1)[1])})
                 if path.startswith("/api/lineage/"):
                     return self._lineage(st, path, q)
+                if path == "/api/rules":
+                    from . import business_rules, dbt_loader, dbt_results
+                    target = st.get_setting("dbt.target")
+                    if not target:
+                        return self._json(400, {"error": tr("configure dbt.target")})
+                    try:
+                        project = dbt_loader.load(target, st.get_setting("dbt.root") or Path(target).parent)
+                        return self._json(200, business_rules.build(project, dbt_results.load(target), st))
+                    except (ValueError, OSError, KeyError) as e:
+                        return self._json(400, {"error": str(e)})
                 if path == "/api/settings":
                     vis = {k: v for k, v in st.settings().items()
                            if k != "projects" and not k.startswith(("state.", "secret.", "sso."))}

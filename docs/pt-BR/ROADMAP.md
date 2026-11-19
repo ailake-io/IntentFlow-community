@@ -53,3 +53,11 @@ revisão de acessibilidade com leitor de tela.
 | Incidentes/mês por mudança de upstream no contexto do usuário | ≥ 1 |
 | Taxa de falso positivo por check (UI/`intentflow stats`) | < 50% para manter o portão de CI ligado |
 | Tempo de diagnóstico economizado em incidente real | mensurável |
+
+## Validação preventiva e regras de negócio (Unreleased)
+
+Implementado na develop: evidência de build completo, conclusão/erros dos checks obrigatórios, revisão nos metadados nativos dbt, contratos obrigatórios estritos, catálogo/UI/histórico de regras e diff lógico entre ambientes. Guias: [PREFLIGHT](PREFLIGHT.md), [BUSINESS_RULES](BUSINESS_RULES.md).
+
+Próximos, em ordem: vincular qualidade externa a snapshots dos dados; revisar remoção/enfraquecimento de regras; ampliar fixtures de incremental/backfill/eventos atrasados; impor deploy e ensaiar recuperação no warehouse real. Sem promessa de prever qualquer falha.
+
+Frescor de fontes dbt e resultados GX/Soda atuais/mapeados também podem ser obrigatórios; veja PREFLIGHT.

@@ -50,31 +50,43 @@ class Context:
     contracts: list = field(default_factory=list)   # contracts.ModelContract
     external: list = field(default_factory=list)    # external.ExtRead: jobs outside the SQL (OpenLineage + declared)
     completed_checks: set[str] = field(default_factory=set)  # only checks completed in this run
+    failed_checks: set[str] = field(default_factory=set)
+    required_checks: set[str] = field(default_factory=set)
+    active_check: str | None = None
+    record_probe_history: bool = True
     parsed_sql: dict = field(default_factory=dict)  # ASTs shared only within one run
 
 
 def load_all() -> None:
-    from . import dbt_quality, schema_drift, sql_quality, orchestration, airflow3, dq, contracts, streaming, lint, elementary, lakehouse, catalog, probes, cluster, runtime_history, cost, dbt_run, deep, external  # noqa: F401
+    from . import dbt_quality, schema_drift, sql_quality, orchestration, airflow3, dq, contracts, streaming, lint, elementary, lakehouse, catalog, probes, cluster, runtime_history, cost, dbt_run, deep, external, business  # noqa: F401
 
 
 def run_checks(ctx: Context, only: list[str] | None = None, costs: set[str] | None = None, stages: set[str] | None = None) -> list[Finding]:
     load_all()
     out: list[Finding] = []
     ctx.completed_checks.clear()
+    ctx.failed_checks.clear()
     ctx.parsed_sql.clear()
     disabled = set(ctx.policies.get("disabled_checks", []) or [])
     for c in REGISTRY.values():
         if c.id in disabled:
             continue
-        if only and c.id not in only and not any(c.id.startswith(o) for o in only):
+        if only and not any(code.startswith(o) for o in only for code in (c.id, *c.emits)):
             continue
         if costs and c.cost not in costs:
             continue
         if stages and c.stage not in stages:
             continue
         try:
+            ctx.active_check = c.id
             out.extend(c.fn(ctx) or [])
-            ctx.completed_checks.update((c.id, *c.emits))
+            if c.id not in ctx.failed_checks:
+                ctx.completed_checks.update((c.id, *c.emits))
+            else:
+                ctx.failed_checks.update(c.emits)
         except Exception as e:   # a broken check does not take the others down
+            ctx.failed_checks.update((c.id, *c.emits))
             out.append(Finding(c.id, "info", tr("check {id} failed to run", id=c.id), f"{type(e).__name__}: {e}", stage=c.stage))
+        finally:
+            ctx.active_check = None
     return out

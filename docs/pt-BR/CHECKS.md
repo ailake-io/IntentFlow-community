@@ -26,6 +26,12 @@ Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a ge
 | DBTR002/003 | Modelo com erro de execução; modelos pulados por falha a montante | continuous | statistical | testado |
 | DBTR004 | Modelo > 2× a mediana histórica de tempo | continuous | statistical | testado |
 
+## Regras de negócio e evidência de promoção
+
+BIZ001 informa execução ausente/pulada/antiga de testes dbt com tag `business_rule`; BIZ002 informa responsável ausente ou ambíguo. DBTR001 inclui testes SQL e unitários com dependências e responsável. [BUSINESS_RULES](BUSINESS_RULES.md) explica configuração, histórico e limites.
+
+`preflight` bloqueia evidência incompleta de build, checks obrigatórios desabilitados e erros de checks/consultas. CTR001 obrigatório lê contratos estritamente e eleva a falta de aplicação de unicidade/not_null a high. Chaves incrementais e testes compostos não provam unicidade de uma coluna isolada. Veja [PREFLIGHT](PREFLIGHT.md).
+
 ## SQL (AST do SQLGlot sobre o SQL compilado)
 
 | Id | O que detecta | Estado |

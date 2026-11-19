@@ -60,7 +60,7 @@ def sql_lint(ctx: Context):
     out = []
     for uid, n in ctx.project.nodes.items():
         sql = n.compiled_code or ""
-        if n.resource_type not in ("model", "snapshot") or not sql.strip():
+        if n.resource_type not in ("model", "snapshot") or n.language != "sql" or not sql.strip():
             continue
         key = "lint:" + hashlib.sha1(f"{sql}|{dialect}|{','.join(rules)}|v1".encode()).hexdigest()
         hit = ctx.store.get(key) if ctx.store is not None and hasattr(ctx.store, "get") else None

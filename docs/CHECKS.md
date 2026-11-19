@@ -26,6 +26,12 @@ Preserve the build's `target/run_results.json` before `dbt docs generate`: docum
 | DBTR002/003 | Model with a run error; models skipped because of an upstream failure | continuous | statistical | tested |
 | DBTR004 | Model > 2× its historical median time | continuous | statistical | tested |
 
+## Business rules and promotion evidence
+
+BIZ001 reports missing/skipped/stale execution of dbt tests tagged `business_rule`; BIZ002 reports missing or ambiguous rule ownership. DBTR001 includes singular and unit tests with dependencies and owners. [BUSINESS_RULES](BUSINESS_RULES.md) explains configuration, history and limits.
+
+`preflight` blocks incomplete full-build evidence, disabled required checks and check/query errors. Required CTR001 reads contract inputs strictly and raises missing uniqueness/not_null enforcement to high severity. Incremental keys and composite tests do not prove single-column uniqueness. See [PREFLIGHT](PREFLIGHT.md).
+
 ## SQL (SQLGlot AST over the compiled SQL)
 
 | Id | What it detects | State |

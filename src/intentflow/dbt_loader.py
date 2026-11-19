@@ -37,6 +37,7 @@ class DbtNode:
     columns: dict[str, Col] = field(default_factory=dict)
     depends_on: list[str] = field(default_factory=list)
     tests: list[dict] = field(default_factory=list)   # {name, column, kwargs}
+    language: str = "sql"
 
 
 @dataclass
@@ -46,6 +47,7 @@ class Project:
     adapter: str = "duckdb"
     root: Path | None = None
     root_package: str | None = None      # name of the root dbt project; models of installed packages (dbt_utils, evaluator...) are not the team's
+    test_definitions: dict[str, dict] = field(default_factory=dict)
 
     def in_root_package(self, uid: str) -> bool:
         """True for nodes of the root project (or when there is no notion of package, e.g. SQLMesh)."""
@@ -141,6 +143,7 @@ def load(target_dir: str | Path, root: str | Path | None = None) -> Project:
             unique_id=uid, name=n["name"], resource_type=rt,
             relation=n.get("relation_name") or "", path=n.get("original_file_path", ""),
             raw_code=n.get("raw_code", "") or "", compiled_code=n.get("compiled_code", "") or "",
+            language=n.get("language") or "sql",
             materialized=cfg.get("materialized", ""), unique_key=cfg.get("unique_key"),
             incremental_strategy=cfg.get("incremental_strategy"),
             contract_enforced=bool(((cfg.get("contract") or {}).get("enforced"))),
@@ -161,7 +164,19 @@ def load(target_dir: str | Path, root: str | Path | None = None) -> Project:
                                                {**(d.get("meta") or {}), **((d.get("config") or {}).get("meta") or {})},
                                                list(d.get("tags") or []), False)
         nodes[uid] = node
-    for t_ in tests:
+    test_definitions = {}
+    for t_ in [*tests, *(man.get("unit_tests") or {}).values()]:
+        cfg = t_.get("config") or {}
+        if cfg.get("enabled", True) is False:
+            continue
+        deps = [uid for uid in (t_.get("depends_on") or {}).get("nodes", []) if uid in nodes]
+        test_definitions[t_["unique_id"]] = {
+            "id": t_["unique_id"], "name": t_["name"], "models": deps,
+            "tags": list(dict.fromkeys([*(t_.get("tags") or []), *(cfg.get("tags") or [])])),
+            "meta": {**(t_.get("meta") or {}), **(cfg.get("meta") or {})},
+            "description": t_.get("description") or "", "severity": cfg.get("severity", "error"),
+            "file": t_.get("original_file_path") or "", "resource_type": t_.get("resource_type", "test"),
+        }
         att = t_.get("attached_node")
         md = t_.get("test_metadata") or {}
         if att in nodes:
@@ -170,4 +185,4 @@ def load(target_dir: str | Path, root: str | Path | None = None) -> Project:
                                      "kwargs": kw})
             tests_by_id[t_["unique_id"]] = (att, md.get("name", t_["name"]), kw.get("column_name") or t_.get("column_name"))
     return Project(nodes=nodes, tests_by_id=tests_by_id, adapter=adapter, root=Path(root) if root else None,
-                   root_package=(man.get("metadata") or {}).get("project_name"))
+                   root_package=(man.get("metadata") or {}).get("project_name"), test_definitions=test_definitions)

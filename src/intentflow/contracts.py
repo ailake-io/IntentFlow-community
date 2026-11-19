@@ -79,17 +79,29 @@ def _from_spec(doc: dict, src: str) -> list[ModelContract]:
     return out
 
 
-def load_all(spec: str | None) -> list[ModelContract]:
+def load_all(spec: str | None, *, strict: bool = False) -> list[ModelContract]:
     files: list[Path] = []
     for part in [x.strip() for x in (spec or "").split(",") if x.strip()]:
         p = Path(os.path.expanduser(part))
-        files += sorted([*p.rglob("*.yaml"), *p.rglob("*.yml")]) if p.is_dir() else [p]
+        matched = sorted([*p.rglob("*.yaml"), *p.rglob("*.yml")]) if p.is_dir() else [p]
+        if strict and not matched:
+            raise ValueError(tr("no contract files found: {path}", path=p))
+        files += matched
     res: list[ModelContract] = []
     for f in files:
         try:
             doc = yaml.safe_load(f.read_text())
-        except (OSError, yaml.YAMLError):
+        except (OSError, yaml.YAMLError, UnicodeError) as e:
+            if strict:
+                raise ValueError(tr("contract unavailable or invalid: {path}", path=f)) from e
             continue
         if isinstance(doc, dict):
-            res += _from_spec(doc, str(f))
+            parsed = _from_spec(doc, str(f))
+            if strict and not parsed:
+                raise ValueError(tr("no supported contract definitions: {path}", path=f))
+            res += parsed
+        elif strict:
+            raise ValueError(tr("contract unavailable or invalid: {path}", path=f))
+    if strict and not res:
+        raise ValueError(tr("no contract definitions configured"))
     return res

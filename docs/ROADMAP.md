@@ -57,3 +57,11 @@ ones: description/test); screen-reader accessibility review; UI view of `risks`.
 | Incidents/month from upstream changes in the user's context | ≥ 1 |
 | False positive rate per check (UI/`intentflow stats`) | < 50% to keep the CI gate on |
 | Diagnosis time saved on a real incident | measurable |
+
+## Preventive validation and business rules (Unreleased)
+
+Implemented on develop: full-build preflight evidence checks, required-check completion/error handling, native dbt revision metadata, strict required contracts, business-rule catalog/UI/history and logical-node schema matching across environments. Guides: [PREFLIGHT](PREFLIGHT.md), [BUSINESS_RULES](BUSINESS_RULES.md).
+
+Next, in order: bind external quality to source-data snapshots; review of removed/weakened rules; wider incremental/backfill/late-event fixtures; deployment enforcement and recovery drills on the actual warehouse. No promise of universal failure prediction.
+
+Optional mandatory dbt source freshness and current/mapped GX/Soda evidence are also implemented; see PREFLIGHT.
