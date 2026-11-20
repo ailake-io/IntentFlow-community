@@ -71,7 +71,7 @@ def cmd_preflight(a) -> int:
         with _store(a) as store:
             result = preflight.run(store, {k: getattr(a, k) for k in ("target", "base", "root", "base_root", "duckdb", "postgres_env")},
                                    required=[x.strip() for group in a.require_check for x in group.split(",") if x.strip()],
-                                   max_age_hours=a.max_age_hours, warnings_as_errors=a.warnings_as_errors, fail_on=a.fail_on, revision=a.revision, require_freshness=a.require_source_freshness)
+                                   max_age_hours=a.max_age_hours, warnings_as_errors=a.warnings_as_errors, fail_on=a.fail_on, revision=a.revision, require_freshness=a.require_source_freshness, accepted_changes=a.accept_change, review_model_logic=a.review_model_logic, baseline_revision=a.base_revision)
     except ValueError as e:
         err(str(e))
         return 2
@@ -82,11 +82,39 @@ def cmd_preflight(a) -> int:
         for gap in result["errors"]:
             line = f"{gap['code']}: {gap['message']}"
             print(f"::error::{line}" if a.format == "github" else line)
+        for change in result.get("change_review", {}).get("changes", []):
+            if change["requires_review"]:
+                print(f"{change['id']} {change['name']}: {change['message']}")
         for f in result["findings"]:
             line = f"[{f['severity']}] {f['check']} {f['title']}"
             print(f"::{'error' if f['id'] in result.get('blocking_findings', []) else 'warning'}::{line}".replace("\n", " ") if a.format == "github" else line)
         print(tr("completed checks: {n}; evidence gaps: {gaps}", n=len(result["completed_checks"]), gaps=len(result["errors"])))
     return 0 if result["ok"] else 1
+
+
+def cmd_changes(a) -> int:
+    from . import change_review, runner
+    try:
+        with _store(a) as store:
+            o = runner.resolve_options(store, {"target": a.target, "base": a.base})
+            if not o["target"] or not o["base"]:
+                raise ValueError(tr("change comparison requires candidate and baseline targets"))
+            report = change_review.acknowledge(change_review.load(o["target"], o["base"], review_model_logic=a.review_model_logic, baseline_revision=a.base_revision))
+    except ValueError as e:
+        err(str(e))
+        return 2
+    if a.format == "json":
+        print(json.dumps(report, indent=2))
+    else:
+        for gap in report["gaps"]:
+            print(f"[{gap['side']}] {gap['resource']}: {gap['message']}")
+        for change in report["changes"]:
+            label = tr("review required") if change["requires_review"] else tr("informational")
+            print(f"{change['id']} [{label}] {change['name']}: {change['message']}")
+            if change["impact"]:
+                print("  " + tr("Known impact: {models}", models=", ".join(n["name"] for n in change["impact"])))
+        print(report["note"])
+    return 1 if a.fail_on_review and (report["unreviewed"] or report["gaps"]) else 0
 
 
 def cmd_rules(a) -> int:
@@ -601,11 +629,23 @@ def main(argv=None) -> int:
     pf.add_argument("--require-check", action="append", default=[], help=tr("additional required check ids, comma separated"))
     pf.add_argument("--max-age-hours", type=float, default=24)
     pf.add_argument("--revision", help=tr("expected INTENTFLOW_REVISION in dbt custom artifact metadata"))
+    pf.add_argument("--base-revision", help=tr("expected deployed baseline revision in manifest and catalog"))
     pf.add_argument("--require-source-freshness", action="store_true", help=tr("require current sources.json evidence for every declared source SLA"))
     pf.add_argument("--warnings-as-errors", action="store_true")
+    pf.add_argument("--accept-change", action="append", default=[], metavar="ID=REASON", help=tr("acknowledge one exact change with a reason; does not waive other checks"))
+    pf.add_argument("--review-model-logic", action="store_true", help=tr("also require review of changed model SQL, Python or macro dependencies"))
     pf.add_argument("--fail-on", choices=SEVERITIES, default="high")
     pf.add_argument("--format", choices=["text", "json", "github"], default="text")
     pf.set_defaults(fn=cmd_preflight)
+
+    ch = sub.add_parser("changes", help=tr("preview candidate changes and known impact against a trusted baseline"))
+    ch.add_argument("--target")
+    ch.add_argument("--base")
+    ch.add_argument("--format", choices=["text", "json"], default="text")
+    ch.add_argument("--fail-on-review", action="store_true")
+    ch.add_argument("--review-model-logic", action="store_true")
+    ch.add_argument("--base-revision")
+    ch.set_defaults(fn=cmd_changes)
 
     br = sub.add_parser("rules", help=tr("business rules declared as dbt tests, results and recent history"))
     br.add_argument("--target")

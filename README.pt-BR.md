@@ -43,6 +43,8 @@ Preparação completa: [INSTALLATION](docs/pt-BR/INSTALLATION.md). Os comandos a
 
 Declare testes nativos dbt com `tags: [business_rule]` e `meta.owner`. A tela Regras de negócio/`intentflow rules` mostra resultados, responsáveis, impacto e as últimas 20 execuções observadas. `intentflow preflight` exige build completo recente, cobertura de catálogo, base confiável e checks obrigatórios; bloqueia falhas, pulos e validação indisponível. O `gate` antes da execução continua disponível.
 
+`intentflow changes` e a tela Mudanças antes da produção mostram testes, contratos, schemas e políticas de incremental/frescor alterados contra a referência. O preflight bloqueia mudanças que exijam revisão mesmo com os testes restantes aprovados. Veja [CHANGE_REVIEW](docs/pt-BR/CHANGE_REVIEW.md) para aceite exato, impacto e limites.
+
 Veja [BUSINESS_RULES](docs/pt-BR/BUSINESS_RULES.md) para exemplos SQL/negócio e [PREFLIGHT](docs/pt-BR/PREFLIGHT.md) para CI, revisão dos artefatos, contratos, política de avisos e limites. Essas adições do checkout não estão nos wheels anteriores. Configure o job obrigatório da CI/deploy para impor o resultado.
 
 ## Uso (CLI)

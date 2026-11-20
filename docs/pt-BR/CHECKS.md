@@ -104,3 +104,5 @@ falso positivo em modelos limpos. SQL001 e SCH001 geram correção determinísti
 
 Cada achado pode ser marcado como falso positivo (não reabre). `intentflow stats`/UI mostram a taxa por check e sugerem desligar
 quando ≥ 50% com ≥ 5 decisões (`policy disable-check`). Novos checks devem rodar sem bloquear até ter taxa conhecida.
+
+A [revisão de mudanças](CHANGE_REVIEW.md) compara controles/interfaces com a referência confiável e exige revisão no preflight, independentemente da severidade de achados. É uma etapa separada dos checks numerados.

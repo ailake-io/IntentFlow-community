@@ -104,3 +104,5 @@ positive. SQL001 and SCH001 produce deterministic fixes (`expand_star`, `rename_
 
 Each finding can be marked as a false positive (it does not reopen). `intentflow stats`/the UI show the rate per check and suggest turning a
 check off when it is ≥ 50% with ≥ 5 decisions (`policy disable-check`). New checks should run without blocking until their rate is known.
+
+The separate [change-review gate](CHANGE_REVIEW.md) compares candidate controls/interfaces with a trusted baseline and requires review in preflight, independently of finding severity. It is not another numbered check.

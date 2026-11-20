@@ -36,6 +36,8 @@ Immediate engineering work: remediate and reassess the Debian image CVEs, automa
 
 DBTR003 now covers descendants skipped after test failures as an Unreleased correction on develop.
 
+Unreleased: [change review](CHANGE_REVIEW.md) now compares tests, schema/interfaces, contracts, incremental keys and freshness policies against a trusted baseline. Full-build preflight requires exact review of changed controls even when remaining tests pass. Dynamic behavior and unregistered consumers still need complementary validation.
+
 ## Product decisions still open
 
 Already settled: team users, roles, MFA; SSO/OIDC and per-project roles (Enterprise); built-in HTTPS (`--tls-cert`) or behind a proxy

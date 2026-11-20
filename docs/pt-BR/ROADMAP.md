@@ -58,6 +58,8 @@ revisão de acessibilidade com leitor de tela.
 
 Implementado na develop: evidência de build completo, conclusão/erros dos checks obrigatórios, revisão nos metadados nativos dbt, contratos obrigatórios estritos, catálogo/UI/histórico de regras e diff lógico entre ambientes. Guias: [PREFLIGHT](PREFLIGHT.md), [BUSINESS_RULES](BUSINESS_RULES.md).
 
-Próximos, em ordem: vincular qualidade externa a snapshots dos dados; revisar remoção/enfraquecimento de regras; ampliar fixtures de incremental/backfill/eventos atrasados; impor deploy e ensaiar recuperação no warehouse real. Sem promessa de prever qualquer falha.
+Próximos, em ordem: vincular qualidade externa a snapshots dos dados; ampliar fixtures de incremental/backfill/eventos atrasados; impor deploy e ensaiar recuperação no warehouse real. Sem promessa de prever qualquer falha.
 
 Frescor de fontes dbt e resultados GX/Soda atuais/mapeados também podem ser obrigatórios; veja PREFLIGHT.
+
+Unreleased: a [revisão de mudanças](CHANGE_REVIEW.md) compara testes, schema/interfaces, contratos, chaves incrementais e políticas de frescor. O preflight exige revisão exata de controles alterados mesmo quando os testes restantes passam. Comportamento dinâmico e consumidores não registrados precisam de validação complementar.

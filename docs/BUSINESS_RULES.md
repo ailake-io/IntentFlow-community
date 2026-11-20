@@ -48,7 +48,7 @@ Generic tests can use the same native `config.tags` and `config.meta.owner` in t
 - Normal checks persist the last **20 observed invocations per tagged test id** in the project store, deduplicated by dbt invocation. Re-reading the same build does not add executions. This is bounded execution history, not an unlimited business-metric time series. Keep the store persistent/backed up; changed dbt test ids start a separate history.
 - Preflight blocks failed/skipped/full-build gaps independently of finding severity and can enforce all warning results. Failed preflight artifact validation returns diagnostics before ingesting; normal check/watch is responsible for following those failed runs in the shared store.
 
-The UI reads results; editing and executing the rules happens in the dbt repository and its normal CI/deployment process. No rule runs continuously just because it was declared. Schedule dbt and IntentFlow watch/check, and configure notification routes as needed. This does not automatically identify a business-rule definition that was deleted or weakened; review the rule diff as part of the PR.
+The UI reads results; editing and executing the rules happens in the dbt repository and its normal CI/deployment process. No rule runs continuously just because it was declared. Schedule dbt and IntentFlow watch/check, and configure notification routes as needed. [Change review](CHANGE_REVIEW.md) identifies removed/changed definitions, policy changes and removal of business tracking against a trusted baseline. Preflight requires exact review acknowledgements; it cannot decide whether arbitrary changed SQL is semantically stronger.
 
 ## Daily cases and how to express them
 

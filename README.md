@@ -43,6 +43,8 @@ Full setup: [INSTALLATION](docs/INSTALLATION.md). The commands below assume Bash
 
 Declare native dbt tests with `tags: [business_rule]` and `meta.owner`. The Business rules page/`intentflow rules` shows results, owners, impact and the last 20 observed executions. `intentflow preflight` requires a fresh full-build result, catalog coverage, a trusted baseline and required checks; it blocks failures, skips and unavailable validation. Existing pre-run `gate` remains available.
 
+`intentflow changes` and the Changes before production page expose removed/changed tests, contracts, schemas and incremental/freshness policies against the baseline. Preflight blocks changes needing review even if the remaining tests pass. See [CHANGE_REVIEW](docs/CHANGE_REVIEW.md) for exact acknowledgements, impact and limitations.
+
 See [BUSINESS_RULES](docs/BUSINESS_RULES.md) for SQL/business examples and [PREFLIGHT](docs/PREFLIGHT.md) for CI/commit provenance, contracts, warning policies and limits. These source-checkout additions are not included in older release wheels. Configure a required CI/deployment gate to enforce the result.
 
 ## Usage (CLI)

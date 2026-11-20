@@ -60,3 +60,15 @@ Um projeto local separado, `../intentflow-retail-pilot`, baixa o UCI Online Reta
 O checkout develop acrescenta o preflight de evidência de build completo e a CLI/UI de regras baseadas em testes nativos dbt marcados. Veja [PREFLIGHT](PREFLIGHT.md) e [BUSINESS_RULES](BUSINESS_RULES.md) para escopo e lacunas. Regressões cobrem artefatos incompletos/antigos/misturados, checks desabilitados/com erro, falhas de consulta capturadas, aquecimento de histórico, contratos estritos, sete regras com dbt real, frescor com comando dbt real e fixtures externas atuais/reconhecidas/mapeadas. O sandbox parcial Enterprise não substitui build completo no warehouse alvo.
 
 O baseline de varejo ampliado tem 6 seeds, 10 modelos e 30 testes: 26 aprovados, 4 avisos naturais e nenhuma falha/pulo. Cinco regras e sua UI/histórico passaram. O gate integral continua bloqueando repetições candidatas na origem preservada; o preflight positivo usa exceção explícita de PRB001 somente em outro store de QA, mantendo os testes da chave da fato.
+
+## Revisão de mudanças — 2026-11-20 (Unreleased)
+
+A [revisão de mudanças](CHANGE_REVIEW.md) compara testes, schema/interfaces, contratos nativos, chaves incrementais e políticas de frescor existentes. O preflight bloqueia controles removidos/alterados mesmo quando os testes restantes passam. Há revisão estrita opcional de código e vínculo à revisão implantada esperada. Aceites exigem ids/justificativas exatos e mantêm as demais validações obrigatórias.
+
+- Suíte Community local completa: **415 aprovados / 44 pulados**. Uma regressão dbt nativa adicionada depois foi validada na suíte específica de comparação, com **37 aprovados**; os conjuntos se sobrepõem e não devem ser somados. A CI cobre a coleta final.
+- Suíte Enterprise: **129 aprovados / 10 pulados**, incluindo sandbox Docker local. Keycloak (8), GitLab (1) e Ollama (1) ficaram sem configuração.
+- Aceitação dbt real: referência aprovada; regra removida, regra com `where 1=0` e expectativa unitária embutida reduzida passam no dbt e são bloqueadas pelo preflight. Aceites exatos de mudanças intencionais passam; a fixture foi restaurada ao final.
+- Tela de revisão em português no Chrome: ids/estado de revisão corretos e nenhum erro JavaScript. Os artefatos incluem um teste unitário nativo.
+- Comparação sintética de metadados de 5.000 modelos: **0,486 s**, com prévia de impacto limitada a 100 recursos e truncamento explícito. É uma medição de metadados, sem benchmark do warehouse de produção.
+
+A fixture, logs, JSON e captura de tela ficam separadamente em `../intentflow-retail-pilot/reports/change-review/` e `change-review-results.json`, fora dos pacotes. O guia detalha limites de consumidores, execução e snapshots. CVEs das imagens e ensaios de deploy/recuperação no warehouse de destino seguem pendentes.

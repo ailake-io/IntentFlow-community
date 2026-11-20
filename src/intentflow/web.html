@@ -188,7 +188,7 @@ async function load(){
 const sevCount=(f,s)=>f.filter(x=>x.severity===s).length;
 
 /* ---------- navigation ---------- */
-const VIEWS=[['overview',T("Overview")],['incidents',T("Incidents")],['findings',T("Findings")],['rules',T("Business rules")],['lineage',T("Lineage and impact")],['diff',T("Data diff")],['pipelines','Pipelines'],['cluster',T("Cluster and memory")],['integrations',T("Integrations")],['fixes',T("Fixes")],['config',T("Settings")],['team',T("Team")],['audit',T("Audit")]];
+const VIEWS=[['overview',T("Overview")],['incidents',T("Incidents")],['findings',T("Findings")],['rules',T("Business rules")],['changes',T("Changes before production")],['lineage',T("Lineage and impact")],['diff',T("Data diff")],['pipelines','Pipelines'],['cluster',T("Cluster and memory")],['integrations',T("Integrations")],['fixes',T("Fixes")],['config',T("Settings")],['team',T("Team")],['audit',T("Audit")]];
 const has=f=>!!(S.me&&S.me.features&&S.me.features.includes(f));     // Enterprise features reported by /api/me
 function langSel(){if($('#langsel'))return;$('.side-foot').append(h('select',{id:'langsel','aria-label':'Language / Idioma',onchange:e=>setLang(e.target.value)},
   [['en','English'],['pt','Português']].map(([v,l])=>h('option',{value:v,selected:v===I18N.lang},l))))}
@@ -235,7 +235,7 @@ function render(){
   if(!S.data)return;
   nav();const m=$('#main');
   if(document.activeElement&&['INPUT','SELECT'].includes(document.activeElement.tagName)&&m.contains(document.activeElement))return; // do not interrupt typing
-  const v={overview,incidents,findings,rules:rulesPage,lineage:lineageView,diff:diffPage,pipelines,cluster,integrations:integrationsPage,fixes,config,team:teamPage,audit}[S.view]||overview;
+  const v={overview,incidents,findings,rules:rulesPage,changes:changesPage,lineage:lineageView,diff:diffPage,pipelines,cluster,integrations:integrationsPage,fixes,config,team:teamPage,audit}[S.view]||overview;
   m.replaceChildren(v())}
 
 /* ---------- components ---------- */
@@ -829,6 +829,33 @@ function rulesPage(){
       h('details',{},h('summary',{},T("Recent executions")+' ('+rule.history.length+')'),
         rule.history.length?h('table',{},h('thead',{},h('tr',{},[T("Last result"),T("State"),T("Failing rows")].map(label=>h('th',{},label)))),
           h('tbody',{},[...rule.history].reverse().map(run=>h('tr',{},h('td',{},run.generated_at?new Date(run.generated_at).toLocaleString():'—'),h('td',{},pill(run.status)),h('td',{},run.failures??'—'))))):h('p',{class:'sub'},T("History is recorded when checks run."))))));
+}
+
+/* ---------- candidate change review ---------- */
+function changesPage(){
+  const key=(S.project||'main')+'|'+(S.cfg.settings?.['dbt.target']||'')+'|'+(S.cfg.settings?.['dbt.base_target']||'')+'|'+(S.cfg.settings?.['dbt.base_revision']||'')+'|'+(S.cfg.last_check?.ts||'');
+  if(!S.changes||S.changes.key!==key){
+    S.changes={key,loading:true};
+    api('/api/changes').then(data=>{if(S.changes?.key===key){S.changes={key,...data};render()}})
+      .catch(e=>{if(S.changes?.key===key){S.changes={key,error:e.message};render()}});
+  }
+  const data=S.changes;
+  const head=header(T("Changes before production"),T("Compare the candidate with an approved baseline and inspect the known impact."),
+    h('button',{class:'btn',onclick:()=>{S.changes=null;render()}},T("Refresh")));
+  if(data.loading)return h('div',{},head,h('div',{class:'card empty'},h('span',{class:'spin'})));
+  if(data.error)return h('div',{},head,empty(T("Comparison unavailable"),data.error),h('p',{class:'sub'},T("Configure dbt.target and dbt.base_target for this project. The candidate must not be its own baseline.")));
+  return h('div',{},head,
+    data.gaps.length?empty(T("Comparison incomplete"),T("Some catalog columns are unavailable; no complete schema comparison can be claimed.")):null,
+    h('p',{class:'sub'},T("{total} change(s); {reviews} require review.",{total:data.summary.total,reviews:data.summary.review_required})),
+    data.changes.length?data.changes.slice(0,100).map(change=>h('div',{class:'card',style:'padding:14px;margin-bottom:10px'},
+      h('div',{style:'display:flex;justify-content:space-between;gap:10px'},h('b',{},change.name),
+        h('span',{class:'pill '+(change.requires_review?'pending':'')},change.requires_review?T("Review required"):T("Informational"))),
+      h('p',{},change.message),h('p',{class:'sub'},T("Owner")+': '+(change.owner||T("no owner set"))),
+      h('p',{class:'sub'},T("Known impact")+': '+(change.impact.map(node=>node.name).join(', ')||'—')),
+      change.impact_truncated?h('p',{class:'sub'},T("Impact preview is limited; inspect lineage for the remaining dependencies.")):null,
+      h('code',{},change.id))):empty(T("No declared changes found"),T("This does not replace a full build, business tests or a data diff.")),
+    data.changes.length>100?h('p',{class:'sub'},T("Showing the first 100 changes. Use the changes CLI JSON report for the full list.")):null,
+    h('p',{class:'sub'},data.note));
 }
 
 /* ---------- boot ---------- */
