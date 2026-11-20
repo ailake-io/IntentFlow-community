@@ -18,6 +18,9 @@ from .i18n import tr
 RELATIONS = {"model", "seed", "snapshot", "source"}
 TESTS = {"test", "unit_test"}
 MAX_IMPACT_PREVIEW = 100
+# dbt build records these runtime helpers on test nodes; docs/parse may omit
+# those edges. Include them consistently, still comparing their actual bodies.
+DBT_TEST_EXECUTION_MACROS = ("macro.dbt.get_limit_subquery_sql", "macro.dbt.should_store_failures", "macro.dbt.statement")
 
 
 def _hash(value):
@@ -91,8 +94,10 @@ def _macros(manifest):
     if not isinstance(definitions, dict):
         raise ValueError(tr("change comparison requires valid macro definitions"))
     cache = {}
-    def dependencies(node):
+    def dependencies(node, *, test=False):
         found, stack = {}, list((node.get("depends_on") or {}).get("macros") or [])
+        if test:
+            stack.extend(DBT_TEST_EXECUTION_MACROS)
         while stack:
             uid = stack.pop()
             if uid in found:
@@ -125,7 +130,7 @@ def _test_parts(node, macros):
     return {"sql": _sql(node.get("raw_code") or node.get("raw_sql")),
             "arguments": (node.get("test_metadata") or {}).get("kwargs") or {},
             "inputs": sorted((node.get("depends_on") or {}).get("nodes") or []),
-            "policy": policy, "macros": macros(node),
+            "policy": policy, "macros": macros(node, test=True),
             "unit_fixtures": {key: node.get(key) for key in ("given", "expect", "overrides", "model")}}
 
 

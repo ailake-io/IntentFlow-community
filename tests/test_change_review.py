@@ -305,6 +305,18 @@ def test_transitive_macro_cycles_terminate_and_changes_require_review(documents)
     assert report['unreviewed']
 
 
+@pytest.mark.parametrize('changed_body',[False,True])
+def test_dbt_execution_phase_macro_edges_do_not_change_the_rule_but_bodies_do(documents,changed_body):
+    before,after,*_=documents
+    for manifest in (before,after):
+        manifest['macros']={uid:{'macro_sql':'select 1'} for uid in change_review.DBT_TEST_EXECUTION_MACROS}
+    after['nodes'][TEST]['depends_on']['macros']=list(change_review.DBT_TEST_EXECUTION_MACROS)
+    if changed_body:
+        after['macros']['macro.dbt.statement']['macro_sql']='select 2'
+    report=compare(documents)
+    assert bool(report['unreviewed'])==changed_body
+
+
 def test_embedded_unit_expectation_changes_require_review(documents):
     before,after,*_=documents
     uid='unit_test.shop.orders.projection'
