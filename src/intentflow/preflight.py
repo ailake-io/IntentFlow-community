@@ -285,15 +285,31 @@ def check_age(doc, name, now, hours, gap):
         gap("artifact_timestamp", tr("{name}: generated_at must include a valid timezone", name=name))
 
 
-def run(store, options, *, required=(), max_age_hours=24, warnings_as_errors=False, fail_on="high", revision=None, require_freshness=False):
+def run(store, options, *, required=(), max_age_hours=24, warnings_as_errors=False, fail_on="high", revision=None, require_freshness=False, accepted_changes=(), review_model_logic=False, baseline_revision=None):
     from . import runner
     from .checks import REGISTRY, load_all
 
     o = runner.resolve_options(store, options)
     if not all(o.get(k) for k in ("target", "base", "root")):
         raise ValueError(tr("preflight requires target, base and root"))
+    if Path(o["target"]).resolve() == Path(o["base"]).resolve():
+        raise ValueError(tr("candidate and baseline must be different artifact locations"))
     evidence = inspect_artifacts(o["target"], o["base"], o["root"], max_age_hours=max_age_hours, warnings_as_errors=warnings_as_errors, revision=revision, require_freshness=require_freshness)
     evidence.update({"ok": False, "findings": [], "completed_checks": [], "failed_checks": [], "required_checks": sorted(set(DEFAULT_REQUIRED) | set(required))})
+    if not evidence["errors"]:
+        from . import change_review
+        try:
+            changes = change_review.load(o["target"], o["base"], review_model_logic=review_model_logic, baseline_revision=baseline_revision)
+        except ValueError as e:
+            evidence["errors"].append({"code": "change_comparison_unavailable", "message": str(e)})
+        else:
+            evidence["change_review"] = change_review.acknowledge(changes, accepted_changes)
+            if changes["gaps"]:
+                evidence["errors"].append({"code": "change_comparison_incomplete", "message": str(tr("Catalog columns unavailable for change comparison.")), "gaps": changes["gaps"]})
+            if changes["unreviewed"]:
+                evidence["errors"].append({"code": "changes_require_review", "message": str(tr("Existing controls or interfaces changed; review the identified changes before promotion.")), "changes": changes["unreviewed"]})
+            if accepted_changes:
+                store.audit("cli", "change_acknowledged", {"changes": [{"id": c["id"], "reason": c["reason"]} for c in changes["changes"] if c["acknowledged"]]})
     load_all()
     known = {code for c in REGISTRY.values() for code in (c.id, *c.emits)}
     unknown = set(evidence["required_checks"]) - known

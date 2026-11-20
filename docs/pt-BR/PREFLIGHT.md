@@ -10,13 +10,14 @@ Recurso Unreleased do checkout: `intentflow preflight`. Wheels de releases anter
 - Resultado de docs/parse/run/test usado no lugar do build; resultados vazios, recursos habilitados ausentes, IDs repetidos/incompatíveis, ausência de testes habilitados e estados de falha/pulo/desconhecidos.
 - Catálogo incompleto/com erro em qualquer lado; projeto/adapter incompatíveis; SQL compilado divergente entre manifesto e build; arquivos SQL/Python atuais de modelos/testes diferentes do manifesto.
 - Check obrigatório desabilitado, exceção interna de check ou consulta do warehouse que falha mesmo quando a sonda captura a exceção.
+- Testes existentes, acompanhamento de regras ou interfaces removidos/alterados que exijam revisão contra a referência; colunas de catálogo ausentes em relações ativas. Veja [CHANGE_REVIEW](CHANGE_REVIEW.md).
 - Achados na severidade de `--fail-on` ou acima dela, por padrão high. `--warnings-as-errors` também bloqueia avisos dbt.
 
 Checks obrigatórios por padrão: SQL001/002, DBT002/003/004, SCH001/002/003, DBTR001/002/003 e BIZ001/002. O conjunto normal é executado, incluindo checks contínuos; a política não pode remover silenciosamente um obrigatório. `completed_checks` informa funções concluídas, não prova que toda integração, coluna ou regra foi avaliada. Um check sem sua entrada opcional pode não ter o que inspecionar.
 
 `--require-check` acrescenta **IDs exatos**, não prefixos. PRB001–004/SQL012–014 exigem conexão disponível. PRB002/003 obrigatórios precisam de histórico: aquecimento inicial é lacuna, não aprovação. Preflight lê o histórico das sondas e não treina volume/nulos com os dados candidatos. Rode checks normais na base confiável primeiro. CTR001 obrigatório lê estritamente todos os contratos declarados; arquivos ausentes, inválidos ou sem definições suportadas não são ignorados.
 
-A comparação de schema usa a identidade dbt quando homologação e produção têm schemas de relação diferentes. O diff de catálogo continua limitado aos recursos presentes nos dois lados; build/testes completos e regras de negócio permanecem necessários.
+A comparação de schema usa a identidade dbt quando homologação e produção têm schemas de relação diferentes. A comparação de mudanças também expõe recursos removidos e colunas/tipos alterados independentemente de consumidores conhecidos; build/testes completos e regras de negócio permanecem necessários.
 
 ## Evidência obrigatória de frescor e qualidade externa
 
@@ -36,6 +37,7 @@ A evidência obrigatória adicional suporta SQL001–015, DBT001–005, DBTR001�
 Trecho shell desse job, na raiz do projeto dbt:
 
 ```bash
+export DBT_PARTIAL_PARSE=false  # regenerar metadados da revisão ao restaurar cache dbt
 export DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION="$GITHUB_SHA"
 dbt build --target ci
 cp target/run_results.json target/build_run_results.json
@@ -71,4 +73,4 @@ Códigos de saída: 0 passou no escopo configurado; 1 bloqueado; 2 configuraçã
 
 Cobre integridade de artefatos/build dbt e os checks existentes. Não reproduz todo tráfego de produção, prova a semântica do negócio, impõe política externa de deploy, valida todas as credenciais de nuvem, descobre toda coluna sensível ou certifica atualização da origem. Frescor de fontes e resultados GX/Soda precisam ser exigidos explicitamente; sem as opções correspondentes, não são certificados pelo preflight. Integrações continuam precisando de configuração e validação próprias.
 
-Prioridades seguintes: vincular qualidade externa ao snapshot exato dos dados; revisar remoção/enfraquecimento de regras contra a base; ampliar fixtures de incremental/backfill/fuso e eventos atrasados; integrar deploy e ensaiar recuperação no warehouse real. CVEs das imagens e validação de segurança/desempenho em produção continuam pendentes. Serviços, permissões e dados podem mudar depois da validação.
+Prioridades seguintes: vincular qualidade externa ao snapshot exato dos dados; ampliar fixtures de incremental/backfill/fuso e eventos atrasados; integrar deploy e ensaiar recuperação no warehouse real. CVEs das imagens e validação de segurança/desempenho em produção continuam pendentes. Serviços, permissões e dados podem mudar depois da validação.

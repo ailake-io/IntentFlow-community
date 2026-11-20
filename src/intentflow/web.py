@@ -60,7 +60,7 @@ class _Handled(Exception):
 SAFE_SETTING_PREFIXES = ("policy.", "scan.", "watch.", "lineage.", "dbt.")      # tuning a project admin may change...
 # ...except paths the server will read from (an admin of one project could point them at another project's files) and
 # security policy that applies to everyone.
-GLOBAL_ONLY_SETTINGS = {"dbt.root", "dbt.target", "dbt.base_target", "dbt.base_root", "lineage.declared",
+GLOBAL_ONLY_SETTINGS = {"dbt.root", "dbt.target", "dbt.base_target", "dbt.base_root", "dbt.base_revision", "lineage.declared",
                         "policy.separate_approver", "policy.token_max_age_days"}
 
 
@@ -291,6 +291,15 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     return self._json(200, {"notes": st.notes(path.rsplit("/", 1)[1])})
                 if path.startswith("/api/lineage/"):
                     return self._lineage(st, path, q)
+                if path == "/api/changes":
+                    from . import change_review
+                    target, base = st.get_setting("dbt.target"), st.get_setting("dbt.base_target")
+                    if not target or not base:
+                        return self._json(400, {"error": tr("change comparison requires candidate and baseline targets")})
+                    try:
+                        return self._json(200, change_review.acknowledge(change_review.load(target, base, baseline_revision=st.get_setting("dbt.base_revision"))))
+                    except ValueError as e:
+                        return self._json(400, {"error": str(e)})
                 if path == "/api/rules":
                     from . import business_rules, dbt_loader, dbt_results
                     target = st.get_setting("dbt.target")

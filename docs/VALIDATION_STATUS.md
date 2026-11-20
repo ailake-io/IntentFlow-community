@@ -60,3 +60,17 @@ A separate local project, `../intentflow-retail-pilot`, downloads the full UCI O
 The develop checkout adds the preflight full-build evidence gate and the rules CLI/UI backed by tagged native dbt tests. See [PREFLIGHT](PREFLIGHT.md) and [BUSINESS_RULES](BUSINESS_RULES.md) for scope and remaining gaps. Automated regressions cover incomplete/stale/mixed artifacts, disabled/errored checks, caught query failures, history warm-up, strict contracts, seven real-dbt business rules, source freshness with the real dbt command, and recognized/mapped/current external-quality fixtures. Partial Enterprise sandbox validation still does not replace a full target-warehouse build.
 
 The expanded retail baseline has 6 seeds, 10 models and 30 tests: 26 pass, 4 natural-data warnings and no failures/skips. Five business rules and their browser UI/history passed. The full gate still blocks preserved raw duplicate candidates; the positive preflight case uses an explicit PRB001 exception only in a separate QA store, retaining full fact-key tests.
+
+## Baseline change review — 2026-11-20 (Unreleased)
+
+[Change review](CHANGE_REVIEW.md) compares existing tests, schema/interfaces, native contracts, incremental keys and freshness policies. Preflight blocks removed/changed controls even when remaining tests pass. Optional strict model-code review and expected deployed-revision metadata are supported; acknowledgements require exact ids/reasons and do not waive other validation.
+
+- Local full Community suite: **415 passed / 44 skipped**. A subsequently added native-dbt regression was verified in the separate **37 passed** comparison suite; these overlapping counts must not be added. CI covers the final collection.
+- Paired Enterprise suite: **129 passed / 10 skipped**, including the local Docker sandbox cases. Keycloak (8), GitLab (1) and Ollama (1) were not configured.
+- Native dbt acceptance: baseline passes; removed rule, vacuous `where 1=0` rule and reduced embedded unit-test expectation each pass dbt but are blocked by preflight. Exact intentional-change acknowledgements pass; the fixture is restored afterwards.
+- Portuguese Chrome change-review page: correct ids/review state and no JavaScript errors. Real artifacts include a native unit-test resource.
+- Synthetic 5,000-model metadata comparison: **0.486 s**, bounded 100-resource impact preview with truncation explicitly reported. This is not a production warehouse benchmark.
+
+The acceptance fixture, logs, JSON and screenshot live separately in `../intentflow-retail-pilot/reports/change-review/` and `change-review-results.json`; they are not packaged in either repository. Consumer/runtime/data-snapshot limits are explicit in the guide. Image CVEs and target-warehouse deployment/recovery validation remain pending.
+
+Follow-up with the complete 541,909-row UCI baseline exposed dbt runtime-helper dependency edges present in build manifests and absent in docs manifests. Normalize those known edges consistently while retaining helper-body review. The fresh full retail build has 16 successful builds, 26 passing tests, 4 natural warnings and no failures/skips; change review has zero changes/gaps and the documented isolated PRB001 QA exception passes. The original warehouse, XLSX and six CSV checksums are preserved. Related comparison/preflight/business regressions after this correction: **113 passed** (overlapping earlier runs).

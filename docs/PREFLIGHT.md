@@ -10,13 +10,14 @@ Unreleased source-checkout feature: `intentflow preflight`. Earlier release whee
 - Results from docs/parse/run/test instead of build; empty results, missing enabled resources, duplicate/mismatched resource ids, missing enabled tests, failed/skipped/unknown statuses.
 - Incomplete/erroring catalogs on either side; mismatched project/adapter; different compiled SQL between manifest and build; current SQL/Python model/test files differing from the manifest.
 - A required check disabled by policy, an internal check exception, or a failed warehouse query even when its probe catches the exception.
+- Removed/changed existing tests, business-rule tracking or interfaces requiring review against the baseline; missing catalog columns for any active relation. See [CHANGE_REVIEW](CHANGE_REVIEW.md).
 - Findings at or above `--fail-on` (default high). `--warnings-as-errors` also blocks dbt warning results.
 
 The default required checks are SQL001/002, DBT002/003/004, SCH001/002/003, DBTR001/002/003 and BIZ001/002. The normal check set runs, including continuous checks; the required set cannot silently disappear through disabled policies. `completed_checks` reports completed check functions, not proof that every integration, column or rule was evaluated. A check without its optional input can have nothing applicable to inspect.
 
 `--require-check` adds **exact ids**, not prefixes. For PRB001–004/SQL012–014 it also requires an available warehouse connection. Required PRB002/003 need historical observations; initial warm-up is a gap, not an approval. Preflight reads probe history and does not train volume/null baselines on candidate data. Run normal checks on the trusted baseline first. Required CTR001 loads every declared contract strictly: missing/invalid/unsupported files cannot be silently ignored.
 
-Schema comparison matches dbt node identity when homologation and production use different relation schemas. Catalog comparison remains limited to the resources present on both sides; a full build/test and business assertions remain necessary.
+Schema comparison matches dbt node identity when homologation and production use different relation schemas. The change-review comparison also reports resource removals and column/type changes independently of known consumers; a full build/test and business assertions remain necessary.
 
 ## Mandatory source and external-quality evidence
 
@@ -36,6 +37,7 @@ Additional mandatory evidence is currently supported for SQL001–015, DBT001–
 Example shell portion of that job, from the dbt project root:
 
 ```bash
+export DBT_PARTIAL_PARSE=false  # regenerate revision metadata when restoring a dbt cache
 export DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION="$GITHUB_SHA"
 dbt build --target ci
 cp target/run_results.json target/build_run_results.json
@@ -71,4 +73,4 @@ Exit codes: 0 passed the configured checks/evidence; 1 blocked; 2 invalid CLI co
 
 This covers dbt artifact/build integrity and the existing check set. It does not replay all production traffic, prove business semantics, enforce an external deployment policy, validate all cloud credentials, discover every sensitive column, or certify source timeliness. Source freshness and GX/Soda evidence must be explicitly required; otherwise preflight does not certify them. Plugins/integrations still require their own setup and validation.
 
-Next priorities: bind external quality to the exact source-data snapshot; review of removed/weakened business rules against the baseline; representative incremental/backfill/timezone and late-event fixtures; deployment integration and recovery drills on the actual warehouse. Image CVEs and production security/performance validation remain separate pending work. No preventive check can guarantee that an external service, permission or new data pattern will never change after validation.
+Next priorities: bind external quality to the exact source-data snapshot; representative incremental/backfill/timezone and late-event fixtures; deployment integration and recovery drills on the actual warehouse. Image CVEs and production security/performance validation remain separate pending work. No preventive check can guarantee that an external service, permission or new data pattern will never change after validation.

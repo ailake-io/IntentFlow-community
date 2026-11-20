@@ -48,7 +48,7 @@ Testes genéricos podem usar os mesmos `config.tags` e `config.meta.owner` no YA
 - Checks normais persistem as últimas **20 invocações observadas por ID de teste marcado**, no store do projeto, sem repetir a mesma invocação dbt. É histórico limitado de execuções, não série ilimitada de indicadores de negócio. Preserve/faça backup do store; mudar o ID dbt cria outro histórico.
 - Preflight bloqueia falhas/pulos/lacunas de build completo independentemente da severidade do achado e pode bloquear todos os avisos. Falha na validação dos artefatos retorna diagnóstico antes da ingestão; check/watch normal acompanha essas execuções reprovadas no store compartilhado.
 
-A UI consulta resultados; edição e execução das regras acontecem no repositório dbt e na CI/deploy normal. Declarar uma regra não a agenda. Agende dbt e watch/check e configure as notificações. A remoção ou enfraquecimento de uma definição ainda não é identificado automaticamente; revise o diff das regras no PR.
+A UI consulta resultados; edição e execução das regras acontecem no repositório dbt e na CI/deploy normal. Declarar uma regra não a agenda. Agende dbt e watch/check e configure as notificações. A [revisão de mudanças](CHANGE_REVIEW.md) identifica definições removidas/alteradas, políticas e retirada do acompanhamento contra uma referência confiável. O preflight exige aceite exato; a semântica de SQL arbitrário alterado continua precisando de revisão humana.
 
 ## Casos do dia a dia e como representar
 
