@@ -37,6 +37,7 @@ Additional mandatory evidence is currently supported for SQL001–015, DBT001–
 Example shell portion of that job, from the dbt project root:
 
 ```bash
+export DBT_PARTIAL_PARSE=false  # regenerate revision metadata when restoring a dbt cache
 export DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION="$GITHUB_SHA"
 dbt build --target ci
 cp target/run_results.json target/build_run_results.json

@@ -37,6 +37,7 @@ A evidência obrigatória adicional suporta SQL001–015, DBT001–005, DBTR001�
 Trecho shell desse job, na raiz do projeto dbt:
 
 ```bash
+export DBT_PARTIAL_PARSE=false  # regenerar metadados da revisão ao restaurar cache dbt
 export DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION="$GITHUB_SHA"
 dbt build --target ci
 cp target/run_results.json target/build_run_results.json
