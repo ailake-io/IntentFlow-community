@@ -71,17 +71,16 @@ def run_check(store: Store, overrides: dict | None = None, only: list[str] | Non
                             o["postgres_env"] if k == "warehouse.postgres_env" and o["postgres_env"] else store.get_setting(k))
     dres = dbt_results.load(o["target"])
     if dres:
-        fresh = dbt_results.record(store, dres)       # timings enter the history once per invocation
+        dbt_results.record(store, dres)       # timings enter the history once per invocation
         store.set_setting("state.dbt_run", dbt_results.summary(dres, project))
-        _ = fresh
         from . import business_rules
         business_rules.record(store, project, dres)
-    from . import external
+    from . import contracts, dq_results, external
     declared = store.get_setting("lineage.declared") or str(Path(o["root"] or Path(o["target"]).parent) / external.DECLARED_FILE)
     ctx = Context(project=project, external=external.load(store, declared, project), lineage=lineage, base_project=base, base_lineage=base_l, policies=store.policies(), dbt_results=dres,
                   airflow_dags_dir=o["airflow_dags"], kestra_flows_dir=o["kestra_flows"], store=store, warehouse=wh,
-                  dq_results=__import__("intentflow.dq_results", fromlist=["x"]).load_all(store.get_setting("dq.results")),
-                  contracts=__import__("intentflow.contracts", fromlist=["x"]).load_all(store.get_setting("contracts.dir")),
+                  dq_results=dq_results.load_all(store.get_setting("dq.results")),
+                  contracts=contracts.load_all(store.get_setting("contracts.dir")),
                   samples=store.recent_samples(time.time() - 24 * 3600))
     if required_checks is not None:
         ctx.required_checks = required_checks
@@ -172,8 +171,8 @@ def collect_runs(store: Store, airflow: str | None = None, airflow_api: str | No
             rs = c.runs()
             store.upsert_runs(rs)
             n += len(rs)
-        except RuntimeError as e:
-            errors.append(f"{name}: {e}")
+        except Exception as e:          # one bad orchestrator (bad JSON, socket error, schema change) must not stop the others
+            errors.append(f"{name}: {type(e).__name__}: {str(e)[:300]}")
     if not clients:
         errors.append(tr("no orchestrator configured") + " (airflow.url / kestra.url / prefect.url / dagster.url / airbyte.url / fivetran.url / spark.url / databricks.jobs_host / argo.url / mage.url / dbt_cloud.account_id / kafka_connect.url / flink.url / luigi.url / mlflow.url / rundeck.url / aws.*)")
     return {"runs": n, "errors": errors}
@@ -216,12 +215,12 @@ def collect_samples(store: Store, host: bool = True, docker: bool = True) -> int
             s += monitoring.prometheus_samples(store.get_setting("prometheus.url"), qs or None)
         except (RuntimeError, ValueError):
             pass
-    if store.get_setting("catalog.glue") or store.get_setting("catalog.unity"):
-        from . import catalogs
-        catalogs.collect(store)
-    if store.get_setting("kafka.bootstrap") or store.get_setting("kafka.schema_registry"):
-        from . import streaming
-        streaming.collect(store)
+    for flags, mod in ((("catalog.glue", "catalog.unity"), "catalogs"), (("kafka.bootstrap", "kafka.schema_registry"), "streaming")):
+        if any(store.get_setting(f) for f in flags):
+            try:
+                __import__(f"intentflow.{mod}", fromlist=["collect"]).collect(store)
+            except Exception as e:      # an unreachable catalog/registry must not drop the other samples
+                store.audit("system", "collect_failed", {"what": mod, "error": f"{type(e).__name__}: {str(e)[:300]}"})
     url = store.get_setting("airflow.url")
     if url:
         try:
@@ -238,14 +237,15 @@ def watch(store: Store, interval_s: float = 300, iterations: int | None = None, 
     while iterations is None or n < iterations:
         t0 = time.time()
         try:
-            collect_runs(store)
-            collect_samples(store)
+            for step in (collect_runs, collect_samples):      # collection failures must not skip checks/notifications
+                try:
+                    step(store)
+                except Exception as e:
+                    store.audit("system", "watch_error", {"step": step.__name__, "error": str(e)[:300]})
             if store.get_setting("dbt.target"):
-                run_check(store)
-                from . import dbt_loader, incidents, notify
-                target = store.get_setting("dbt.target")
-                proj = dbt_loader.load(target)
-                notify.send(store, incidents.group(store.findings("open"), proj))
+                res = run_check(store)
+                from . import incidents, notify
+                notify.send(store, incidents.group(store.findings("open"), res["project"]))
         except Exception as e:     # a bad cycle does not take the scheduler down
             try:
                 store.audit("system", "watch_error", {"error": str(e)[:300]})

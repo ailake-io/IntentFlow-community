@@ -4,7 +4,6 @@ import pytest
 
 pytest.importorskip("sqlfluff")
 
-from intentflow import sqlmesh_loader  # noqa: E402
 from intentflow.checks import Context, run_checks  # noqa: E402
 from intentflow.checks.lint import lint_sql  # noqa: E402
 from intentflow.dbt_loader import DbtNode, Project  # noqa: E402

@@ -7,7 +7,6 @@ Configuration: `intentflow config set dq.results 'path/or/glob[,another]'` (fold
 """
 from __future__ import annotations
 
-from .i18n import tr
 
 import glob
 import json

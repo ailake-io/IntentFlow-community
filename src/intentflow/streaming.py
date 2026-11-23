@@ -62,7 +62,7 @@ def avro_fields(schema) -> dict[str, str]:
 def consumer_lag(bootstrap: str, groups: list[str] | None = None) -> list[tuple[str, str, int]]:
     """[(group, topic, lag)] summing the partitions. Requires `kafka-python-ng`."""
     try:
-        from kafka import KafkaAdminClient, KafkaConsumer, TopicPartition
+        from kafka import KafkaAdminClient, KafkaConsumer
     except ImportError as e:
         raise RuntimeError(tr("install `kafka-python-ng` (pip install intentflow[kafka]) to measure lag")) from e
     cfg: dict = {"bootstrap_servers": bootstrap.split(","), "request_timeout_ms": 15000}

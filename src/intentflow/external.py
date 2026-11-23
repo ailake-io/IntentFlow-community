@@ -276,7 +276,12 @@ def _candidates(ref: str) -> list[list[str]]:
 
 def match(project, ref: str) -> tuple[str | None, str]:
     """(uid, reason): `ok`, `missing` (no node) or `ambiguous` (the most specific matching suffix points to more than one node)."""
-    rels = {uid: [p.strip('"`[]').lower() for p in n.relation.split(".")] if n.relation else [] for uid, n in project.nodes.items()}
+    cached = getattr(project, "_ext_rels", None)
+    if cached is None or cached[0] != len(project.nodes):      # match() runs inside readers() loops: build once per project
+        cached = (len(project.nodes), {uid: [p.strip('"`[]').lower() for p in n.relation.split(".")] if n.relation else []
+                                       for uid, n in project.nodes.items()})
+        project._ext_rels = cached
+    rels = cached[1]
     for parts in _candidates(ref):
         hits = {uid for uid, n in project.nodes.items()
                 if (rels[uid] and len(parts) <= len(rels[uid]) and rels[uid][-len(parts):] == parts)

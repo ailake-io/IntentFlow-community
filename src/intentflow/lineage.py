@@ -297,6 +297,12 @@ def default_workers() -> int:
         return min(4, os.cpu_count() or 1)      # measured: 8 processes were worse than 4 (serialization/pool dominate)
 
 
+def cache_keys(project: Project) -> set[str]:
+    """Lineage cache keys the current project uses (everything else in the cache is stale)."""
+    dialect = DIALECTS.get(project.adapter, None)
+    return {_model_key(project, u, dialect) for u, n in project.nodes.items() if n.resource_type in ("model", "snapshot") and n.compiled_code}
+
+
 def build(project: Project, cache=None, workers: int | None = None) -> LineageResult:
     """`cache`: object with `get(key)`/`set(key, value)` (e.g. the SQLite store) to reuse unchanged models.
     `workers`: processes for the models not in the cache (default: cores, max 4; `INTENTFLOW_WORKERS` overrides)."""

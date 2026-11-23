@@ -1,6 +1,6 @@
 """REAL OpenLineage emitter: an Airflow (container, openlineage provider) sends events to IntentFlow's receiver.
 The container must be set up with an http transport → 127.0.0.1:5055 (see docs/INTEGRATIONS.md)."""
-import base64, json, os, threading, time, urllib.request
+import base64, os, threading, time, urllib.request
 from http.server import ThreadingHTTPServer
 
 import pytest

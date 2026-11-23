@@ -19,7 +19,6 @@ def diff_columns(base, head):
             huid = buid
         if not huid:
             continue
-        hn = head.nodes[huid]
         bc, hc = base.actual_columns(buid), head.actual_columns(huid)
         if not bc or not hc:
             continue      # node without catalog in one of the versions: nothing to compare (avoids a false "removed")

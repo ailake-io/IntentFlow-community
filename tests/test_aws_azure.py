@@ -1,12 +1,12 @@
 """AWS (Glue, Step Functions, Athena) contra o emulador `moto` (API real do boto3, servidor emulado) e Azure Data Factory com servidor local."""
-import json, os, time
+import json
 
 import pytest
 
 moto = pytest.importorskip("moto")
 boto3 = pytest.importorskip("boto3")
 
-from intentflow import runner, warehouses  # noqa: E402
+from intentflow import runner  # noqa: E402
 from intentflow.orchestrators.aws import AthenaClient, GlueClient, StepFunctionsClient  # noqa: E402
 from intentflow.orchestrators.more import AzureDataFactoryClient  # noqa: E402
 from intentflow.store import Store  # noqa: E402

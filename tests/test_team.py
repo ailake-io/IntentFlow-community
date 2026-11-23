@@ -1,4 +1,3 @@
-import time
 """Team mode: users, roles, login, separation of duties, assignment/comments, TLS and safe exposure."""
 from conftest import new_db
 import json, shutil, subprocess, threading, urllib.request, urllib.error, ssl

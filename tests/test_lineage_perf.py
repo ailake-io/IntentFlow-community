@@ -1,6 +1,5 @@
 """Performance/correctness regression of the lineage cache on a synthetic project."""
 import time
-from pathlib import Path
 
 from intentflow import dbt_loader, lineage
 from intentflow.store import Store

@@ -1,6 +1,6 @@
 """SQLite × PostgreSQL store parity, migration between backends and concurrent initialization.
 PostgreSQL tests are skipped without the database (INTENTFLOW_TEST_PG_ADMIN, default: local intentflow-pg container)."""
-import json, os, subprocess, sys, threading, time
+import os, subprocess, sys, threading, time
 from pathlib import Path
 
 import pytest

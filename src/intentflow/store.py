@@ -474,24 +474,47 @@ class Store:
             finally:
                 out.close()
             os.chmod(dest, 0o600)    # holds token hashes and metadata: only the owner reads it
+            self._copy_key(dest)
             return os.path.getsize(dest)
         if not _is_pg(dest) and not os.path.exists(dest):
             os.close(os.open(dest, os.O_CREAT | os.O_WRONLY, 0o600))
-        n = copy_store(self, Store(dest))
+        with Store(dest) as out:
+            n = copy_store(self, out)
         if not _is_pg(dest) and os.path.exists(dest):
             os.chmod(dest, 0o600)
+            self._copy_key(dest)
             return os.path.getsize(dest)
         return n
 
-    def prune(self, days: float, now: float | None = None) -> dict:
+    def _copy_key(self, dest: str) -> None:
+        """Encrypted secrets in a SQLite backup are unreadable without the store's key file: keep it next to the copy (0600)."""
+        src = self.path + ".key"
+        if self.backend == "sqlite" and os.path.exists(src) and not os.environ.get("INTENTFLOW_SECRET_KEY"):
+            fd = os.open(dest + ".key", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "wb") as f, open(src, "rb") as k:
+                f.write(k.read())
+
+    def prune(self, days: float, now: float | None = None, keep_lineage: set[str] | None = None) -> dict:
+        """`keep_lineage`: cache keys of the current project; others are dropped. None leaves the lineage cache alone."""
         cut = (now or time.time()) - days * 86400
         c = self.con
         res = {}
         for name, sql in (("samples", "delete from samples where ts < ?"), ("history", "delete from history where ts < ?"),
                           ("audit", "delete from audit where ts < ?"),
                           ("findings", "delete from findings where status in ('resolved','false_positive') and last_seen < ?"),
-                          ("runs", "delete from runs where coalesce(start, 0) < ?")):
+                          ("runs", "delete from runs where coalesce(start, 0) < ?"),
+                          ("ol_edges", "delete from ol_edges where job in (select job from ol_jobs where last_event < ?)"),
+                          ("ol_jobs", "delete from ol_jobs where last_event < ?"),
+                          ("sessions", "delete from sessions where expires < ?"),
+                          ("login_attempts", "delete from login_attempts where ts < ?")):
             res[name] = c.execute(sql, (cut,)).rowcount
+        # notification cooldown markers (state.notified.*) only matter for COOLDOWN
+        res["notified"] = c.execute("delete from settings where key like 'state.notified.%' and updated < ?", (cut,)).rowcount
+        if keep_lineage is not None:
+            stale = [(r["key"],) for r in c.execute("select key from lineage_cache").fetchall() if r["key"] not in keep_lineage]
+            if stale:
+                c.executemany("delete from lineage_cache where key=?", stale)
+            res["lineage_cache"] = len(stale)
         c.commit()
         return res
 
@@ -552,7 +575,7 @@ class Store:
         if role not in ("viewer", "engineer", "admin"):
             raise ValueError(tr("invalid role (viewer, engineer, admin)"))
         if not re.fullmatch(r"[A-Za-z0-9_.@+-]{2,128}", name):
-            raise ValueError(tr("invalid name (2–64 characters: letters, digits, _ . @ -)"))
+            raise ValueError(tr("invalid name (2–128 characters: letters, digits, _ . @ + -)"))
         if self.con.execute("select 1 from users where name=?", (name,)).fetchone():
             raise ValueError(tr("user '{name}' already exists", name=name))
         token = "if_" + secrets.token_urlsafe(32)
@@ -831,6 +854,13 @@ class Store:
     def set_setting(self, key: str, value) -> None:
         self._upsert("settings", ("key", "value", "updated"), ("key",), [(key, json.dumps(value), time.time())])
         self.con.commit()
+
+    def claim_setting(self, key: str, value) -> bool:
+        """Set `key` only if absent; True if this call set it (atomic across threads and processes)."""
+        before = self.con.execute("insert into settings(key, value, updated) values(?,?,?) on conflict do nothing",
+                                  (key, json.dumps(value), time.time())).rowcount
+        self.con.commit()
+        return before == 1
 
     def get_setting(self, key: str, default=None):
         r = self.con.execute("select value from settings where key=?", (key,)).fetchone()

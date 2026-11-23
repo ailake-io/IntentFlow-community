@@ -206,7 +206,8 @@ class _Run:
 
     def call(self, n: ast.Call, env):
         fn = n.func
-        args = [self.ev(a, env) for a in n.args]
+        for a in n.args:          # evaluated for their side effects on env (nested reads/assignments)
+            self.ev(a, env)
         if isinstance(fn, ast.Name):
             return self.call_user(fn.id, n, env)
         if not isinstance(fn, ast.Attribute):

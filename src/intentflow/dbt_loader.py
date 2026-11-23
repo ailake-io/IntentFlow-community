@@ -61,10 +61,16 @@ class Project:
         return {k: c for k, c in self.nodes[uid].columns.items() if c.actual}
 
     def children(self) -> dict[str, list[str]]:
+        # The graph is fixed once loaded (loaders finish depends_on before building the Project); node count guards additions.
+        sig = len(self.nodes)
+        cached = getattr(self, "_children", None)
+        if cached is not None and cached[0] == sig:
+            return cached[1]
         out: dict[str, list[str]] = {u: [] for u in self.nodes}
         for u, n in self.nodes.items():
             for d in n.depends_on:
                 out.setdefault(d, []).append(u)
+        self._children = (sig, out)
         return out
 
     def downstream(self, uid: str) -> list[str]:

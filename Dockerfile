@@ -15,6 +15,8 @@ ENV PATH="/app/.venv/bin:${PATH}"
 USER 10001:10001
 VOLUME /data
 EXPOSE 8787
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/me', timeout=4)" || exit 1
 # Exposure outside loopback requires users and TLS/proxy; see docs/DEPLOYMENT.md.
 ENTRYPOINT ["intentflow"]
 CMD ["ui"]

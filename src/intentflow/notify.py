@@ -48,6 +48,8 @@ def render_markdown(incidents, title: str | None = None, limit: int = 15) -> str
 
 
 def post_json(url: str, payload: dict, headers: dict | None = None, timeout: float = 10.0) -> int:
+    if not url.lower().startswith(("https://", "http://")):          # urllib would also open file:// and ftp://
+        raise ValueError(tr("only http(s) URLs are allowed"))
     req = urllib.request.Request(url, data=json.dumps(payload).encode(), method="POST",
                                  headers={"Content-Type": "application/json", **(headers or {})})
     with urllib.request.urlopen(req, timeout=timeout) as r:

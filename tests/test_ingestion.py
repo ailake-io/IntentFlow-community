@@ -5,7 +5,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 
 from intentflow import runner
-from intentflow.checks import Context, run_checks
 from intentflow.orchestrators.ingestion import AirbyteClient, FivetranClient, _iso_seconds
 from intentflow.store import Store
 

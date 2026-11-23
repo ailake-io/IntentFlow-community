@@ -1,4 +1,4 @@
-import base64, json, os, subprocess, sys, threading, time, urllib.request, urllib.error
+import base64, json, os, subprocess, threading, time, urllib.request, urllib.error
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -217,7 +217,7 @@ def test_ui_token_auth(tmp_path):
                 return e.code
         assert get("/api/overview") == 401
         assert get("/api/overview", {"Authorization": "Bearer s3cret"}) == 200
-        assert get("/api/overview", {"Cookie": "if_session=s3cret"}) == 200
+        assert get("/api/overview", {"Cookie": "if_session=s3cret"}) == 401      # the cookie carries an HMAC of the token, never the token
         assert get("/?token=errado") == 401
     finally:
         srv.shutdown()
@@ -225,7 +225,7 @@ def test_ui_token_auth(tmp_path):
 
 def test_ui_javascript_is_syntactically_valid():
     """Regression: a syntax error leaves the UI blank and no API test notices."""
-    import re, shutil, subprocess, tempfile
+    import re, shutil, tempfile
     node = shutil.which("node")
     if not node:
         pytest.skip("node not available")

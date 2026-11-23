@@ -4,11 +4,10 @@ import base64, hashlib, json, os, secrets, subprocess, sys, threading, time, url
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-import pytest
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-from intentflow import runner, totp
+from intentflow import totp
 from intentflow.model import Finding
 from intentflow.store import Store
 from intentflow.web import make_handler

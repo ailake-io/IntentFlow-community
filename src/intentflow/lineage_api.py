@@ -181,7 +181,7 @@ def impact(proj, res, model: str, column: str | None = None, external: list | No
             base = affected[h]["distance"] if h in affected else 0
             for d in proj.downstream(h):
                 if proj.nodes[d].resource_type in ("exposure", "semantic_model", "metric", "saved_query"):
-                    consumers[d] = min(consumers.get(d, 99), base + 1 + (proj.downstream(h).index(d) if False else 0))
+                    consumers[d] = min(consumers.get(d, 99), base + 1)
         if external:        # jobs outside the project (Spark/Python/...) that read the column or something derived from it, and the chain of outputs
             from . import external as ext
             touched = {(uid, column.lower())} | {(u, c) for u, a in affected.items() for c in a["columns"]}

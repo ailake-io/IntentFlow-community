@@ -4,7 +4,6 @@ One COMPLETE event per model, with `schema` and `columnLineage` facets (spec 1.x
 """
 from __future__ import annotations
 
-from .i18n import tr
 
 import json
 import time
@@ -49,9 +48,9 @@ def build_events(project, lineage_result, namespace: str = "intentflow", now: fl
         fields: dict[str, dict] = {}
         for e in by_dst.get(uid, []):
             src = _ds(project, e.src)
-            tr = {"type": "DIRECT", "subtype": "IDENTITY" if e.kind == "direct" else "TRANSFORMATION", "masking": bool(e.masked)}
+            xform = {"type": "DIRECT", "subtype": "IDENTITY" if e.kind == "direct" else "TRANSFORMATION", "masking": bool(e.masked)}
             fields.setdefault(e.dst_col, {"inputFields": [], "transformationType": "IDENTITY" if e.kind == "direct" else "TRANSFORMATION"})
-            fields[e.dst_col]["inputFields"].append({**src, "field": e.src_col, "transformations": [tr]})
+            fields[e.dst_col]["inputFields"].append({**src, "field": e.src_col, "transformations": [xform]})
         facets = {}
         if n.columns:
             facets["schema"] = _facet("SchemaDataset", "1-1-1", {"fields": [{"name": c.name, "type": c.type or "", **({"description": c.description} if c.description else {})}

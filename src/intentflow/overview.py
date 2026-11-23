@@ -1,7 +1,6 @@
 """Single view: what is running, what failed, what is being fixed and what was prevented."""
 from __future__ import annotations
 
-from .i18n import tr
 
 import time
 from collections import Counter, defaultdict, OrderedDict
@@ -39,8 +38,8 @@ def build(store: Store, window_h: int = 24) -> dict:
     target = store.get_setting("dbt.target")
     if target:
         try:
-            from . import dbt_loader
-            proj = dbt_loader.load(target)
+            from . import lineage_api      # mtime-cached load: the overview is polled every few seconds
+            proj = lineage_api.load(target, store.get_setting("dbt.root"), cache=store)[0]
         except Exception:
             proj = None
     incidents = [{"id": i.id, "title": i.title, "severity": i.severity, "findings": len(i.findings), "finding_ids": [f["id"] for f in i.findings], "impacted": len(i.impacted),

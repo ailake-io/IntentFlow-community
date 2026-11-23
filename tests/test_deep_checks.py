@@ -1,5 +1,4 @@
 import json, shutil
-from pathlib import Path
 
 import duckdb
 

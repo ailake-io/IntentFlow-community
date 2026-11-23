@@ -146,9 +146,14 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             return bytes.fromhex(k)
 
         # ---- responses ----
-        def _send(self, code, body, ctype="application/json", cookies=(), location=None):
+        def _send(self, code, body, ctype="application/json", cookies=(), location=None, nonce=None):
             b = body.encode() if isinstance(body, str) else body
             self.send_response(code)
+            if nonce:
+                self.send_header("Content-Security-Policy", f"default-src 'self'; script-src 'nonce-{nonce}'; style-src 'self' 'unsafe-inline'; "
+                                 "img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'")
+            if self._secure_cookie():
+                self.send_header("Strict-Transport-Security", "max-age=31536000")
             self.send_header("Content-Type", ctype + "; charset=utf-8")
             self.send_header("Content-Length", str(len(b)))
             self.send_header("Cache-Control", "no-store")
@@ -173,6 +178,11 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
         def _secure_cookie(self):
             return "; Secure" if getattr(self.server, "scheme", "http") == "https" or self.headers.get("X-Forwarded-Proto") == "https" else ""
 
+        def _legacy_sid(self) -> str:
+            """The cookie never carries the legacy token itself: an HMAC of it with the server's cookie key."""
+            import hmac, hashlib
+            return "ifl_" + hmac.new(self.cookie_key(), legacy.encode(), hashlib.sha256).hexdigest()
+
         def session_cookie(self, sid: str) -> str:
             return f"if_session={sid}; HttpOnly; SameSite=Strict; Path=/{self._secure_cookie()}"
 
@@ -192,7 +202,10 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     return None if (u and u.get("mfa")) else u      # a bare token is not enough once MFA is on
                 return None
             if legacy:
-                return {"name": "token-admin", "role": "admin", "project_roles": {}} if (sid == legacy or bearer == legacy) else None
+                import hmac
+                ok = (sid is not None and hmac.compare_digest(sid.encode(), self._legacy_sid().encode())) or \
+                     (bearer is not None and hmac.compare_digest(bearer.encode(), legacy.encode()))
+                return {"name": "token-admin", "role": "admin", "project_roles": {}} if ok else None
             return {"name": user, "role": "admin", "project_roles": {}}
 
         def _project(self) -> str:
@@ -243,7 +256,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             pick = q.get("lang") or cookie(self.headers.get("Cookie", ""), "if_lang") or (self.headers.get("Accept-Language") or "")[:2]
             code = i18n.normalize(pick)
             data = json.dumps({"lang": code, "messages": i18n.catalog(code) if code != "en" else {}}, ensure_ascii=False)
-            return PAGE_FILE.read_text().replace('/*I18N*/{"lang":"en","messages":{}}', data.replace("</", "<\\/"), 1)
+            page = PAGE_FILE.read_text().replace('/*I18N*/{"lang":"en","messages":{}}', data.replace("</", "<\\/"), 1)
+            return page.replace("<script>", f'<script nonce="{self._nonce}">')
 
         # ---- GET ----
         def do_GET(self):
@@ -259,7 +273,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                 if path == "/" and "token" in q:
                     return self._send(401, tr("URL token login is disabled; use the login form"), "text/plain")
                 if path == "/":
-                    return self._send(200, self._page(q), "text/html")
+                    self._nonce = secrets.token_urlsafe(16)
+                    return self._send(200, self._page(q), "text/html", nonce=self._nonce)
                 if path == "/api/i18n":
                     code = i18n.normalize(q.get("lang"))
                     return self._json(200, {"lang": code, "messages": i18n.catalog(code) if code != "en" else {}})
@@ -272,6 +287,11 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                            "projects": projs, "default_project": DEFAULT_PROJECT, "features": extensions.features()}
                     out.update(extensions.first("me", self, prim, who) or {})
                     return self._json(200, out)
+                mtok = os.environ.get("INTENTFLOW_METRICS_TOKEN")
+                bearer = (self.headers.get("Authorization") or "").removeprefix("Bearer ")
+                if path == "/metrics" and mtok and secrets.compare_digest(bearer.encode(), mtok.encode()):
+                    from . import promexport
+                    return self._send(200, promexport.render(prim), "text/plain; version=0.0.4")      # main project only
                 self._need(prim, "read")
                 who = self._identity(prim)
                 st = self._data(prim, who)
@@ -478,8 +498,10 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                 sid = prim.create_session(who["name"], "token")
                 prim.audit(who["name"], "login", {"via": "token", "mfa": bool(who.get("mfa"))})
                 return self._json(200, {"user": {"name": who["name"], "role": who["role"]}}, cookies=[self.session_cookie(sid)])
-            if legacy and tok == legacy:
-                return self._json(200, {"user": {"name": "token-admin", "role": "admin"}}, cookies=[self.session_cookie(tok)])
+            import hmac
+            if legacy and hmac.compare_digest(tok.encode(), legacy.encode()):
+                prim.audit("token-admin", "login", {"via": "legacy_token"})
+                return self._json(200, {"user": {"name": "token-admin", "role": "admin"}}, cookies=[self.session_cookie(self._legacy_sid())])
             prim.attempt_failed(ip)
             return self._json(401, {"error": tr("invalid token")})
 
@@ -563,9 +585,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
         def _run(self, prim: Store, what: str):
             who = self._need(prim, "run_check" if what == "check" else "run_collect")
             st = self._data(prim, who)
-            if st.get_setting("state.running"):
+            if not st.claim_setting("state.running", what):      # atomic: two clicks/requests cannot both start a run
                 raise ValueError(tr("a run is already in progress"))
-            st.set_setting("state.running", what)
             spath, code = st.path, i18n.lang()
 
             def job():
@@ -624,21 +645,16 @@ def build_server(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls
     with Store(store_path) as st:
         has_users = st.has_users()
         st.unset_setting("state.running")      # a run interrupted by a crash/restart would otherwise block new runs forever
+    if behind_proxy and not os.environ.get("INTENTFLOW_TRUSTED_PROXIES"):
+        import sys
+        print(tr("warning: --behind-proxy without INTENTFLOW_TRUSTED_PROXIES: every client shares the proxy IP for the login rate limit"), file=sys.stderr)
     if not loopback:
         if not has_users:
             raise SystemExit(tr("refused: to listen outside loopback, add users first (`intentflow user add NAME --role admin`)"))
         if not (tls_cert and tls_key) and not behind_proxy:
             raise SystemExit(tr("refused: outside loopback use HTTPS (--tls-cert/--tls-key) or declare --behind-proxy (reverse proxy with TLS)"))
-    ctx = None
-    if tls_cert and tls_key:
-        import ssl
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        try:
-            ctx.load_cert_chain(tls_cert, tls_key)
-        except (OSError, ssl.SSLError) as e:      # e.g. key mode 600 owned by another uid inside a container
-            raise SystemExit(tr("refused: cannot load the TLS certificate/key ({err}); the files must be readable by the user running the UI",
-                                err=e)) from None
+    from .http_utils import tls_context
+    ctx = tls_context(tls_cert, tls_key) if tls_cert and tls_key else None
     try:
         max_workers = int(os.environ.get("INTENTFLOW_UI_MAX_WORKERS", "128"))
     except ValueError:

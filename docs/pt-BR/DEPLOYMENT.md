@@ -60,7 +60,7 @@ Conexões acima do limite são encerradas. Mantenha também limites de conexão 
 Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor de webhook numa rede, 50 usuários simultâneos, reinício e
 `kill -9` do banco, `pg_dump`/`pg_restore` e um rename pego por `check --base` (saída 1).
 
-- **Build:** `docker build --network=host -t intentflow:0.3.0 .` se o DNS do Docker não alcança o PyPI durante o build.
+- **Build:** `docker build --network=host -t intentflow:0.3.5 .` se o DNS do Docker não alcança o PyPI durante o build.
 - **Armazém e segredos:** `IF_DB_URL` e `INTENTFLOW_SECRET_KEY` como variáveis de ambiente (use seu cofre); `--store env:IF_DB_URL`.
 - **Arquivos TLS** precisam ser legíveis pelo uid `10001` (usuário da imagem), inclusive o diretório. Senão a UI sai com `PermissionError`.
 - **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
@@ -111,6 +111,23 @@ Em `notify.sinks` (configuração, não arquivo): cada sink tem `name`, `type` e
 | `azure_devops` (Enterprise) | `org`, `project`, `repo`, `pr`, `api` | `AZURE_DEVOPS_PAT` |
 
 Rotas em `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam: o mesmo incidente com a mesma severidade só reenvia após 24 h.
+
+## Configurações expostas à rede (variáveis de ambiente)
+
+| Variável | Efeito |
+|---|---|
+| `INTENTFLOW_OL_TOKEN` | Token Bearer exigido pelo receptor OpenLineage (`intentflow openlineage serve`). Obrigatório com `--host` fora do loopback, junto com `--tls-cert/--tls-key` ou `--behind-proxy`. Os emissores enviam `Authorization: Bearer <token>` (ex.: `OPENLINEAGE__TRANSPORT__AUTH__API_KEY`). |
+| `INTENTFLOW_METRICS_TOKEN` | Token opcional de scrape para `/metrics` (`Authorization: Bearer <token>`), independente dos tokens de usuário e do MFA. Retorna só as métricas do projeto principal. |
+| `INTENTFLOW_WAREHOUSE_TIMEOUT_S` | `statement_timeout` do warehouse PostgreSQL/Redshift em segundos (padrão 300); as conexões também usam `connect_timeout=10`. Limita data diffs e probes disparados pela UI. |
+| `INTENTFLOW_TRUSTED_PROXIES` | IPs de proxy cujo `X-Forwarded-For` é aceito. Sem ela, `--behind-proxy` avisa: todos os clientes compartilham o IP do proxy no limite de login (10 falhas/min). |
+
+```bash
+INTENTFLOW_OL_TOKEN=... intentflow openlineage serve --host 0.0.0.0 --port 5000 --tls-cert cert.pem --tls-key key.pem
+```
+
+Códigos de saída da CLI: `0` ok, `1` achados bloqueantes (gate/preflight), `2` não foi possível avaliar (artefatos ausentes, argumentos inválidos). No CI, trate `2` como falha de infraestrutura, não como resultado de política.
+
+Backups SQLite (`intentflow backup`) também gravam `<destino>.key` (0600) quando o store usa arquivo de chave; guarde os dois juntos e proteja-os como o store.
 
 ## Métricas (Prometheus e OpenTelemetry)
 

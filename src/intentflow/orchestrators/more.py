@@ -107,10 +107,9 @@ class AzureDataFactoryClient:
         self.url = (f"{base.rstrip('/')}/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.DataFactory/factories/{fac}"
                     f"/queryPipelineRuns?api-version=2018-06-01")
         self.post = post
-        self.portal = f"https://adf.azure.com/en/monitoring/pipelineruns/"
+        self.portal = "https://adf.azure.com/en/monitoring/pipelineruns/"
 
     def runs(self, hours: int = 24) -> list[Run]:
-        import time
         from datetime import datetime, timedelta, timezone
         now = datetime.now(timezone.utc)
         tok = os.environ.get("AZURE_TOKEN")

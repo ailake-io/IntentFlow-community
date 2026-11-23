@@ -1,8 +1,7 @@
-import json, re, shutil, subprocess
+import re, shutil, subprocess
 from pathlib import Path
 
 from intentflow import integrations
-from intentflow.model import Finding
 from intentflow.monitoring import Sample
 from intentflow.orchestrators import Run
 from intentflow.store import Store
