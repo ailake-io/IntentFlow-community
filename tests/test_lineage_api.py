@@ -59,6 +59,9 @@ def test_lineage_http_endpoints(shop_target, tmp_path):
         assert {n["model"] for n in col["graph"]["nodes"]} >= {"customers", "stg_payments"}
         assert col["impact"]["count"] >= 0
         assert "error" in get("/api/lineage/column?model=customers&column=zzz")
+        assert "dbt.base_target" in get("/api/lineage/diff")["error"]
+        st.set_setting("dbt.base_target", str(shop_target / "target"))
+        assert get("/api/lineage/diff")["added"] == []
     finally:
         srv.shutdown()
 
@@ -72,3 +75,21 @@ def test_model_list_hides_installed_packages_unless_asked(shop_target):
     p.root_package = "outro_projeto"                      # tudo vira "pacote de terceiros"
     assert lineage_api.models(p) == []
     assert any(m["id"] == uid for m in lineage_api.models(p, include_packages=True))
+
+
+def test_lineage_diff_between_versions(shop_target, capsys):
+    import dataclasses
+    from intentflow import cli
+    t = str(shop_target / "target")
+    proj, res = lineage_api.load(t, str(shop_target))
+    assert lineage_api.diff((proj, res), (proj, res)) == {"added": [], "removed": [], "changed": [], "models_added": [], "models_removed": []}
+    gone, flip = res.edges[0], res.edges[1]
+    base = dataclasses.replace(res, edges=[dataclasses.replace(flip, kind="other") if e is flip else e for e in res.edges if e is not gone])
+    d = lineage_api.diff((proj, base), (proj, res))
+    name = lambda u, c: f"{proj.nodes[u].name}.{c}"
+    assert d["added"] == [{"src": name(gone.src, gone.src_col), "dst": name(gone.dst, gone.dst_col), "kind": gone.kind}]
+    assert d["changed"][0]["from"] == "other" and not d["removed"]
+    assert cli.main(["--store", ":memory:", "lineage", "--target", t, "--root", str(shop_target), "--base", t, "--base-root", str(shop_target), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["added"] == []
+    assert cli.main(["--store", ":memory:", "lineage", "--target", t, "--root", str(shop_target), "--json"]) == 0
+    assert len(json.loads(capsys.readouterr().out)) == len(res.edges)

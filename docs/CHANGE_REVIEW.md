@@ -60,6 +60,13 @@ intentflow preflight --target target --root . --base baseline \
 
 Both baseline manifest and catalog must contain the exact native `metadata.env.INTENTFLOW_REVISION`, produced with `DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION` during baseline generation. This checks metadata consistency, not cryptographic authenticity. Candidate `--revision` keeps its existing full-artifact checks. For the UI, save `dbt.target`, `dbt.base_target` and optionally `dbt.base_revision` in the selected project store.
 
+## Column-lineage diff
+
+`intentflow lineage --target target --base base/target` lists column edges added (`+`), removed (`-`) or whose kind changed (`~`,
+e.g. `direct → derived`) and models added/removed, keyed by model name; `--json` prints the same as data. In the UI, **Lineage and
+impact** shows the panel when `dbt.base_target` is configured and no model is selected. `intentflow lineage --json` (without `--base`)
+exports every edge; `intentflow openlineage emit --dry-run` prints OpenLineage events for catalogs.
+
 ## Limits and complementary validation
 
 The comparison reads metadata without executing project code. It cannot discover unregistered consumers, approve business semantics, prove runtime macro dispatch or dynamic Python behavior, or bind every runtime variable, external fixture/file and source-data snapshot. Regenerate artifacts in trusted CI after source changes; use pinned dependencies and fixtures. The model-code strict flag covers recorded SQL/Python and declared macro dependencies, not every possible execution configuration.

@@ -1290,5 +1290,11 @@
  "only http(s) URLs are allowed": "só são permitidas URLs http(s)",
  "store schema version {theirs} is newer than this IntentFlow supports ({mine}): upgrade IntentFlow": "a versão {theirs} do schema do store é mais nova do que este IntentFlow suporta ({mine}): atualize o IntentFlow",
  "too many requests; slow down": "muitas requisições; diminua o ritmo",
- "encryption at rest: status | migrate (encrypt old plain-text secrets) | rotate (re-encrypt with the current key)": "cifragem em repouso: status | migrate (cifra segredos antigos em texto) | rotate (recifra com a chave atual)"
+ "encryption at rest: status | migrate (encrypt old plain-text secrets) | rotate (re-encrypt with the current key)": "cifragem em repouso: status | migrate (cifra segredos antigos em texto) | rotate (recifra com a chave atual)",
+ "JSON: every column edge, or the diff with --base": "JSON: todas as arestas de coluna, ou o diff com --base",
+ "target/ of the previous version: print column-lineage changes (+ added, - removed, ~ kind changed)": "target/ da versão anterior: mostra as mudanças de lineage de colunas (+ adicionada, - removida, ~ tipo alterado)",
+ "Compared with dbt.base_target. Pick a model on the left for its details.": "Comparado com dbt.base_target. Escolha um modelo à esquerda para ver os detalhes.",
+ "Lineage changes vs the previous version": "Mudanças de lineage em relação à versão anterior",
+ "No column-lineage change.": "Nenhuma mudança no lineage de colunas.",
+ "configure dbt.base_target (the previous version) to compare lineage": "configure dbt.base_target (a versão anterior) para comparar o lineage"
 }

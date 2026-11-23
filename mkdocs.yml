@@ -1,0 +1,41 @@
+site_name: IntentFlow
+repo_url: https://github.com/ailake-io/IntentFlow-community
+docs_dir: docs
+exclude_docs: |
+  security/
+theme:
+  name: material
+  features: [navigation.sections, search.highlight]
+  palette:
+    - scheme: default
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - scheme: slate
+      toggle: {icon: material/brightness-4, name: Light mode}
+nav:
+  - Home: index.md
+  - Getting started: [INSTALLATION.md, DEPLOYMENT.md, CLOUD_SETUP.md, EDITIONS.md]
+  - Guides: [CHECKS.md, PREFLIGHT.md, CHANGE_REVIEW.md, BUSINESS_RULES.md, INTEGRATIONS.md]
+  - Design: [ARCHITECTURE.md, DECISIONS.md, RISKS.md, ROADMAP.md]
+  - Evidence: [VALIDATION_STATUS.md, BENCHMARKS.md, BENCH_REAL_PROJECT.md]
+  - Pilot: [PILOT.md, PILOT_OFFER.md]
+  - Português:
+      - pt-BR/INSTALLATION.md
+      - pt-BR/DEPLOYMENT.md
+      - pt-BR/CLOUD_SETUP.md
+      - pt-BR/EDITIONS.md
+      - pt-BR/CHECKS.md
+      - pt-BR/PREFLIGHT.md
+      - pt-BR/CHANGE_REVIEW.md
+      - pt-BR/BUSINESS_RULES.md
+      - pt-BR/INTEGRATIONS.md
+      - pt-BR/ARCHITECTURE.md
+      - pt-BR/DECISIONS.md
+      - pt-BR/RISKS.md
+      - pt-BR/ROADMAP.md
+      - pt-BR/VALIDATION_STATUS.md
+      - pt-BR/BENCHMARKS.md
+      - pt-BR/BENCH_REAL_PROJECT.md
+      - pt-BR/PILOT.md
+      - pt-BR/PILOT_OFFER.md
+      - pt-BR/REVIEW_2026-10-13.md
+markdown_extensions: [admonition, tables, toc]

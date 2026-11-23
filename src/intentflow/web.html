@@ -604,6 +604,18 @@ function drawGraph(nodes,edges,onPick){
     if(onPick&&!n.center){const fire=()=>onPick(n);g.addEventListener('click',fire);g.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();fire()}})}
     svg.append(g)});
   return h('div',{class:'graph'},svg)}
+async function linLoadDiff(){const L=S.lin;L.diff='loading';render();
+  try{L.diff=await api('/api/lineage/diff')}catch(e){L.diff={error:e.message}}render()}
+function linDiffView(){const L=S.lin,d=L.diff;
+  if(d===undefined){linLoadDiff();return h('div',{class:'card empty'},h('span',{class:'spin'}))}
+  if(d==='loading')return h('div',{class:'card empty'},h('span',{class:'spin'}));
+  if(d.error)return empty(T("Could not load the lineage"),d.error);
+  const rows=[...d.models_added.map(m=>['+',T("model"),m,'']),...d.models_removed.map(m=>['−',T("model"),m,'']),
+    ...d.added.map(e=>['+',e.kind,e.src,e.dst]),...d.removed.map(e=>['−',e.kind,e.src,e.dst]),...d.changed.map(e=>['~',e.from+' → '+e.to,e.src,e.dst])];
+  return h('div',{class:'card'},h('h2',{style:'margin-bottom:6px'},T("Lineage changes vs the previous version")),
+    h('p',{class:'sub'},T("Compared with dbt.base_target. Pick a model on the left for its details.")),
+    rows.length?h('table',{},h('tbody',{},rows.map(r=>h('tr',{},h('td',{},h('b',{style:'color:'+(r[0]==='+'?'var(--ok)':r[0]==='~'?'var(--med)':'var(--crit)')},r[0])),
+      h('td',{},h('small',{},r[1])),h('td',{},h('code',{},r[2])),h('td',{},r[3]?h('code',{},r[3]):null))))):h('p',{},T("No column-lineage change.")))}
 function lineageView(){const L=S.lin;
   if(!S.cfg.settings['dbt.target'])return h('div',{},header(T("Lineage and impact"),T("See where each column comes from and what breaks if it changes.")),
     empty(T("Set up the dbt project"),T("Enter the target/ directory in Settings."),h('a',{class:'btn pri',href:'#/config'},T("Go to Settings"))));
@@ -616,7 +628,7 @@ function lineageView(){const L=S.lin;
   const side=h('div',{class:'card models'},q,L.models===null||L.loading&&!L.models?h('div',{class:'empty'},h('span',{class:'spin'})):list.length?list:h('div',{class:'empty'},T("No model")));
   let main;
   if(L.err)main=empty(T("Could not load the lineage"),L.err);
-  else if(!L.sel)main=empty(T("Pick a model"),T("Select on the left to see dependencies, columns and impact."));
+  else if(!L.sel)main=S.cfg.settings['dbt.base_target']?linDiffView():empty(T("Pick a model"),T("Select on the left to see dependencies, columns and impact."));
   else if(!L.detail)main=h('div',{class:'card empty'},h('span',{class:'spin'}));
   else main=lineageDetail();
   return h('div',{},header(T("Lineage and impact"),T("Where each column comes from and what breaks if it changes. Click a node to navigate.")),h('div',{class:'lin'},side,main))}

@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+### Added
+- Column-lineage diff between two versions: `intentflow lineage --base <target>` (`+`/`-`/`~`, `--json`), `/api/lineage/diff` and a UI panel when `dbt.base_target` is set.
+- `intentflow lineage --json` exports every column edge (OpenLineage events stay in `openlineage emit --dry-run`).
+- Documentation site (`mkdocs.yml`, Material); CI builds it with `--strict`; GitHub Pages publishing opt-in (`PUBLISH_DOCS` variable).
+
+### Fixed
+- pt-BR deployment guide documents the 0.3.7 settings (rate limit, access log, HTTP retries, key rotation, schema version, SIGTERM).
+
 ## [0.3.7] - 2026-11-23
 
 ### Added

@@ -401,6 +401,11 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                     out = {"graph": lineage_api.column_graph(proj, res, q.get("model", ""), q.get("column", ""), depth),
                            "impact": lineage_api.impact(proj, res, q.get("model", ""), q.get("column", ""),
                                                         external=external.load(st, declared, proj))}
+                elif what == "diff":
+                    base = st.get_setting("dbt.base_target")
+                    if not base:
+                        raise ValueError(tr("configure dbt.base_target (the previous version) to compare lineage"))
+                    out = lineage_api.diff(lineage_api.load(base, st.get_setting("dbt.base_root"), cache=st), (proj, res))
                 else:
                     raise ValueError(tr("unknown route"))
                 return self._json(200, out)

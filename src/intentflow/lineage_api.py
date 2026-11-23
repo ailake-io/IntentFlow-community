@@ -223,3 +223,22 @@ def impact(proj, res, model: str, column: str | None = None, external: list | No
     rows.sort(key=lambda r: (r["distance"] or 99, r["name"]))
     return {"model": proj.nodes[uid].name, "column": column, "affected": rows, "owners": sorted({r["owner"] for r in rows if r["owner"]}),
             "count": len(rows)}
+
+
+def _edges(proj, res) -> dict:
+    def name(u):
+        return proj.nodes[u].name if u in proj.nodes else u
+    return {(f"{name(e.src)}.{e.src_col}", f"{name(e.dst)}.{e.dst_col}"): e.kind for e in res.edges}
+
+
+def diff(base, head) -> dict:
+    """Column-lineage changes between two (project, result) pairs, keyed by model name (stable across builds).
+    `changed`: same edge, different kind (e.g. direct → derived)."""
+    (bp, br), (hp, hr) = base, head
+    b, h = _edges(bp, br), _edges(hp, hr)
+    row = lambda k, kind: {"src": k[0], "dst": k[1], "kind": kind}
+    bm, hm = {n.name for n in bp.nodes.values()}, {n.name for n in hp.nodes.values()}
+    return {"added": [row(k, h[k]) for k in sorted(h.keys() - b.keys())],
+            "removed": [row(k, b[k]) for k in sorted(b.keys() - h.keys())],
+            "changed": [{"src": k[0], "dst": k[1], "from": b[k], "to": h[k]} for k in sorted(b.keys() & h.keys()) if b[k] != h[k]],
+            "models_added": sorted(hm - bm), "models_removed": sorted(bm - hm)}

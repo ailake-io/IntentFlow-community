@@ -65,3 +65,18 @@ def test_team_mode_shows_login_and_accepts_token(ui):
     finally:
         b.close()
         p.stop()
+
+
+def test_lineage_diff_panel_renders(ui, shop_target):
+    db, url = ui
+    with Store(db) as st:
+        st.set_setting("dbt.target", str(shop_target / "target"))
+        st.set_setting("dbt.base_target", str(shop_target / "target"))
+    p, b, page, problems = _open(url + "#/lineage")
+    try:
+        page.get_by_text("Lineage changes vs the previous version").wait_for(timeout=15000)
+        page.get_by_text("No column-lineage change.").wait_for(timeout=5000)
+        assert problems == []
+    finally:
+        b.close()
+        p.stop()

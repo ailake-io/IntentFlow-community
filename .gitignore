@@ -33,3 +33,4 @@ dist/
 .intentflow-transactions/
 .intentflow-*.tmp
 .coverage
+site/
