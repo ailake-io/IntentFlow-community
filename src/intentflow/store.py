@@ -284,6 +284,7 @@ create table if not exists sessions(id_hash text primary key, "user" text, creat
 create table if not exists login_attempts(ip text, ts real);
 create index if not exists la_ip on login_attempts(ip, ts);
 create table if not exists settings(key text primary key, value text, updated real);
+create table if not exists schema_version(version integer not null);
 create index if not exists users_token_hash on users(token_hash);
 create index if not exists audit_ts on audit(ts);
 create index if not exists samples_ts on samples(ts);
@@ -336,8 +337,22 @@ class Store:
                 self.con.execute(f"alter table {table} add column {col} {typ}")
             except sqlite3.OperationalError:
                 pass
+        self._check_schema_version()
         if key:
             _INITIALIZED.add(key)
+
+    def _check_schema_version(self) -> None:
+        """Refuse a store migrated by a newer IntentFlow (its columns/semantics are unknown here); record ours otherwise."""
+        mine = len(self._MIGRATIONS)
+        r = self.con.execute("select max(version) v from schema_version").fetchone()
+        theirs = (r["v"] if r else None) or 0
+        if theirs > mine:
+            raise SystemExit(tr("store schema version {theirs} is newer than this IntentFlow supports ({mine}): upgrade IntentFlow",
+                                theirs=theirs, mine=mine))
+        if theirs < mine:
+            self.con.execute("delete from schema_version")
+            self.con.execute("insert into schema_version(version) values(?)", (mine,))
+            self.con.commit()
 
     def _init_pg(self) -> None:
         if self.path in _INITIALIZED:
@@ -350,6 +365,7 @@ class Store:
             for table, col, typ in self._MIGRATIONS:
                 c.execute(f"alter table {table} add column if not exists {col} {typ.replace('real', 'double precision')}")
             c.commit()
+            self._check_schema_version()
         finally:
             c.execute("select pg_advisory_unlock(?)", (_PG_LOCK_KEY,))
         _INITIALIZED.add(self.path)
@@ -947,6 +963,22 @@ def _copy_rows(src: "Store", dst: "Store", clear: bool) -> int:
         dst.con.execute("select setval(pg_get_serial_sequence('notes','id'), greatest(coalesce((select max(id) from notes), 0), 1))")
     dst.con.commit()
     return total
+
+
+def rotate_secrets(store: "Store") -> dict:
+    """Re-encrypt every stored secret with the current INTENTFLOW_SECRET_KEY (old keys in INTENTFLOW_SECRET_KEY_OLD)."""
+    if not store.box.enabled:
+        raise RuntimeError(tr("no key: set INTENTFLOW_SECRET_KEY (or use a SQLite file)"))
+    b, n = store.box, {"totp": 0, "sessions": 0}
+    for r in store.con.execute("select name, totp_secret from users where totp_secret is not null and totp_secret <> ''").fetchall():
+        store.con.execute("update users set totp_secret=? where name=?", (b.rotate(r["totp_secret"]), r["name"]))
+        n["totp"] += 1
+    for r in store.con.execute("select id_hash, id_token, refresh_token from sessions where id_token is not null or refresh_token is not null").fetchall():
+        store.con.execute("update sessions set id_token=?, refresh_token=? where id_hash=?",
+                          (b.rotate(r["id_token"]), b.rotate(r["refresh_token"]), r["id_hash"]))
+        n["sessions"] += 1
+    store.con.commit()
+    return n
 
 
 def migrate_secrets(store: "Store") -> dict:

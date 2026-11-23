@@ -5,6 +5,7 @@ Credentials through environment variables: AIRFLOW_USER/AIRFLOW_PASSWORD or AIRF
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import json
 import os
@@ -27,7 +28,7 @@ class AirflowClient:
         req = urllib.request.Request(f"{self.base}/auth/token", method="POST", data=json.dumps({"username": user, "password": password}).encode(),
                                      headers={"Content-Type": "application/json", "Accept": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with _urlopen(req, timeout=15) as r:
                 return json.loads(r.read().decode())["access_token"]
         except Exception as e:
             raise RuntimeError(tr("Airflow 3 login failed at {url}: {error}", url=f"{self.base}/auth/token", error=getattr(e, "code", type(e).__name__))) from None

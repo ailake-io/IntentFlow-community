@@ -1287,5 +1287,8 @@
  "refused: to listen outside loopback set INTENTFLOW_OL_TOKEN (emitters send it as Bearer)": "recusado: para escutar fora do loopback defina INTENTFLOW_OL_TOKEN (os emissores o enviam como Bearer)",
  "invalid name (2–128 characters: letters, digits, _ . @ + -)": "nome inválido (2–128 caracteres: letras, dígitos, _ . @ + -)",
  "warning: --behind-proxy without INTENTFLOW_TRUSTED_PROXIES: every client shares the proxy IP for the login rate limit": "aviso: --behind-proxy sem INTENTFLOW_TRUSTED_PROXIES: todos os clientes compartilham o IP do proxy no limite de tentativas de login",
- "only http(s) URLs are allowed": "só são permitidas URLs http(s)"
+ "only http(s) URLs are allowed": "só são permitidas URLs http(s)",
+ "store schema version {theirs} is newer than this IntentFlow supports ({mine}): upgrade IntentFlow": "a versão {theirs} do schema do store é mais nova do que este IntentFlow suporta ({mine}): atualize o IntentFlow",
+ "too many requests; slow down": "muitas requisições; diminua o ritmo",
+ "encryption at rest: status | migrate (encrypt old plain-text secrets) | rotate (re-encrypt with the current key)": "cifragem em repouso: status | migrate (cifra segredos antigos em texto) | rotate (recifra com a chave atual)"
 }

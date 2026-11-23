@@ -403,13 +403,13 @@ def cmd_lineage_verify(a) -> int:
 
 
 def cmd_secrets(a) -> int:
-    from .store import migrate_secrets
+    from .store import migrate_secrets, rotate_secrets
     st = _store(a)
     if a.action == "status":
         print(json.dumps(st.box.status()))
         return 0 if st.box.enabled else 1
     try:
-        print(json.dumps(migrate_secrets(st)))
+        print(json.dumps((rotate_secrets if a.action == "rotate" else migrate_secrets)(st)))
     except RuntimeError as e:
         err(str(e))
         return 1
@@ -774,8 +774,8 @@ def main(argv=None) -> int:
     lv.add_argument("-v", "--verbose", action="store_true")
     lv.set_defaults(fn=cmd_lineage_verify)
 
-    sc = sub.add_parser("secrets", help=tr("encryption at rest: status | migrate (encrypt old plain-text secrets)"))
-    sc.add_argument("action", choices=["status", "migrate"])
+    sc = sub.add_parser("secrets", help=tr("encryption at rest: status | migrate (encrypt old plain-text secrets) | rotate (re-encrypt with the current key)"))
+    sc.add_argument("action", choices=["status", "migrate", "rotate"])
     sc.set_defaults(fn=cmd_secrets)
 
     ot = sub.add_parser("otel-push", help=tr("send metrics to the OpenTelemetry Collector (OTLP/HTTP)"))
@@ -867,12 +867,23 @@ def main(argv=None) -> int:
     extensions.each("register_cli", sub)
 
     a = ap.parse_args(argv)
+    import signal
+    import threading
+
+    def _term(*_):
+        raise KeyboardInterrupt      # SIGTERM (docker stop / k8s) unwinds like Ctrl-C: finally blocks run, servers close
+    prev = signal.signal(signal.SIGTERM, _term) if threading.current_thread() is threading.main_thread() else None
     try:
         return a.fn(a)
+    except KeyboardInterrupt:
+        return 130
     except (OSError, KeyError, ValueError, StopIteration) as e:
         # exit 2 = could not evaluate; 1 stays reserved for "blocking findings" so CI gates can tell them apart
         err(f"{type(e).__name__}: {e}")
         return 2
+    finally:
+        if prev is not None:
+            signal.signal(signal.SIGTERM, prev)
 
 
 if __name__ == "__main__":

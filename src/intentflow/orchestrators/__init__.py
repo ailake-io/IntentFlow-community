@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import base64
 import json
@@ -39,7 +40,7 @@ def ts(s: str | None) -> float | None:
 def http_json(url: str, headers: dict | None = None, timeout: float = 15.0):
     req = urllib.request.Request(url, headers={"Accept": "application/json", **(headers or {})})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _urlopen(req, timeout=timeout) as r:
             return json.loads(r.read().decode() or "null")
     except urllib.error.HTTPError as e:
         raise RuntimeError(tr("HTTP {code} at {url}", code=e.code, url=url.split("?")[0])) from None

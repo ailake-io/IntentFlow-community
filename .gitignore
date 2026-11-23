@@ -32,3 +32,4 @@ dist/
 # Journal e temporários de alteração de código
 .intentflow-transactions/
 .intentflow-*.tmp
+.coverage

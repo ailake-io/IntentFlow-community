@@ -60,7 +60,7 @@ def oom_killed(ctx: Context):
 @check("CLU004", "Queries spilling to disk", stage="continuous", cost="statistical")
 def spill(ctx: Context):
     out = []
-    for (src, scope, metric), v in _series(ctx).items():
+    for (_src, scope, metric), v in _series(ctx).items():
         if metric == "spilled_bytes" and v[-1].value > 0:
             gb = v[-1].value / 1e9
             out.append(Finding("CLU004", "high" if gb >= 10 else "medium", tr("query {query} spilled {gb} GB to disk", query=scope, gb=f"{gb:.1f}"),

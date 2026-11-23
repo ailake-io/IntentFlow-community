@@ -28,7 +28,7 @@ logging.getLogger("sqlglot").setLevel(logging.ERROR)     # optimizer noise on re
 DIALECTS = {"duckdb": "duckdb", "postgres": "postgres", "snowflake": "snowflake", "bigquery": "bigquery",
             "databricks": "databricks", "spark": "spark", "redshift": "redshift", "trino": "trino", "clickhouse": "clickhouse",
             "athena": "athena", "starrocks": "starrocks", "doris": "doris", "mysql": "mysql", "sqlserver": "tsql", "oracle": "oracle"}
-MASK_FUNCS = {"MD5", "SHA", "SHA1", "SHA2", "SHA256", "SHA512", "HASH", "FARM_FINGERPRINT", "XXHASH64", "SHA256"}
+MASK_FUNCS = {"MD5", "SHA", "SHA1", "SHA2", "SHA256", "SHA512", "HASH", "FARM_FINGERPRINT", "XXHASH64"}
 
 
 @dataclass

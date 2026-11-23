@@ -304,7 +304,7 @@ def _run(project, lineage_result, con, models, bases, same, max_columns, progres
         row_changed: set[str] = set()
         changed: dict[tuple[str, str], bool] = {}
         stable_rows: dict[str, bool] = {}
-        for pname, sql in perturbs.items():
+        for _pname, sql in perturbs.items():
             con.execute("begin")
             try:
                 con.execute(sql)

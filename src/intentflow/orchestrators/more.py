@@ -7,6 +7,7 @@ Mage : `GET /api/pipeline_runs` (optional MAGE_API_KEY, sent as `api_key`)
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import os
 import urllib.parse
@@ -71,7 +72,7 @@ class MageClient:
         body = json.dumps({"session": {"email": user, "password": pw}, "api_key": self._key()}).encode()
         req = urllib.request.Request(f"{self.base}/api/sessions", data=body, method="POST", headers={"Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with _urlopen(req, timeout=15) as r:
                 jwt = json.loads(r.read().decode())["session"]["token"]
             seg = jwt.split(".")[1]
             return json.loads(base64.urlsafe_b64decode(seg + "=" * (-len(seg) % 4)))["token"]     # internal session token

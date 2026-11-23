@@ -4,7 +4,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+### Added
+- `intentflow secrets rotate` with `INTENTFLOW_SECRET_KEY_OLD` for encryption key rotation.
+- Optional access log (`INTENTFLOW_ACCESS_LOG=json|text`) for the UI and the OpenLineage receiver.
+- Release workflow: on a `v*` tag builds wheel/sdist, SPDX SBOM and Sigstore signatures and attaches them to the GitHub release; PyPI upload opt-in (`PUBLISH_PYPI` variable + trusted publisher).
+- CI: browser end-to-end job (Playwright: CSP, JS errors, token login), coverage gate (80%), ruff bugbear rules.
+
+### Security
+- Per-IP rate limit on `/api/*` (`INTENTFLOW_API_RATE_PER_MIN`, default 600; loopback exempt).
+
 ### Changed
+- Store schema version is recorded; a store migrated by a newer IntentFlow is refused instead of being used with unknown columns.
+- SIGTERM stops `serve`, `openlineage serve` and `watch` cleanly (exit 130).
+- Orchestrator/catalog API calls retry connection errors, 429 and 5xx (`INTENTFLOW_HTTP_RETRIES`, default 2).
 - Docs: Enterprise requirement `intentflow>=0.3.6` (Enterprise follows the Community version), retention scope of `prune`, `/metrics` scrape token, receiver/CSP guarantees, preflight exit code 2, CI audits in the roadmap and 0.3.6 validation evidence.
 
 ## [0.3.6] - 2026-11-23

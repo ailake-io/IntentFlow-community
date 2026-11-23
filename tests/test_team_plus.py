@@ -262,7 +262,7 @@ def test_throttle_uses_forwarded_ip_only_from_trusted_proxy(tmp_path, monkeypatc
     monkeypatch.setenv("INTENTFLOW_TRUSTED_PROXIES", "127.0.0.1")
     srv, base = serve(db)
     try:
-        for i in range(10):                                               # 10 failures of client A (through a trusted proxy)
+        for _i in range(10):                                               # 10 failures of client A (through a trusted proxy)
             assert call(base, "POST", "/api/login", {"token": "if_x"}, {"X-Forwarded-For": "203.0.113.7"})[0] == 401
         assert call(base, "POST", "/api/login", {"token": "if_x"}, {"X-Forwarded-For": "203.0.113.7"})[0] == 429
         assert call(base, "POST", "/api/login", {"token": "if_x"}, {"X-Forwarded-For": "203.0.113.8"})[0] == 401   # another client is not blocked

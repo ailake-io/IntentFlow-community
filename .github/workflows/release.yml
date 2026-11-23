@@ -1,0 +1,54 @@
+name: release
+
+# On a version tag: build the wheel/sdist, write an SPDX SBOM, sign every artifact with Sigstore (keyless, GitHub OIDC)
+# and attach them to the GitHub release. PyPI upload runs only when the repository variable PUBLISH_PYPI is "true"
+# and a trusted publisher is configured on PyPI for this workflow (environment "pypi").
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Tag matches package version
+        run: |
+          v=$(python -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('src/intentflow/__init__.py').read())[1])")
+          test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
+      - run: pip install build && python -m build
+      - uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/intentflow-${{ github.ref_name }}.spdx.json
+          upload-artifact: false
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign artifacts
+        run: for f in dist/*; do cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"; done
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "IntentFlow ${GITHUB_REF_NAME#v}" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+
+  pypi:
+    needs: build
+    if: vars.PUBLISH_PYPI == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
