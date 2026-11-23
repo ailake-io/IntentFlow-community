@@ -145,7 +145,7 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
         def _rate_ok(self) -> bool:
             """Sliding one-minute window per client IP over /api/*. In memory, per process. Loopback is exempt (local mode,
             or a same-host proxy without INTENTFLOW_TRUSTED_PROXIES where every client would share one IP)."""
-            if api_rate <= 0 or not self.path.startswith("/api/"):
+            if api_rate <= 0 or not urlparse(self.path).path.startswith("/api/"):   # same parse as the router (absolute-form targets)
                 return True
             now, ip = time.time(), self._client_ip()
             if ip in ("127.0.0.1", "::1", "::ffff:127.0.0.1"):

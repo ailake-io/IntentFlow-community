@@ -83,6 +83,9 @@ def test_api_rate_limit_per_ip(monkeypatch, tmp_path):
             sent.append(code)
     assert Fake("10.0.0.1")._rate_ok() and Fake("10.0.0.1")._rate_ok()
     assert not Fake("10.0.0.1")._rate_ok() and sent == [429]
+    absolute = Fake("10.0.0.1")
+    absolute.path = "http://evil/api/me"            # absolute-form target routes to /api/me: limited too
+    assert not absolute._rate_ok()
     assert Fake("10.0.0.2")._rate_ok()            # other client unaffected
     assert all(Fake("127.0.0.1")._rate_ok() for _ in range(5))   # loopback exempt
 
