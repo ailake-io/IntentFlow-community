@@ -509,7 +509,8 @@ class Store:
                           ("login_attempts", "delete from login_attempts where ts < ?")):
             res[name] = c.execute(sql, (cut,)).rowcount
         # notification cooldown markers (state.notified.*) only matter for COOLDOWN
-        res["notified"] = c.execute("delete from settings where key like 'state.notified.%' and updated < ?", (cut,)).rowcount
+        res["notified"] = c.execute("delete from settings where key like ? and updated < ?",
+                                    ("state.notified.%", cut)).rowcount      # '%' as a parameter: psycopg2 reads a literal % as a placeholder
         if keep_lineage is not None:
             stale = [(r["key"],) for r in c.execute("select key from lineage_cache").fetchall() if r["key"] not in keep_lineage]
             if stale:
