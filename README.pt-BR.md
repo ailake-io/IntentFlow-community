@@ -81,7 +81,7 @@ intentflow openlineage serve --port 5000
 ```
 
 Isso instala somente o núcleo Community. O Enterprise é uma extensão separada e privada, disponível a clientes autorizados e ativada por uma
-licença válida. Os metadados do pacote exigem `intentflow>=0.3.5` e `cryptography`; o pip instala ou reutiliza essas dependências quando elas
+licença válida. Os metadados do pacote exigem `intentflow>=0.3.6` e `cryptography`; o pip instala ou reutiliza essas dependências quando elas
 estão disponíveis nas origens configuradas. Se a distribuição Community for fornecida como wheel separado, instale os dois wheels juntos. A
 extensão é descoberta pelo entry point `intentflow.extensions`. Veja [EDITIONS](docs/pt-BR/EDITIONS.md) para a relação entre os pacotes e as
 opções de instalação.

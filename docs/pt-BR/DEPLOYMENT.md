@@ -50,7 +50,7 @@ Conexões acima do limite são encerradas. Mantenha também limites de conexão 
 
 - **Agendador:** `intentflow --store ... watch --interval 300` em um processo separado (coleta, verifica e notifica). Um só por armazém.
 - **Backup:** `intentflow --store ... backup /backups/if-$(date +%F).db` (cópia consistente, permissão 600; o arquivo contém hashes de token). Em PostgreSQL, prefira `pg_dump` (ver abaixo).
-- **Retenção:** `intentflow --store ... prune --days 90`.
+- **Retenção:** `intentflow --store ... prune --days 90`: amostras, histórico, auditoria, execuções, achados resolvidos, jobs/arestas OpenLineage, sessões expiradas, tentativas de login e marcadores de notificação antigos. Com `dbt.target` configurado, também remove do cache de linhagem as entradas que o projeto atual não usa mais.
 - **Rotação de token:** `intentflow user rotate NOME` (ou "Novo token" na UI).
 - **Idioma:** `INTENTFLOW_LANG=pt` deixa a CLI e os achados do `watch` em português; a UI segue o navegador e o seletor de cada pessoa.
 - **Vários projetos:** um armazém por projeto (`--store` ou `INTENTFLOW_STORE`); suba uma UI por armazém. Vários projetos num servidor, com papel por projeto, é Enterprise (abaixo).
@@ -131,7 +131,7 @@ Backups SQLite (`intentflow backup`) também gravam `<destino>.key` (0600) quand
 
 ## Métricas (Prometheus e OpenTelemetry)
 
-- **Prometheus:** `GET /metrics` (exige o mesmo `Authorization: Bearer` da API; `bearer_token_file` no `scrape_config`). Séries:
+- **Prometheus:** `GET /metrics` (exige o mesmo `Authorization: Bearer` da API, ou o token dedicado `INTENTFLOW_METRICS_TOKEN`, que funciona também quando o usuário tem MFA; `bearer_token_file` no `scrape_config`). Séries:
   `intentflow_findings_open{severity}`, `intentflow_findings_open_by_check{check}`, `intentflow_runs{system,state}`,
   `intentflow_check_last_run_timestamp_seconds`, `intentflow_check_last_findings`.
 - **OpenTelemetry:** `intentflow otel-push --endpoint http://collector:4318` (OTLP/HTTP JSON; ponha no cron/`watch`). Cabeçalhos por

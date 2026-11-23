@@ -32,7 +32,7 @@ How to connect each cloud service: [CLOUD_SETUP](CLOUD_SETUP.md).
 
 GitLab was exercised on a local self-hosted instance in an earlier round; hosted customer environments remain unverified.
 
-Immediate engineering work: remediate and reassess the Debian image CVEs, automate recurring image/extra audits. See [VALIDATION_STATUS](VALIDATION_STATUS.md).
+Immediate engineering work: remediate and reassess the Debian image CVEs. CI now audits locked Python dependencies (`pip-audit`) and fails the image on fixable CRITICAL findings (trivy); HIGH base-image findings still need a decision. See [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
 DBTR003 now covers descendants skipped after test failures as an Unreleased correction on develop.
 

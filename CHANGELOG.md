@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+### Changed
+- Docs: Enterprise requirement `intentflow>=0.3.6` (Enterprise follows the Community version), retention scope of `prune`, `/metrics` scrape token, receiver/CSP guarantees, preflight exit code 2, CI audits in the roadmap and 0.3.6 validation evidence.
+
 ## [0.3.6] - 2026-11-23
 
 ### Added
