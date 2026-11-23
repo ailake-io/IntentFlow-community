@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-11-23
+
 ### Added
 - `intentflow secrets rotate` with `INTENTFLOW_SECRET_KEY_OLD` for encryption key rotation.
 - Optional access log (`INTENTFLOW_ACCESS_LOG=json|text`) for the UI and the OpenLineage receiver.

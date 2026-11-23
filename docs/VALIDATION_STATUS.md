@@ -6,7 +6,7 @@ This page records November validation evidence. Counts refer to the described co
 
 ## Code, installation and CI
 
-- Current versions: Community `0.3.6`, Enterprise `0.3.6`, requiring `intentflow>=0.3.6` and `cryptography`; Enterprise follows the Community version. Evidence in the dated sections below was collected on the checkouts of its date (Community `0.3.5`, Enterprise `0.3.4` until 2026-11-20).
+- Current versions: Community `0.3.7`, Enterprise `0.3.7`, requiring `intentflow>=0.3.7` and `cryptography`; Enterprise follows the Community version. Evidence in the dated sections below was collected on the checkouts of its date (Community `0.3.5`, Enterprise `0.3.4` until 2026-11-20).
 - Community runs independently. Enterprise is a plugin in the same Python environment, with a valid license required to enable features.
 - Both checkout wheels were built and installed together in a clean Python 3.14.6 venv; `pip check` and `intentflow --version` passed. Customer private-index access was not verified.
 - Main CI covers Python 3.11, 3.13 and 3.14. Actions use Node 24 (`checkout@v6`, `setup-python@v6`; Community also `setup-java@v5`).
@@ -74,6 +74,15 @@ The expanded retail baseline has 6 seeds, 10 models and 30 tests: 26 pass, 4 nat
 The acceptance fixture, logs, JSON and screenshot live separately in `../intentflow-retail-pilot/reports/change-review/` and `change-review-results.json`; they are not packaged in either repository. Consumer/runtime/data-snapshot limits are explicit in the guide. Image CVEs and target-warehouse deployment/recovery validation remain pending.
 
 Follow-up with the complete 541,909-row UCI baseline exposed dbt runtime-helper dependency edges present in build manifests and absent in docs manifests. Normalize those known edges consistently while retaining helper-body review. The fresh full retail build has 16 successful builds, 26 passing tests, 4 natural warnings and no failures/skips; change review has zero changes/gaps and the documented isolated PRB001 QA exception passes. The original warehouse, XLSX and six CSV checksums are preserved. Related comparison/preflight/business regressions after this correction: **113 passed** (overlapping earlier runs).
+
+## Release 0.3.7 — 2026-11-23
+
+Operational hardening released as Community and Enterprise `0.3.7`: store schema version guard, SIGTERM shutdown, HTTP retries, access log,
+`/api` rate limit, secret key rotation, LLM usage audit and license expiry warning. Evidence:
+
+- Community suite: **437 passed / 44 skipped** (SQLite), **446 passed / 35 skipped** (PostgreSQL 16); browser end-to-end **2 passed**.
+- Enterprise suite against Community `0.3.7`: **134 passed / 10 skipped**.
+- CI green on both repositories, including the new e2e, coverage (≥80%) and `core-min` jobs.
 
 ## Release 0.3.6 — 2026-11-23
 

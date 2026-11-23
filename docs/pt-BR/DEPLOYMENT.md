@@ -60,7 +60,7 @@ Conexões acima do limite são encerradas. Mantenha também limites de conexão 
 Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor de webhook numa rede, 50 usuários simultâneos, reinício e
 `kill -9` do banco, `pg_dump`/`pg_restore` e um rename pego por `check --base` (saída 1).
 
-- **Build:** `docker build --network=host -t intentflow:0.3.6 .` se o DNS do Docker não alcança o PyPI durante o build.
+- **Build:** `docker build --network=host -t intentflow:0.3.7 .` se o DNS do Docker não alcança o PyPI durante o build.
 - **Armazém e segredos:** `IF_DB_URL` e `INTENTFLOW_SECRET_KEY` como variáveis de ambiente (use seu cofre); `--store env:IF_DB_URL`.
 - **Arquivos TLS** precisam ser legíveis pelo uid `10001` (usuário da imagem), inclusive o diretório. Senão a UI sai com `PermissionError`.
 - **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
