@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from .i18n import tr
 
-import json
 from pathlib import Path
 
 

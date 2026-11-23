@@ -5,6 +5,43 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uvx ruff check src tests
+
+  locked:
+    # Same dependency set as the Docker image (uv.lock), not a fresh pip resolution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked --extra dev --extra postgres --extra secrets --extra lint --extra mysql --extra warehouses
+      - run: uv run pytest -q -p no:cacheprovider
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uv export --locked --no-dev --extra secrets --extra postgres --no-emit-project -o "$RUNNER_TEMP/req.txt"
+      - run: uvx pip-audit -r "$RUNNER_TEMP/req.txt" --strict
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build -t intentflow:ci .
+      - run: docker run --rm intentflow:ci --version
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: intentflow:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
   unit:
     # Whole suite with the extras that need no external service; real-service tests are skipped.
     runs-on: ubuntu-latest

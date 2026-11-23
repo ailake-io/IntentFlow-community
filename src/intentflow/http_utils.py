@@ -3,6 +3,19 @@ from __future__ import annotations
 from .i18n import tr
 
 
+def tls_context(cert: str, key: str):
+    """Server TLS (>= 1.2). Unreadable files end the process with an explanation instead of a traceback."""
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+    try:
+        ctx.load_cert_chain(cert, key)
+    except (OSError, ssl.SSLError) as e:      # e.g. key mode 600 owned by another uid inside a container
+        raise SystemExit(tr("refused: cannot load the TLS certificate/key ({err}); the files must be readable by the user running the UI",
+                            err=e)) from None
+    return ctx
+
+
 class RequestError(ValueError):
     def __init__(self, status: int, message: str):
         super().__init__(message)

@@ -9,7 +9,7 @@ import json
 import os
 import urllib.request
 
-from . import Run, http_json, ts
+from . import Run, http_json
 
 
 def _post_json(url: str, body: dict, headers: dict | None = None, timeout: float = 15.0):

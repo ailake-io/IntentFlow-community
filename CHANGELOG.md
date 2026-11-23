@@ -9,7 +9,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Full-build `preflight` gate with optional mandatory source freshness and current/mapped GX/Soda evidence: artifact freshness/completeness, required checks, optional native dbt revision metadata and strict required contracts. Candidate probes do not train volume/null baselines.
 - Native dbt business-rule catalog (`rules` CLI/UI), owners, impact and bounded execution history. BIZ001/BIZ002 expose missing/stale executions and owner gaps.
 
+### Security
+- OpenLineage receiver: `--host`, Bearer token (`INTENTFLOW_OL_TOKEN`) and TLS (`--tls-cert/--tls-key` or `--behind-proxy`) required outside loopback; malformed events answer 400.
+- Legacy UI token: the cookie holds an HMAC of the token, comparisons are constant-time and logins are audited. HTML page sends a nonce-based CSP; HSTS over HTTPS.
+- Optional `/metrics` scrape token (`INTENTFLOW_METRICS_TOKEN`); PostgreSQL warehouse connections have `connect_timeout` and `statement_timeout` (`INTENTFLOW_WAREHOUSE_TIMEOUT_S`, default 300); notification sinks accept only http(s) URLs.
+
 ### Fixed
+- CLI: missing artifacts and invalid arguments exit 2 with a message instead of a traceback (exit 1 stays reserved for blocking findings); `lineage --column` and `diff --model` (engine quoting) no longer crash.
+- Scheduler/collection: one failing orchestrator, catalog or registry no longer skips the others, the checks or notifications.
+- `prune` also removes old OpenLineage jobs/edges, expired sessions, login attempts, notification markers and stale lineage cache entries.
+- SQLite backups copy the store key file so encrypted secrets stay readable; the lineage oracle deletes its temporary data copy; atomic UI run claim; PostgreSQL diff reports type names instead of OIDs.
+- Faster impact/checks on large projects (cached child graph and external dataset matching; mtime-cached manifest in the overview).
 - Reject ambiguous contract model names; accept qualified package/model ids and relations instead of validating an arbitrary same-named model.
 - Treat unknown Soda outcomes as errors instead of passing them.
 - Match logical dbt nodes across environment schemas; select secondary emitted check ids; retain caught query errors during preflight.

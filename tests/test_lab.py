@@ -3,7 +3,6 @@ type change and optimizer rewrite equivalence."""
 import shutil, subprocess, sys
 from pathlib import Path
 
-import pytest
 
 from intentflow import dbt_loader, lineage
 from intentflow.checks import Context, run_checks

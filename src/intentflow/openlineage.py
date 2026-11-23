@@ -91,10 +91,17 @@ def ingest_file(store: Store, path: str) -> dict:
     return ingest_events(store, events)
 
 
-def make_handler(store_path: str):
+def make_handler(store_path: str, token: str | None = None):
+    """`token` (or INTENTFLOW_OL_TOKEN): required as `Authorization: Bearer` when set; mandatory outside loopback."""
+    import hmac
+    import os
+    token = token if token is not None else os.environ.get("INTENTFLOW_OL_TOKEN") or None
+
     class H(BaseHTTPRequestHandler):
         def setup(self):
             self.request.settimeout(15)
+            if hasattr(self.request, "do_handshake"):      # TLS handshake in the worker thread, bounded by the timeout: never in accept()
+                self.request.do_handshake()
             super().setup()
 
         def log_message(self, *a):
@@ -109,6 +116,13 @@ def make_handler(store_path: str):
                 self.send_response(403)
                 self.end_headers()
                 return
+            if token:
+                auth = self.headers.get("Authorization") or ""
+                if not hmac.compare_digest(auth.encode(), f"Bearer {token}".encode()):
+                    self.close_connection = True
+                    self.send_response(401)
+                    self.end_headers()
+                    return
             try:
                 event = json.loads(read_body(self, limit=4 * 1024 * 1024))
                 if not isinstance(event, dict) or not isinstance(event.get("run"), dict) or not isinstance(event.get("job"), dict):
@@ -116,7 +130,7 @@ def make_handler(store_path: str):
                 with Store(store_path) as store:
                     res = ingest_events(store, [event])
                 code, body = 200, json.dumps(res)
-            except (ValueError, KeyError, TypeError) as e:
+            except (ValueError, KeyError, TypeError, AttributeError) as e:      # malformed facets/datasets: 400, never a dropped connection
                 self.close_connection = True
                 code = e.status if isinstance(e, RequestError) else 400
                 body = json.dumps({"error": str(e)})
@@ -127,7 +141,21 @@ def make_handler(store_path: str):
     return H
 
 
-def serve(store_path: str, port: int = 5000):
-    srv = ThreadingHTTPServer(("127.0.0.1", port), make_handler(store_path))
-    print(tr("OpenLineage receiver: {url}", url=f"http://127.0.0.1:{srv.server_address[1]}/api/v1/lineage"))
+def serve(store_path: str, port: int = 5000, host: str = "127.0.0.1", token: str | None = None,
+          tls_cert: str | None = None, tls_key: str | None = None, behind_proxy: bool = False):
+    """Outside loopback: a token AND transport encryption (own TLS or a declared TLS proxy), so the Bearer never travels in clear."""
+    import os
+    token = token or os.environ.get("INTENTFLOW_OL_TOKEN") or None
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        if not token:
+            raise SystemExit(tr("refused: to listen outside loopback set INTENTFLOW_OL_TOKEN (emitters send it as Bearer)"))
+        if not (tls_cert and tls_key) and not behind_proxy:
+            raise SystemExit(tr("refused: outside loopback use HTTPS (--tls-cert/--tls-key) or declare --behind-proxy (reverse proxy with TLS)"))
+    srv = ThreadingHTTPServer((host, port), make_handler(store_path, token))
+    scheme = "http"
+    if tls_cert and tls_key:
+        from .http_utils import tls_context
+        srv.socket = tls_context(tls_cert, tls_key).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
+        scheme = "https"
+    print(tr("OpenLineage receiver: {url}", url=f"{scheme}://{host}:{srv.server_address[1]}/api/v1/lineage"))
     srv.serve_forever()

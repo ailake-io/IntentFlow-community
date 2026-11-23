@@ -13,7 +13,6 @@ It is a measured approximation, not an answer key. See docs/BENCHMARKS.md for th
 """
 from __future__ import annotations
 
-import json
 import re
 import shutil
 import tempfile
@@ -111,9 +110,18 @@ def run(project, lineage_result, duckdb_path: str, package: str | None = None, m
     for u in bases_all:
         same.setdefault(project.nodes[u].relation.lower(), []).append(u)
     bases = [us[0] for us in same.values()]
-    tmp = Path(tempfile.mkdtemp()) / Path(duckdb_path).name      # the file name is the catalog name in the relations
+    tmpdir = tempfile.mkdtemp(prefix="intentflow-oracle-")
+    tmp = Path(tmpdir) / Path(duckdb_path).name      # the file name is the catalog name in the relations
     shutil.copy(duckdb_path, tmp)
     con = duckdb.connect(str(tmp))
+    try:          # the copy holds real data: always closed and deleted
+        return _run(project, lineage_result, con, models, bases, same, max_columns, progress, only_used, only_sources, sample_rows)
+    finally:
+        con.close()
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def _run(project, lineage_result, con, models, bases, same, max_columns, progress, only_used, only_sources, sample_rows) -> dict:
 
     def tab_cols(u):
         try:
@@ -356,7 +364,6 @@ def run(project, lineage_result, duckdb_path: str, package: str | None = None, m
         fp_list += [f"{node.name}.{col} → {name(k)}" for k in sorted(d_susp)]
         if progress:
             progress(i + 1, len(targets), f"{node.name}.{col}")
-    con.close()
     rate = lambda a, b: (a / (a + b)) if a + b else None
     prec, rec = rate(tp, fp_susp), rate(tp, fn + explained_n)       # recall direto: o que mudou e a direta cobre
     mprec, mrec = rate(mtp, mfp), rate(mtp, mfn)

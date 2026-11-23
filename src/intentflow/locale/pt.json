@@ -884,7 +884,6 @@
  "invalid action": "ação inválida",
  "invalid code": "código inválido",
  "invalid key": "chave inválida",
- "invalid name (2–64 characters: letters, digits, _ . @ -)": "nome inválido (2–64 caracteres: letras, números, _ . @ -)",
  "invalid relation: SQL clauses are not allowed": "relação inválida: cláusulas SQL não são permitidas",
  "invalid relation: SQL statements are not allowed": "relação inválida: comandos SQL não são permitidos",
  "invalid relation: functions, aliases and subqueries are not allowed": "relação inválida: funções, aliases e subconsultas não são permitidos",
@@ -1283,5 +1282,10 @@
  "… and {n} more incident(s).": "… e mais {n} incidente(s).",
  "── direct": "── direta",
  "── masked (hash)": "── mascarada (hash)",
- "✓ No differences": "✓ Sem diferenças"
+ "✓ No differences": "✓ Sem diferenças",
+ "serve: outside loopback requires INTENTFLOW_OL_TOKEN": "serve: fora do loopback exige INTENTFLOW_OL_TOKEN",
+ "refused: to listen outside loopback set INTENTFLOW_OL_TOKEN (emitters send it as Bearer)": "recusado: para escutar fora do loopback defina INTENTFLOW_OL_TOKEN (os emissores o enviam como Bearer)",
+ "invalid name (2–128 characters: letters, digits, _ . @ + -)": "nome inválido (2–128 caracteres: letras, dígitos, _ . @ + -)",
+ "warning: --behind-proxy without INTENTFLOW_TRUSTED_PROXIES: every client shares the proxy IP for the login rate limit": "aviso: --behind-proxy sem INTENTFLOW_TRUSTED_PROXIES: todos os clientes compartilham o IP do proxy no limite de tentativas de login",
+ "only http(s) URLs are allowed": "só são permitidas URLs http(s)"
 }

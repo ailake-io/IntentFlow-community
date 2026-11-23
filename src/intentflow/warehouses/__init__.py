@@ -120,7 +120,9 @@ class PostgresWarehouse(Warehouse):
         url = os.environ.get(url_env)
         if not url:
             raise RuntimeError(tr("variable {name} is not set", name=url_env))
-        self.con = psycopg2.connect(url)
+        # bounded: a data diff or probe started from the UI must not hold the warehouse indefinitely
+        timeout_ms = int(float(os.environ.get("INTENTFLOW_WAREHOUSE_TIMEOUT_S", "300")) * 1000)
+        self.con = psycopg2.connect(url, connect_timeout=10, options=f"-c statement_timeout={timeout_ms}")
         self.con.set_session(readonly=True, autocommit=True)
 
     def rows(self, sql):
@@ -129,13 +131,12 @@ class PostgresWarehouse(Warehouse):
             return c.fetchall() if c.description else []
 
     def describe(self, rel):
-        return [(r[0], r[1]) for r in self.rows(f"select * from (select * from {rel} limit 0) q") ] if False else self._describe(rel)
-
-    def _describe(self, rel):
         with self.con.cursor() as c:
             c.execute(f"select * from {rel} limit 0")
-            import psycopg2.extensions as ext  # tipos pelo OID
-            return [(d.name, str(d.type_code)) for d in c.description]
+            cols = [(d.name, d.type_code) for d in c.description]
+            c.execute("select oid, format_type(oid, null) from pg_type where oid = any(%s)", (list({t for _, t in cols}),))
+            names = dict(c.fetchall())
+        return [(n, names.get(t, str(t))) for n, t in cols]      # type names, not OIDs, in the diff
 
     def plan(self, sql):
         import json

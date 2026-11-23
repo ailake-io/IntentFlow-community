@@ -1,5 +1,5 @@
 import json
-import copy, json, os
+import copy, os
 from pathlib import Path
 
 import pytest
@@ -68,7 +68,7 @@ def test_same_name_in_two_schemas_gets_distinct_ids(data):
 def test_missing_sqlmesh_gives_actionable_error(tmp_path):
     (tmp_path / "models").mkdir()
     (tmp_path / "config.yaml").write_text("gateways: {}")
-    import subprocess, sys
+    import sys
     with pytest.raises(RuntimeError, match="INTENTFLOW_SQLMESH_PYTHON"):
         sqlmesh_loader.export(tmp_path, python=sys.executable)    # the project's Python has no sqlmesh
 

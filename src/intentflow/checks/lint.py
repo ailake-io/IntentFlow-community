@@ -6,7 +6,6 @@ Only rules that point to correctness/performance risk, not style (layout and cap
 from __future__ import annotations
 
 import hashlib
-import json
 
 from ..i18n import N_, tr
 from ..model import Finding

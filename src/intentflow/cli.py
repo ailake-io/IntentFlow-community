@@ -241,8 +241,11 @@ def cmd_lineage(a) -> int:
             for c in external.coverage(reads):
                 print(tr("conservative propagation: {job}  (no feeds: {datasets})", job=c["job"], datasets=", ".join(c["reads_without_feeds"])))
     if a.column:
-        m, c = a.column.split(".")
-        uid = next(u for u, n in p.nodes.items() if n.name == m)
+        m, _, c = a.column.rpartition(".")
+        uid = next((u for u, n in p.nodes.items() if n.name == m), None)
+        if not m or uid is None:
+            err(tr("model '{model}' not found", model=m or a.column))
+            return 2
         for e in r.upstream_of(uid, c):
             print(f"{p.nodes[e.src].name}.{e.src_col} --{e.kind}{' (' + tr('masked') + ')' if e.masked else ''}--> {m}.{c}")
         for e in r.downstream_of(uid, c):
@@ -296,7 +299,7 @@ def cmd_notify(a) -> int:
 def cmd_openlineage(a) -> int:
     from . import openlineage
     if a.action == "serve":
-        openlineage.serve(a.store, a.port)
+        openlineage.serve(a.store, a.port, a.host, tls_cert=a.tls_cert, tls_key=a.tls_key, behind_proxy=a.behind_proxy)
         return 0
     if a.action == "emit":
         from . import ol_emit
@@ -453,7 +456,11 @@ def cmd_airflow3(a) -> int:
 
 
 def cmd_prune(a) -> int:
-    print(json.dumps(_store(a).prune(a.days)))
+    st = _store(a)
+    target, keep = st.get_setting("dbt.target"), None
+    if target:      # without the current project we cannot tell stale lineage cache entries from live ones
+        keep = lin.cache_keys(dbt_loader.load(target, st.get_setting("dbt.root") or Path(target).parent))
+    print(json.dumps(st.prune(a.days, keep_lineage=keep)))
     return 0
 
 
@@ -486,14 +493,21 @@ def cmd_diff(a) -> int:
         if n is None:
             err(tr("model '{model}' not found", model=a.model))
             return 2
-        db, sch, tbl = [x.strip('"`') for x in n.relation.split(".")]
-        base = f'"{db}"."{a.base_schema or sch}"."{tbl}"'
-        head = f'"{db}"."{a.head_schema or sch}"."{tbl}"'
+        parts = [x.strip('"`[]') for x in n.relation.split(".")]
+        if len(parts) != 3:
+            err(tr("model '{model}' not found", model=a.model))
+            return 2
+        db, sch, tbl = parts
+        q = wh.quote          # engine quoting: ANSI double quotes are string literals in BigQuery/MySQL/Databricks
+        base = f"{q(db)}.{q(a.base_schema or sch)}.{q(tbl)}"
+        head = f"{q(db)}.{q(a.head_schema or sch)}.{q(tbl)}"
     try:
         d = datadiff.diff_relations(wh, base, head, a.key.split(","), a.sample, sample_pct=a.sample_pct)
     except Exception as e:
         err(str(e))
         return 2
+    finally:
+        wh.close()
     print(json.dumps(d, indent=2, default=str) if a.json else datadiff.to_markdown(d))
     return 0 if d["identical"] or not a.fail_on_diff else 1
 
@@ -715,6 +729,10 @@ def main(argv=None) -> int:
     ol.add_argument("--target", help=tr("emit: project (dbt target or SQLMesh)"))
     ol.add_argument("--dry-run", action="store_true")
     ol.add_argument("--port", type=int, default=5000)
+    ol.add_argument("--host", default="127.0.0.1", help=tr("serve: outside loopback requires INTENTFLOW_OL_TOKEN"))
+    ol.add_argument("--tls-cert")
+    ol.add_argument("--tls-key")
+    ol.add_argument("--behind-proxy", action="store_true", help=tr("TLS terminated at a reverse proxy"))
     ol.set_defaults(fn=cmd_openlineage)
 
     w = sub.add_parser("watch", help=tr("scheduler: collect, check and notify periodically"))
@@ -849,7 +867,12 @@ def main(argv=None) -> int:
     extensions.each("register_cli", sub)
 
     a = ap.parse_args(argv)
-    return a.fn(a)
+    try:
+        return a.fn(a)
+    except (OSError, KeyError, ValueError, StopIteration) as e:
+        # exit 2 = could not evaluate; 1 stays reserved for "blocking findings" so CI gates can tell them apart
+        err(f"{type(e).__name__}: {e}")
+        return 2
 
 
 if __name__ == "__main__":

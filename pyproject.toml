@@ -8,7 +8,8 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Thiago Egon Lange" }]
 classifiers = ["Programming Language :: Python :: 3", "Topic :: Database"]
-dependencies = ["sqlglot>=25", "pyyaml>=6", "duckdb>=1.0"]
+# sqlglot internals drive column lineage: new majors are tested before the bound moves
+dependencies = ["sqlglot>=25,<31", "pyyaml>=6,<7", "duckdb>=1.0,<2"]
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary"]
@@ -45,6 +46,18 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 intentflow = ["web.html", "locale/*.json"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 160
+
+[tool.ruff.lint]
+# pyflakes (unused/undefined names, shadowing) + syntax errors; style is not enforced on existing code
+select = ["F", "E9"]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest fixtures are imported and then requested by name
+"tests/*" = ["F811", "F841"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

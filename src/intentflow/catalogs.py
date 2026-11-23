@@ -6,7 +6,6 @@ Config: `catalog.glue` (true; uses `aws.region`), `catalog.unity` (workspace hos
 """
 from __future__ import annotations
 
-from .i18n import tr
 
 import os
 import time

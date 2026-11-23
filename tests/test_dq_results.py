@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from intentflow import dq_results, runner, sqlmesh_loader
+from intentflow import dq_results, sqlmesh_loader
 from intentflow.checks import Context, run_checks
 from intentflow.store import Store
 
