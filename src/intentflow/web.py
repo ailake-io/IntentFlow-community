@@ -119,6 +119,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
 
         def setup(self):
             self.request.settimeout(15)
+            if hasattr(self.request, "do_handshake"):      # TLS handshake in the worker thread, bounded by the timeout: never in accept()
+                self.request.do_handshake()
             self._request_stores = {}
             super().setup()
 
@@ -664,7 +666,7 @@ def build_server(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls
     except ValueError:
         raise SystemExit(tr("INTENTFLOW_UI_MAX_WORKERS must be an integer between 1 and 1024")) from None
     if ctx:
-        srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
+        srv.socket = ctx.wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
         srv.scheme = "https"
     else:
         srv.scheme = "http"

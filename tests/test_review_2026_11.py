@@ -128,3 +128,28 @@ def test_prune_keeps_live_lineage_cache(tmp_path):
     assert st.prune(30, keep_lineage={"live"})["lineage_cache"] == 1
     assert st.get("live") and st.get("stale") is None
     assert "lineage_cache" not in st.prune(30)
+
+
+def test_tls_handshake_does_not_block_accept(tmp_path):
+    """A client that connects and never sends a ClientHello must not stall other TLS clients."""
+    import socket, ssl, subprocess
+    cert, key = tmp_path / "c.pem", tmp_path / "k.pem"
+    subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(cert),
+                    "-days", "1", "-subj", "/CN=localhost"], check=True, capture_output=True)
+    from http.server import ThreadingHTTPServer
+    from intentflow.http_utils import tls_context
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), openlineage.make_handler(str(tmp_path / "s.db")))
+    srv.socket = tls_context(str(cert), str(key)).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    port = srv.server_address[1]
+    idle = socket.create_connection(("127.0.0.1", port))          # silent client
+    try:
+        ctx = ssl._create_unverified_context()
+        req = urllib.request.Request(f"https://127.0.0.1:{port}/api/v1/lineage", data=b"{}", method="POST")
+        try:
+            urllib.request.urlopen(req, timeout=3, context=ctx)
+        except urllib.error.HTTPError as e:
+            assert e.code == 400                                     # answered despite the idle connection
+    finally:
+        idle.close()
+        srv.shutdown()

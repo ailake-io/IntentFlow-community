@@ -100,6 +100,8 @@ def make_handler(store_path: str, token: str | None = None):
     class H(BaseHTTPRequestHandler):
         def setup(self):
             self.request.settimeout(15)
+            if hasattr(self.request, "do_handshake"):      # TLS handshake in the worker thread, bounded by the timeout: never in accept()
+                self.request.do_handshake()
             super().setup()
 
         def log_message(self, *a):
@@ -153,7 +155,7 @@ def serve(store_path: str, port: int = 5000, host: str = "127.0.0.1", token: str
     scheme = "http"
     if tls_cert and tls_key:
         from .http_utils import tls_context
-        srv.socket = tls_context(tls_cert, tls_key).wrap_socket(srv.socket, server_side=True)
+        srv.socket = tls_context(tls_cert, tls_key).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
         scheme = "https"
     print(tr("OpenLineage receiver: {url}", url=f"{scheme}://{host}:{srv.server_address[1]}/api/v1/lineage"))
     srv.serve_forever()
