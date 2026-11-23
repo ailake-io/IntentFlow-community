@@ -8,12 +8,14 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release
+      id-token: write   # Sigstore keyless signing
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -24,13 +26,13 @@ jobs:
           v=$(python -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('src/intentflow/__init__.py').read())[1])")
           test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
       - run: pip install build && python -m build
-      - uses: anchore/sbom-action@v0
+      - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
           path: .
           format: spdx-json
           output-file: dist/intentflow-${{ github.ref_name }}.spdx.json
           upload-artifact: false
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign artifacts
         run: for f in dist/*; do cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"; done
       - name: GitHub release
@@ -45,10 +47,13 @@ jobs:
     if: vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      contents: read
+      id-token: write   # PyPI trusted publishing
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - run: pip install build && python -m build
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
