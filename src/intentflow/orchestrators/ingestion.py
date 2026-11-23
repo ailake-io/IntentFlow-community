@@ -7,6 +7,7 @@ Verification: a real Airbyte OSS 1.15 (abctl); Fivetran only with a local HTTP s
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import base64
 import os
@@ -40,7 +41,7 @@ class AirbyteClient:
                                      data=json.dumps({"client_id": cid, "client_secret": secret, "grant-type": "client_credentials"}).encode(),
                                      headers={"Content-Type": "application/json", "Accept": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with _urlopen(req, timeout=15) as r:
                 return json.loads(r.read().decode())["access_token"]
         except Exception as e:
             raise RuntimeError(tr("Airbyte login failed at {url}: {error}", url=f"{self.base}/api/v1/applications/token", error=getattr(e, "code", type(e).__name__))) from None

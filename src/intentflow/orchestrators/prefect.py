@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import json
 import os
@@ -17,7 +18,7 @@ STATE = {"COMPLETED": "success", "FAILED": "failed", "CRASHED": "failed", "CANCE
 def _post(url: str, body: dict, headers: dict, timeout: float = 15.0):
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={"Content-Type": "application/json", **headers})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _urlopen(req, timeout=timeout) as r:
             return json.loads(r.read().decode() or "null")
     except urllib.error.HTTPError as e:
         raise RuntimeError(tr("HTTP {code} at {url}", code=e.code, url=url)) from None

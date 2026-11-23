@@ -4,7 +4,8 @@ AES-128-CBC + HMAC-SHA256 (Fernet, `cryptography` library). Format: `enc:v1:<tok
 (old stores keep working; `intentflow secrets migrate` encrypts what already exists).
 
 Key, in order: `INTENTFLOW_SECRET_KEY` (any long text; turned into a key by SHA-256) → file `<store>.key` (0600, created on the
-first write; only for a SQLite file). Persisting new secrets is refused without encryption.
+first write; only for a SQLite file). Rotation: set the new key in INTENTFLOW_SECRET_KEY, the previous one(s) in
+INTENTFLOW_SECRET_KEY_OLD (comma-separated), run `intentflow secrets rotate`, then drop the old variable. Persisting new secrets is refused without encryption.
 The `:memory:` store may keep plain text in memory; legacy values stay readable for migration.
 """
 from __future__ import annotations
@@ -40,6 +41,10 @@ class Box:
                     with os.fdopen(fd, "wb") as f:
                         f.write(base64.urlsafe_b64encode(os.urandom(32)))
                 self._f, self.source = _fernet(kp.read_bytes().strip()), "file"
+            olds = [k for k in os.environ.get("INTENTFLOW_SECRET_KEY_OLD", "").split(",") if k.strip()]
+            if self._f is not None and olds:
+                from cryptography.fernet import MultiFernet      # encrypts with the first, decrypts with any
+                self._f = MultiFernet([self._f] + [_fernet(k.strip().encode()) for k in olds])
         except ImportError:                       # legacy reads still possible; enc() refuses to persist new secrets
             self._f, self.source = None, "unavailable"
 
@@ -66,6 +71,14 @@ class Box:
             return self._f.decrypt(str(v)[len(PREFIX):].encode()).decode()
         except InvalidToken:
             raise RuntimeError(tr("could not decrypt: INTENTFLOW_SECRET_KEY differs from the one used to write")) from None
+
+    def rotate(self, v: str | None) -> str | None:
+        """Re-encrypt under the current key (plain text gets encrypted too)."""
+        if v is None or v == "":
+            return v
+        if not str(v).startswith(PREFIX):
+            return self.enc(v)
+        return PREFIX + self._f.encrypt(self.dec(v).encode()).decode()
 
     def status(self) -> dict:
         return {"encrypted_at_rest": self.enabled, "key_source": self.source}

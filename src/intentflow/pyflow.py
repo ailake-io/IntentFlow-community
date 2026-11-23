@@ -388,7 +388,7 @@ class _Run:
             self.reads.append(r.dataset)
             if r.column == "*":
                 f.whole.add(r.dataset)
-            for d, c in r.feeds:
+            for _d, c in r.feeds:
                 if c == "*":
                     f.ind.add((r.dataset, r.column))
                 else:
@@ -513,7 +513,7 @@ def reads(name: str, owner, src: str, writes: tuple, dialect: str, project, para
         run.block(tree.body, env, ret=True)
         if not run.outputs and not run.reads:
             # nothing recognized: run the file's functions as entry points (e.g. `def main(spark)` called by a scheduler)
-            for fn, (fd, _) in list(run.funcs.items()):
+            for _fn, (fd, _) in list(run.funcs.items()):
                 local = {a.arg: (_Mark("session") if a.arg in ("spark", "session") else None) for a in fd.args.args}
                 run.block(fd.body, local, ret=True)
     except (_Budget, RecursionError):

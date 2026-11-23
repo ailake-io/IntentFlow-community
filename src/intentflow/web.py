@@ -112,6 +112,12 @@ def cookie(header: str, name: str) -> str | None:
 def make_handler(store_path: str, user: str = "local", token: str | None = None, **ext_opts):
     """`token`/INTENTFLOW_UI_TOKEN (legacy): a single admin token, only without users. `ext_opts`: passed to extensions (tests)."""
     legacy = token if token is not None else os.environ.get("INTENTFLOW_UI_TOKEN")
+    try:
+        api_rate = int(os.environ.get("INTENTFLOW_API_RATE_PER_MIN", "600"))   # per client IP; 0 disables
+    except ValueError:
+        api_rate = 600
+    hits: dict[str, list] = {}
+    hits_lock = threading.Lock()
 
     class H(BaseHTTPRequestHandler):
         options = ext_opts
@@ -136,8 +142,34 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                 for store in self._request_stores.values():
                     store.close()
 
+        def _rate_ok(self) -> bool:
+            """Sliding one-minute window per client IP over /api/*. In memory, per process. Loopback is exempt (local mode,
+            or a same-host proxy without INTENTFLOW_TRUSTED_PROXIES where every client would share one IP)."""
+            if api_rate <= 0 or not urlparse(self.path).path.startswith("/api/"):   # same parse as the router (absolute-form targets)
+                return True
+            now, ip = time.time(), self._client_ip()
+            if ip in ("127.0.0.1", "::1", "::ffff:127.0.0.1"):
+                return True
+            with hits_lock:
+                if len(hits) > 10000:          # bound memory: drop idle clients
+                    for k in [k for k, v in hits.items() if not v or v[-1] < now - 60]:
+                        del hits[k]
+                q = [t for t in hits.get(ip, ()) if t > now - 60]
+                ok = len(q) < api_rate
+                if ok:
+                    q.append(now)
+                hits[ip] = q
+            if not ok:
+                self.close_connection = True       # a POST body may be unread
+                self._json(429, {"error": tr("too many requests; slow down")})
+            return ok
+
         def log_message(self, *a):
             pass
+
+        def log_request(self, code="-", size="-"):
+            from .http_utils import access_log
+            access_log(self, code)
 
         def cookie_key(self) -> bytes:
             st = self._store(store_path)
@@ -266,6 +298,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             self._lang()
             if not self._host_ok():
                 return self._send(403, "forbidden host", "text/plain")
+            if not self._rate_ok():
+                return
             u = urlparse(self.path)
             path, q = u.path, dict(parse_qsl(u.query))
             prim = self._store(store_path)
@@ -406,6 +440,8 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
             self._lang()
             if not self._host_ok():
                 return self._send(403, "forbidden host", "text/plain")
+            if not self._rate_ok():
+                return
             u = urlparse(self.path)
             query = dict(parse_qsl(u.query))
             parts = u.path.strip("/").split("/")
@@ -577,7 +613,7 @@ def make_handler(store_path: str, user: str = "local", token: str | None = None,
                 res = datadiff.diff_relations(wh, str(body["base"]), str(body["head"]), key, int(body.get("sample", 5)),
                                              sample_pct=float(body["sample_pct"]) if body.get("sample_pct") else None)
             except Exception as e:
-                raise ValueError(tr("diff failed: {error}", error=str(e)[:300]))
+                raise ValueError(tr("diff failed: {error}", error=str(e)[:300])) from e
             finally:
                 if wh is not None:
                     wh.close()
@@ -679,4 +715,7 @@ def serve(store_path: str, port: int = 8787, host: str = "127.0.0.1", tls_cert: 
     with Store(store_path) as st:
         team = st.has_users()
     print(f"IntentFlow UI: {srv.scheme}://{host}:{srv.server_address[1]}/  " + (tr("(team mode: token login)") if team else tr("(local mode)")))
-    srv.serve_forever()
+    try:
+        srv.serve_forever()
+    finally:
+        srv.server_close()

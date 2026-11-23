@@ -4,6 +4,7 @@ Each client accepts `fetch(url, headers)` (and `post` where the API requires POS
 from __future__ import annotations
 
 from ..i18n import tr
+from ..http_utils import urlopen as _urlopen
 
 import json
 import os
@@ -15,7 +16,7 @@ from . import Run, http_json
 def _post_json(url: str, body: dict, headers: dict | None = None, timeout: float = 15.0):
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={"Content-Type": "application/json", **(headers or {})})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _urlopen(req, timeout=timeout) as r:
             return json.loads(r.read().decode() or "null")
     except urllib.error.HTTPError as e:
         raise RuntimeError(tr("HTTP {code} at {url}", code=e.code, url=url.split("?")[0])) from None

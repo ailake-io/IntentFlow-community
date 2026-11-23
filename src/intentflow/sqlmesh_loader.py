@@ -91,7 +91,7 @@ def from_export(data: dict, root: str | Path | None = None) -> Project:
     for m in models:
         ids[m["fqn"]] = f"model.sqlmesh.{_parts(m['fqn'])[-1]}"
     seen: dict[str, int] = {}
-    for fqn, uid in list(ids.items()):         # mesmo nome em schemas diferentes
+    for _fqn, uid in list(ids.items()):         # mesmo nome em schemas diferentes
         seen[uid] = seen.get(uid, 0) + 1
     for fqn, uid in list(ids.items()):
         if seen[uid] > 1:

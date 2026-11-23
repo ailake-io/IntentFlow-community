@@ -53,7 +53,7 @@ def build(proj, res, store=None, base=None, declared: str | None = None, reads=N
                            tr("column lineage and removed columns are not detected in these models"),
                            tr("run `dbt docs generate` after the build and point `--target` at that `target/`"), len(nocat), nocat))
     unres: dict[str, int] = {}
-    for u, c, _why in res.unresolved:
+    for u, _c, _why in res.unresolved:
         if u in proj.nodes:
             unres[name(u)] = unres.get(name(u), 0) + 1
     if unres:

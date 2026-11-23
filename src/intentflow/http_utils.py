@@ -16,6 +16,48 @@ def tls_context(cert: str, key: str):
     return ctx
 
 
+def urlopen(req, timeout: float):
+    """urllib urlopen with retries on transient failures (connection errors, 429, 5xx); read-only calls only.
+    INTENTFLOW_HTTP_RETRIES (default 2) extra attempts, exponential backoff from 0.5s."""
+    import os
+    import time
+    import urllib.error
+    import urllib.request
+    try:
+        retries = max(0, int(os.environ.get("INTENTFLOW_HTTP_RETRIES", "2")))
+    except ValueError:
+        retries = 2
+    for n in range(retries + 1):
+        try:
+            return urllib.request.urlopen(req, timeout=timeout)
+        except urllib.error.HTTPError as e:
+            if n == retries or not (e.code == 429 or e.code >= 500):
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if n == retries:
+                raise
+        time.sleep(0.5 * 2 ** n)
+
+
+def access_log(handler, code) -> None:
+    """One line per request on stderr when INTENTFLOW_ACCESS_LOG is `json` or `text` (default: off).
+    The query string is dropped: it may carry tokens."""
+    import os
+    import sys
+    import time
+    mode = os.environ.get("INTENTFLOW_ACCESS_LOG", "").lower()
+    if mode not in ("json", "text"):
+        return
+    rec = {"ts": round(time.time(), 3), "client": handler.client_address[0], "method": handler.command,
+           "path": (handler.path or "").split("?")[0], "status": int(code) if isinstance(code, int) else code}
+    if mode == "json":
+        import json
+        line = json.dumps(rec)
+    else:
+        line = f'{rec["client"]} {rec["method"]} {rec["path"]} {rec["status"]}'
+    print(line, file=sys.stderr, flush=True)
+
+
 class RequestError(ValueError):
     def __init__(self, status: int, message: str):
         super().__init__(message)

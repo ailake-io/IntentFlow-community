@@ -107,6 +107,10 @@ def make_handler(store_path: str, token: str | None = None):
         def log_message(self, *a):
             pass
 
+        def log_request(self, code="-", size="-"):
+            from .http_utils import access_log
+            access_log(self, code)
+
         def do_POST(self):
             if self.path.rstrip("/") != "/api/v1/lineage":     # Marquez-compatible path
                 self.send_response(404)
@@ -158,4 +162,7 @@ def serve(store_path: str, port: int = 5000, host: str = "127.0.0.1", token: str
         srv.socket = tls_context(tls_cert, tls_key).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
         scheme = "https"
     print(tr("OpenLineage receiver: {url}", url=f"{scheme}://{host}:{srv.server_address[1]}/api/v1/lineage"))
-    srv.serve_forever()
+    try:
+        srv.serve_forever()
+    finally:
+        srv.server_close()

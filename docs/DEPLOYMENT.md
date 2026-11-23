@@ -61,7 +61,7 @@ Excess connections are closed. Keep connection and rate limits enabled at the re
 Verified with Docker: PostgreSQL 16, the UI over TLS, a `watch` scheduler and a webhook receiver on one network, 50 concurrent users, restarts and
 `kill -9` of the database, `pg_dump`/`pg_restore`, and a rename caught by `check --base` (exit 1).
 
-- **Build:** `docker build --network=host -t intentflow:0.3.6 .` if your Docker DNS cannot reach PyPI during the build.
+- **Build:** `docker build --network=host -t intentflow:0.3.7 .` if your Docker DNS cannot reach PyPI during the build.
 - **Store and secrets:** `IF_DB_URL` and `INTENTFLOW_SECRET_KEY` as environment variables (use your secret manager); `--store env:IF_DB_URL`.
 - **TLS files** must be readable by uid `10001` (the image user), including their directory. Otherwise the UI exits with `PermissionError`.
 - **Scheduler:** run `watch` as its own container with `--restart unless-stopped`. It reconnects after a database restart or crash
@@ -89,6 +89,9 @@ Without the library or a key, writing new secrets to persistent stores is refuse
 - **Key:** `INTENTFLOW_SECRET_KEY` (long text; recommended in production and **required with PostgreSQL**), or, for a SQLite file, the
   `<store>.key` file (mode 600, created when the file-backed store initializes). **Keep the key with the backup**: without it the secrets cannot be recovered.
 - **Old stores:** `intentflow secrets migrate` encrypts what was in plain text (idempotent).
+- **Key rotation:** set the new key in `INTENTFLOW_SECRET_KEY` and the previous one(s) in `INTENTFLOW_SECRET_KEY_OLD` (comma-separated), run `intentflow secrets rotate`, then remove `INTENTFLOW_SECRET_KEY_OLD`.
+- **Schema version:** the store records its schema version; an older IntentFlow refuses to open a store migrated by a newer one (upgrade instead of downgrading).
+- **Shutdown:** `serve`, `openlineage serve` and `watch` stop cleanly on SIGTERM (exit 130), as on Ctrl-C.
 - **Changing the key:** set the new one, run `secrets status` (it fails with "key differs") and ask people to redo MFA/SSO.
 
 ## Alerts and PRs (outputs)
@@ -116,6 +119,9 @@ Routes in `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spa
 |---|---|
 | `INTENTFLOW_OL_TOKEN` | Bearer token required by the OpenLineage receiver (`intentflow openlineage serve`). Mandatory with `--host` outside loopback, together with `--tls-cert/--tls-key` or `--behind-proxy`. Emitters send `Authorization: Bearer <token>` (e.g. `OPENLINEAGE__TRANSPORT__AUTH__API_KEY`). |
 | `INTENTFLOW_METRICS_TOKEN` | Optional scrape token for `/metrics` (`Authorization: Bearer <token>`), independent of user tokens and MFA. Returns the main project's metrics only. |
+| `INTENTFLOW_API_RATE_PER_MIN` | Requests per minute per client IP on `/api/*` (default 600; `0` disables). In memory, per process; loopback is exempt, so behind a same-host proxy set `INTENTFLOW_TRUSTED_PROXIES` for it to apply. Answers 429. |
+| `INTENTFLOW_ACCESS_LOG` | `json` or `text`: one stderr line per request (client, method, path without query string, status). Default off. |
+| `INTENTFLOW_HTTP_RETRIES` | Extra attempts for orchestrator/catalog API calls on connection errors, 429 and 5xx (default 2, exponential backoff from 0.5s). |
 | `INTENTFLOW_WAREHOUSE_TIMEOUT_S` | PostgreSQL/Redshift warehouse `statement_timeout` in seconds (default 300); connections also use `connect_timeout=10`. Bounds data diffs and probes started from the UI. |
 | `INTENTFLOW_TRUSTED_PROXIES` | Proxy IPs whose `X-Forwarded-For` is honored. Without it, `--behind-proxy` warns: every client shares the proxy IP in the login rate limit (10 failures/min). |
 
