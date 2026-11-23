@@ -28,7 +28,7 @@ Como ligar cada serviço de nuvem: [CLOUD_SETUP](CLOUD_SETUP.md).
 
 GitLab foi exercitado em instância local autohospedada numa rodada anterior; ambientes hospedados de clientes continuam não verificados.
 
-Trabalho técnico prioritário: tratar e reavaliar os CVEs Debian das imagens, automatizar auditoria recorrente de imagens/extras. Veja [VALIDATION_STATUS](VALIDATION_STATUS.md).
+Trabalho técnico prioritário: tratar e reavaliar os CVEs Debian das imagens. O CI agora audita as dependências Python travadas (`pip-audit`) e reprova a imagem em achados CRITICAL com correção (trivy); os HIGH da base ainda pedem decisão. Veja [VALIDATION_STATUS](VALIDATION_STATUS.md).
 
 DBTR003 agora cobre descendentes pulados após falha de teste, em uma correção Unreleased na develop.
 

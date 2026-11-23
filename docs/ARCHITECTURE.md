@@ -43,7 +43,7 @@ dbt/SQLMesh (manifest/catalog) · Airflow (REST, DAGs) · Kestra (REST, flows) �
 | `incidents` / `notify` | Groups findings by root cause; routes by owner/severity to Slack, webhook, e-mail, GitHub PR; 24 h anti-spam. |
 | `datadiff` | Data diff between two relations in the warehouse: ~10 queries regardless of the number of columns and, with `sample_pct`, sampling by key hash. |
 | `lineage_oracle` | Dynamic lineage validation (`lineage-verify`): perturbs sources in a DuckDB copy, rebuilds only the affected models and compares. |
-| `openlineage` / `ol_emit` | OpenLineage input (file or HTTP receiver) and output (project lineage to a catalog). |
+| `openlineage` / `ol_emit` | OpenLineage input (file or HTTP receiver; loopback by default, Bearer token and TLS outside it) and output (project lineage to a catalog). |
 | `i18n` | Translations: English source strings, `locale/pt.json`; `tr()` in Python, `T()` in the UI. Finding ids use the English rendering. |
 | `extensions` | Extension point (`intentflow.extensions` entry points): CLI commands, web routes, sessions, outputs, integration cards. |
 | `cli` | `check`, `gate`, `diff`, `lineage`, `risks`, `runs`, `monitor`, `watch`, `notify`, `openlineage`, `overview`, `ui`, `user`, `config`, `policy`, `ack`, `fp`, `stats`, `prune`… |
@@ -65,7 +65,7 @@ A finding carries: a stable id, severity (by downstream impact), evidence, affec
 - Declared lineage files (`intentflow.lineage.json`) may come from a PR: `sql_file`/`py_file` are confined to its directory, with size limits,
   linear-time parameter rendering and an evaluation budget for Python analysis; error messages never echo the content.
 - The UI uses loopback by default. External exposure requires team mode and TLS or a declared proxy; `Host`, origin and the `X-IntentFlow` header
-  are checked. Request bodies have a limit and a timeout.
+  are checked. Request bodies have a limit and a timeout. The page sends a nonce-based Content-Security-Policy, and HSTS over HTTPS; TLS handshakes run in request threads with a 15 s timeout.
 - Enterprise fixes: applying requires an approval and a validation bound to the same content; validation runs in Docker without network.
 
 Evidence and open items: [2026-10-13 review (Portuguese)](pt-BR/REVIEW_2026-10-13.md).

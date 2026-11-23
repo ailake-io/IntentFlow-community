@@ -50,7 +50,7 @@ Excess connections are closed. Keep connection and rate limits enabled at the re
 
 - **Scheduler:** `intentflow --store ... watch --interval 300` in a separate process (collect, check and notify). One per store.
 - **Backup:** `intentflow --store ... backup /backups/if-$(date +%F).db` (consistent copy, mode 600; the file holds token hashes). On PostgreSQL prefer `pg_dump`.
-- **Retention:** `intentflow --store ... prune --days 90`.
+- **Retention:** `intentflow --store ... prune --days 90`: old samples, history, audit, runs, resolved findings, OpenLineage jobs/edges, expired sessions, login attempts and notification markers. With `dbt.target` set it also drops lineage cache entries the current project no longer uses.
 - **Token rotation:** `intentflow user rotate NAME` (or "New token" in the UI).
 - **Language:** `INTENTFLOW_LANG=pt` for Portuguese in the CLI and in findings produced by `watch`; the UI follows each person's browser and selector.
 - **Several projects:** one store per project (`--store` or `INTENTFLOW_STORE`) and one UI per store; serving several projects from one
@@ -129,7 +129,7 @@ SQLite backups (`intentflow backup`) also write `<dest>.key` (0600) when the sto
 
 ## Metrics (Prometheus and OpenTelemetry)
 
-- **Prometheus:** `GET /metrics` (requires the same `Authorization: Bearer` as the API). Series: `intentflow_findings_open{severity}`,
+- **Prometheus:** `GET /metrics` (requires the same `Authorization: Bearer` as the API, or the dedicated `INTENTFLOW_METRICS_TOKEN`, which also works when the user has MFA). Series: `intentflow_findings_open{severity}`,
   `intentflow_findings_open_by_check{check}`, `intentflow_runs{system,state}`, `intentflow_check_last_run_timestamp_seconds`, `intentflow_check_last_findings`.
 - **OpenTelemetry:** `intentflow otel-push --endpoint http://collector:4318` (OTLP/HTTP JSON). Headers through `OTEL_EXPORTER_OTLP_HEADERS`.
 

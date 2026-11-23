@@ -40,7 +40,7 @@ dbt (manifest/catalog) · Airflow (REST, DAGs) · Kestra (REST, flows) · wareho
 | `incidents` / `notify` | Agrupa achados por causa raiz; roteia por dono/severidade para Slack, webhook, e-mail, PR; anti-spam de 24 h. |
 | `datadiff` | Diff de dados entre duas relações, executado no warehouse: ~10 consultas independentes do nº de colunas (lotes de 40) e, com `sample_pct`, amostragem por hash da chave (`Warehouse.sample_pred`, hash próprio de cada motor; base e nova caem no mesmo balde). |
 | `lineage_oracle` | Validação dinâmica da linhagem (`lineage-verify`): perturba origens numa cópia DuckDB, reconstrói só os modelos afetados e compara. `--sample-rows` e `--source` para bases grandes. Não roda sobre produção. |
-| `openlineage` | Entrada de eventos OpenLineage (arquivo ou receptor HTTP). |
+| `openlineage` | Entrada de eventos OpenLineage (arquivo ou receptor HTTP; loopback por padrão, token Bearer e TLS fora dele). |
 | `risks` | Relatório do que pode quebrar no processo todo (visibilidade, fragilidade, processo); CLI `risks`. |
 | `pyflow` | Análise estática (AST) de job Python/PySpark/pandas para `external`: datasets lidos/escritos, colunas e `feeds`. |
 | `external` | Leituras de jobs fora do SQL (OpenLineage + `intentflow.lineage.json`), casadas com modelos; alimentam `impact` e `OL001`. |
@@ -59,7 +59,7 @@ Um achado traz: id estável, severidade (por impacto a jusante), evidência, nó
 - Coletores usam consultas de leitura. A restrição efetiva também depende das permissões da credencial no warehouse; não há isolamento universal entre drivers.
 - Aplicar uma correção exige aprovação e validação ligadas ao mesmo conteúdo, além dos hashes atuais dos arquivos. A política pode exigir `build` e aprovador distinto do autor.
 - `dbt_sandbox` executa em Docker sem rede, com perfil temporário, entrada somente para leitura e recursos limitados. O perfil/credenciais originais não entram no ambiente. Falha de isolamento não autoriza execução no host.
-- A UI usa loopback por padrão. Exposição externa exige equipe e TLS ou proxy declarado; há verificação de `Host`, origem e cabeçalho `X-IntentFlow`. Corpos de requisição têm limite e timeout.
+- A UI usa loopback por padrão. Exposição externa exige equipe e TLS ou proxy declarado; há verificação de `Host`, origem e cabeçalho `X-IntentFlow`. Corpos de requisição têm limite e timeout. A página envia Content-Security-Policy com nonce e HSTS em HTTPS; o handshake TLS roda na thread da requisição, com timeout de 15 s.
 - Aprovar registra autorização para aplicar o diff; a validação `build` é separada e escreve somente no ambiente temporário de demonstração.
 - `file_transaction` usa lock compartilhado/exclusivo por projeto, journal com fsync, estados intermediários, rename por arquivo e recuperação explícita/automática. O snapshot dbt respeita o lock e recusa ler durante/interrupção de uma escrita. Leitores externos ainda podem observar parte de um lote em andamento se não respeitarem o lock; atomicidade visível a qualquer leitor exige layout versionado com ponteiro de geração.
 - A implementação de demonstração usa DuckDB; não comprova semântica de outros warehouses. Guia: VALIDATION_RECOVERY (documentação do Enterprise).

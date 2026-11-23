@@ -1,4 +1,4 @@
-# Validation status — 2026-11-19
+# Validation status — 2026-11-23
 
 [Português](pt-BR/VALIDATION_STATUS.md)
 
@@ -6,7 +6,7 @@ This page records November validation evidence. Counts refer to the described co
 
 ## Code, installation and CI
 
-- Checkout versions: Community `0.3.5`, Enterprise `0.3.4`, requiring `intentflow>=0.3.5` and `cryptography`. Changes after the release artifacts belong in `Unreleased`.
+- Current versions: Community `0.3.6`, Enterprise `0.3.6`, requiring `intentflow>=0.3.6` and `cryptography`; Enterprise follows the Community version. Evidence in the dated sections below was collected on the checkouts of its date (Community `0.3.5`, Enterprise `0.3.4` until 2026-11-20).
 - Community runs independently. Enterprise is a plugin in the same Python environment, with a valid license required to enable features.
 - Both checkout wheels were built and installed together in a clean Python 3.14.6 venv; `pip check` and `intentflow --version` passed. Customer private-index access was not verified.
 - Main CI covers Python 3.11, 3.13 and 3.14. Actions use Node 24 (`checkout@v6`, `setup-python@v6`; Community also `setup-java@v5`).
@@ -74,3 +74,14 @@ The expanded retail baseline has 6 seeds, 10 models and 30 tests: 26 pass, 4 nat
 The acceptance fixture, logs, JSON and screenshot live separately in `../intentflow-retail-pilot/reports/change-review/` and `change-review-results.json`; they are not packaged in either repository. Consumer/runtime/data-snapshot limits are explicit in the guide. Image CVEs and target-warehouse deployment/recovery validation remain pending.
 
 Follow-up with the complete 541,909-row UCI baseline exposed dbt runtime-helper dependency edges present in build manifests and absent in docs manifests. Normalize those known edges consistently while retaining helper-body review. The fresh full retail build has 16 successful builds, 26 passing tests, 4 natural warnings and no failures/skips; change review has zero changes/gaps and the documented isolated PRB001 QA exception passes. The original warehouse, XLSX and six CSV checksums are preserved. Related comparison/preflight/business regressions after this correction: **113 passed** (overlapping earlier runs).
+
+## Release 0.3.6 — 2026-11-23
+
+Review fixes (security hardening, CLI exit codes, scheduler isolation, store retention) released as Community and Enterprise `0.3.6`. See the CHANGELOGs.
+
+- Local Community suite (SQLite, Python 3.14): **427 passed / 44 skipped**; against a local PostgreSQL 16 container: **436 passed / 35 skipped**. `test_lineage_perf.py` excluded for time.
+- Community CI on `main`: all 11 jobs passed, including the new `lint` (ruff), `locked` (tests on `uv.lock`), `audit` (`pip-audit`: no known vulnerabilities) and `image` (Docker build + trivy, failing only on fixable CRITICAL).
+- Enterprise suite against Community `0.3.6`: **133 passed / 10 skipped** (Keycloak, GitLab and Ollama not configured).
+- UI with the new Content-Security-Policy checked in Chrome: pages and data load, no console errors.
+- Wheel `intentflow-0.3.6` installed in a clean venv: `intentflow --version`, `pip check`, packaged UI and locale.
+- Not changed: the Debian base image findings listed above remain open.

@@ -67,7 +67,7 @@ intentflow preflight --target target --root . --base baseline \
 
 Supported contract formats and rule examples: [BUSINESS_RULES](BUSINESS_RULES.md). `--postgres-env` names the variable holding the URL; it is not the URL itself. DuckDB uses `--duckdb`. Other warehouses use the existing store configuration. Choose severity thresholds and warning policy deliberately; no universal policy fits all data.
 
-Exit codes: 0 passed the configured checks/evidence; 1 blocked; 2 invalid CLI configuration. JSON preserves gaps, warnings, findings, required/completed/failed checks and resource counts. It is evidence for this candidate and configured scope, not a production-readiness certificate.
+Exit codes: 0 passed the configured checks/evidence; 1 blocked; 2 invalid CLI configuration or unreadable artifacts (could not evaluate). JSON preserves gaps, warnings, findings, required/completed/failed checks and resource counts. It is evidence for this candidate and configured scope, not a production-readiness certificate.
 
 ## Scope and further priorities
 

@@ -67,7 +67,7 @@ intentflow preflight --target target --root . --base baseline \
 
 Formatos de contrato e exemplos: [BUSINESS_RULES](BUSINESS_RULES.md). `--postgres-env` recebe o nome da variável com a URL. DuckDB usa `--duckdb`; outros bancos usam a configuração existente no store. Escolha severidade e tratamento de avisos conforme o negócio.
 
-Códigos de saída: 0 passou no escopo configurado; 1 bloqueado; 2 configuração CLI inválida. JSON preserva lacunas, avisos, achados, checks obrigatórios/concluídos/com falha e contagens de recursos. É evidência da candidata nesse escopo, não certificado de prontidão para produção.
+Códigos de saída: 0 passou no escopo configurado; 1 bloqueado; 2 configuração CLI inválida ou artefatos ilegíveis (não foi possível avaliar). JSON preserva lacunas, avisos, achados, checks obrigatórios/concluídos/com falha e contagens de recursos. É evidência da candidata nesse escopo, não certificado de prontidão para produção.
 
 ## Limites e próximas prioridades
 
