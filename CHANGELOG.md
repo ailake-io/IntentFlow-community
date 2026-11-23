@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-11-23
+
 ### Added
 - Baseline change review (`changes` CLI/UI and preflight): removed/changed tests, schema/interfaces, contracts, incremental keys and freshness policies; bounded known impact, exact reasoned acknowledgements and optional strict model-logic/deployed-revision checks.
 - Full-build `preflight` gate with optional mandatory source freshness and current/mapped GX/Soda evidence: artifact freshness/completeness, required checks, optional native dbt revision metadata and strict required contracts. Candidate probes do not train volume/null baselines.

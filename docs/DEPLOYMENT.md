@@ -61,7 +61,7 @@ Excess connections are closed. Keep connection and rate limits enabled at the re
 Verified with Docker: PostgreSQL 16, the UI over TLS, a `watch` scheduler and a webhook receiver on one network, 50 concurrent users, restarts and
 `kill -9` of the database, `pg_dump`/`pg_restore`, and a rename caught by `check --base` (exit 1).
 
-- **Build:** `docker build --network=host -t intentflow:0.3.5 .` if your Docker DNS cannot reach PyPI during the build.
+- **Build:** `docker build --network=host -t intentflow:0.3.6 .` if your Docker DNS cannot reach PyPI during the build.
 - **Store and secrets:** `IF_DB_URL` and `INTENTFLOW_SECRET_KEY` as environment variables (use your secret manager); `--store env:IF_DB_URL`.
 - **TLS files** must be readable by uid `10001` (the image user), including their directory. Otherwise the UI exits with `PermissionError`.
 - **Scheduler:** run `watch` as its own container with `--restart unless-stopped`. It reconnects after a database restart or crash
