@@ -1,8 +1,7 @@
 name: release
 
 # On a version tag: build the wheel/sdist, write an SPDX SBOM, sign every artifact with Sigstore (keyless, GitHub OIDC)
-# and attach them to the GitHub release. PyPI upload runs only when the repository variable PUBLISH_PYPI is "true"
-# and a trusted publisher is configured on PyPI for this workflow (environment "pypi").
+# and attach them to the GitHub release. PyPI upload (twine) runs when the repository secret PYPI_API_TOKEN is set.
 on:
   push:
     tags: ["v*"]
@@ -44,19 +43,25 @@ jobs:
 
   pypi:
     needs: build
-    if: vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-latest
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/p/intentflow
     permissions:
       contents: read
-      id-token: write   # PyPI trusted publishing
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - run: pip install build && python -m build
-      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+      - name: Build and upload (skipped until the PYPI_API_TOKEN secret exists)
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          [ -n "$TWINE_PASSWORD" ] || { echo "::notice::PYPI_API_TOKEN not set, skipping PyPI"; exit 0; }
+          pip install build twine && python -m build && twine check dist/*
+          twine upload --skip-existing dist/*
 
   image:
     needs: build
