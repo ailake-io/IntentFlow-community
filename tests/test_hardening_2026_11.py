@@ -106,3 +106,11 @@ def test_secret_key_rotation(monkeypatch, tmp_path):
     with Store(p) as st:                       # readable with the new key alone
         raw = st.con.execute("select totp_secret from users where name='ana'").fetchone()[0]
         assert st.box.dec(raw) == "TOTPSEED"
+
+
+def test_audit_mirrors_to_stderr_as_json(monkeypatch, capsys):
+    monkeypatch.setenv("INTENTFLOW_AUDIT_LOG", "json")
+    with Store(":memory:") as st:
+        st.audit("system", "watch_error", {"error": "boom"})
+    rec = json.loads(capsys.readouterr().err)
+    assert rec["event"] == "watch_error" and rec["detail"] == {"error": "boom"}

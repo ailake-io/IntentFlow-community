@@ -70,7 +70,7 @@ class SparkClient:
                 eid = ex.get("id", "?")
                 maxm = float(ex.get("maxMemory") or 0)
                 heap = float((ex.get("peakMemoryMetrics") or {}).get("JVMHeapMemory") or 0)
-                limit = _size(props.get("spark.driver.memory" if eid == "driver" else "spark.executor.memory", None))
+                limit = _size(props.get("spark.driver.memory" if eid == "driver" else "spark.executor.memory"))
                 if heap and limit:            # heap real do JVM (pico) contra o limite configurado
                     out.append(Sample(now, "spark", f"{name}:{eid}", "memory_bytes", heap, limit))
                 else:                          # storage memory only (not the heap): better than nothing

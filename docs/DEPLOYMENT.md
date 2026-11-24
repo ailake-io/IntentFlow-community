@@ -121,6 +121,7 @@ Routes in `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spa
 | `INTENTFLOW_METRICS_TOKEN` | Optional scrape token for `/metrics` (`Authorization: Bearer <token>`), independent of user tokens and MFA. Returns the main project's metrics only. |
 | `INTENTFLOW_API_RATE_PER_MIN` | Requests per minute per client IP on `/api/*` (default 600; `0` disables). In memory, per process; loopback is exempt, so behind a same-host proxy set `INTENTFLOW_TRUSTED_PROXIES` for it to apply. Answers 429. |
 | `INTENTFLOW_ACCESS_LOG` | `json` or `text`: one stderr line per request (client, method, path without query string, status). Default off. |
+| `INTENTFLOW_AUDIT_LOG` | `json` or `text`: mirror every audit event (logins, runs, scheduler errors, changes) to stderr, one line each. Default off. |
 | `INTENTFLOW_HTTP_RETRIES` | Extra attempts for orchestrator/catalog API calls on connection errors, 429 and 5xx (default 2, exponential backoff from 0.5s). |
 | `INTENTFLOW_WAREHOUSE_TIMEOUT_S` | PostgreSQL/Redshift warehouse `statement_timeout` in seconds (default 300); connections also use `connect_timeout=10`. Bounds data diffs and probes started from the UI. |
 | `INTENTFLOW_TRUSTED_PROXIES` | Proxy IPs whose `X-Forwarded-For` is honored. Without it, `--behind-proxy` warns: every client shares the proxy IP in the login rate limit (10 failures/min). |

@@ -152,7 +152,7 @@ def load(target_dir: str | Path, root: str | Path | None = None) -> Project:
             language=n.get("language") or "sql",
             materialized=cfg.get("materialized", ""), unique_key=cfg.get("unique_key"),
             incremental_strategy=cfg.get("incremental_strategy"),
-            contract_enforced=bool(((cfg.get("contract") or {}).get("enforced"))),
+            contract_enforced=bool((cfg.get("contract") or {}).get("enforced")),
             meta={**(n.get("meta") or {}), **(cfg.get("meta") or {})}, tags=list(n.get("tags") or []),
             description=n.get("description", "") or "",
             depends_on=[d for d in (n.get("depends_on") or {}).get("nodes", [])],

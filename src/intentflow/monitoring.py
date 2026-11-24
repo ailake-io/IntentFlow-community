@@ -29,7 +29,8 @@ def parse_size(s: str) -> float:
 def host_memory(now=None) -> list[Sample]:
     now = now or time.time()
     try:
-        kv = {l.split(":")[0]: int(l.split()[1]) * 1024 for l in open("/proc/meminfo") if ":" in l}
+        with open("/proc/meminfo") as f:
+            kv = {l.split(":")[0]: int(l.split()[1]) * 1024 for l in f if ":" in l}
     except OSError:
         return []
     total, avail = kv.get("MemTotal", 0), kv.get("MemAvailable", 0)

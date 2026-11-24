@@ -14,6 +14,7 @@ import urllib.parse
 
 from . import Run, http_json, ts
 from .extra import _post_json
+from datetime import UTC
 
 ARGO_PHASE = {"Succeeded": "success", "Failed": "failed", "Error": "failed", "Running": "running", "Pending": "queued"}
 MAGE_STATUS = {"completed": "success", "failed": "failed", "cancelled": "failed", "running": "running", "initial": "queued"}
@@ -111,8 +112,8 @@ class AzureDataFactoryClient:
         self.portal = "https://adf.azure.com/en/monitoring/pipelineruns/"
 
     def runs(self, hours: int = 24) -> list[Run]:
-        from datetime import datetime, timedelta, timezone
-        now = datetime.now(timezone.utc)
+        from datetime import datetime, timedelta
+        now = datetime.now(UTC)
         tok = os.environ.get("AZURE_TOKEN")
         if not tok:
             raise RuntimeError(tr("AZURE_TOKEN is not set"))

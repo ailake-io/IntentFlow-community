@@ -10,7 +10,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 PRODUCER = "https://github.com/intentflow/intentflow"
 _SCHEMA = "https://openlineage.io/spec/facets/1-0-0/"
@@ -27,7 +27,7 @@ def _facet(kind: str, version: str, body: dict) -> dict:
 
 
 def build_events(project, lineage_result, namespace: str = "intentflow", now: float | None = None) -> list[dict]:
-    when = datetime.fromtimestamp(now or time.time(), timezone.utc).isoformat().replace("+00:00", "Z")
+    when = datetime.fromtimestamp(now or time.time(), UTC).isoformat().replace("+00:00", "Z")
     by_dst: dict[str, list] = {}
     for e in lineage_result.edges:
         by_dst.setdefault(e.dst, []).append(e)

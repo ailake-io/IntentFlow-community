@@ -911,8 +911,15 @@ class Store:
                 for r in self.con.execute("select * from proposals order by updated desc")]
 
     def audit(self, actor: str, event: str, detail: dict) -> None:
-        self.con.execute("insert into audit values(?,?,?,?)", (time.time(), actor, event, json.dumps(detail, default=str)))
+        ts, body = time.time(), json.dumps(detail, default=str)
+        self.con.execute("insert into audit values(?,?,?,?)", (ts, actor, event, body))
         self.con.commit()
+        mode = os.environ.get("INTENTFLOW_AUDIT_LOG", "").lower()     # mirror to stderr for log shippers (default off)
+        if mode in ("json", "text"):
+            import sys
+            line = (json.dumps({"ts": round(ts, 3), "actor": actor, "event": event, "detail": detail}, default=str) if mode == "json"
+                    else f"{actor} {event} {body}")
+            print(line, file=sys.stderr, flush=True)
 
     def audit_log(self, limit: int | None = None) -> list[dict]:
         if limit is None:
@@ -925,7 +932,7 @@ TABLES = ("findings", "history", "samples", "runs", "proposals", "audit", "ol_jo
           "users", "notes", "sessions", "login_attempts", "settings")
 
 
-def copy_store(src: "Store", dst: "Store", clear: bool = True) -> int:
+def copy_store(src: Store, dst: Store, clear: bool = True) -> int:
     """Copy every table from `src` to `dst` (SQLite→PostgreSQL migration, logical backup, restore).
     Reads `src` in one consistent snapshot (a single repeatable-read transaction on PostgreSQL). Returns the total number of rows."""
     if src.backend != "postgres":
@@ -940,7 +947,7 @@ def copy_store(src: "Store", dst: "Store", clear: bool = True) -> int:
         c.autocommit = True
 
 
-def _copy_rows(src: "Store", dst: "Store", clear: bool) -> int:
+def _copy_rows(src: Store, dst: Store, clear: bool) -> int:
     q = lambda c: f'"{c}"' if c in ("end", "user") else c    # noqa: E731
     total = 0
     if clear:
@@ -965,7 +972,7 @@ def _copy_rows(src: "Store", dst: "Store", clear: bool) -> int:
     return total
 
 
-def rotate_secrets(store: "Store") -> dict:
+def rotate_secrets(store: Store) -> dict:
     """Re-encrypt every stored secret with the current INTENTFLOW_SECRET_KEY (old keys in INTENTFLOW_SECRET_KEY_OLD)."""
     if not store.box.enabled:
         raise RuntimeError(tr("no key: set INTENTFLOW_SECRET_KEY (or use a SQLite file)"))
@@ -981,7 +988,7 @@ def rotate_secrets(store: "Store") -> dict:
     return n
 
 
-def migrate_secrets(store: "Store") -> dict:
+def migrate_secrets(store: Store) -> dict:
     """Encrypt secrets still in plain text (stores created before encryption at rest). Idempotent."""
     if not store.box.enabled:
         raise RuntimeError(tr("no key: set INTENTFLOW_SECRET_KEY (or use a SQLite file)"))

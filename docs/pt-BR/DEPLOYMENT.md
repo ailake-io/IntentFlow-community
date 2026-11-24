@@ -123,6 +123,7 @@ Rotas em `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam
 | `INTENTFLOW_METRICS_TOKEN` | Token opcional de scrape para `/metrics` (`Authorization: Bearer <token>`), independente dos tokens de usuário e do MFA. Retorna só as métricas do projeto principal. |
 | `INTENTFLOW_API_RATE_PER_MIN` | Requisições por minuto por IP de cliente em `/api/*` (padrão 600; `0` desliga). Em memória, por processo; loopback fica isento, então atrás de um proxy no mesmo host defina `INTENTFLOW_TRUSTED_PROXIES` para valer. Responde 429. |
 | `INTENTFLOW_ACCESS_LOG` | `json` ou `text`: uma linha no stderr por requisição (cliente, método, caminho sem query string, status). Padrão desligado. |
+| `INTENTFLOW_AUDIT_LOG` | `json` ou `text`: espelha cada evento de auditoria (logins, execuções, erros do agendador, mudanças) no stderr, uma linha por evento. Padrão desligado. |
 | `INTENTFLOW_HTTP_RETRIES` | Tentativas extras nas chamadas às APIs de orquestradores/catálogos em erro de conexão, 429 e 5xx (padrão 2, backoff exponencial a partir de 0,5 s). |
 | `INTENTFLOW_WAREHOUSE_TIMEOUT_S` | `statement_timeout` do warehouse PostgreSQL/Redshift em segundos (padrão 300); as conexões também usam `connect_timeout=10`. Limita data diffs e probes disparados pela UI. |
 | `INTENTFLOW_TRUSTED_PROXIES` | IPs de proxy cujo `X-Forwarded-For` é aceito. Sem ela, `--behind-proxy` avisa: todos os clientes compartilham o IP do proxy no limite de login (10 falhas/min). |

@@ -65,10 +65,9 @@ def _flags(path: list) -> tuple[str, bool]:
         inner = e.this if isinstance(e, exp.Alias) else e
         if isinstance(inner, exp.Table):
             continue
-        if not isinstance(inner, (exp.Column, exp.Table)):
-            # `select *` expands into columns; any other expression is derived
-            if not isinstance(inner, exp.Star):
-                kind = "derived"
+        # `select *` expands into columns; any other expression is derived
+        if not isinstance(inner, (exp.Column, exp.Table, exp.Star)):
+            kind = "derived"
         for f in inner.find_all(exp.Func):
             if f.sql_name().upper() in MASK_FUNCS or type(f).__name__.upper() in MASK_FUNCS:
                 masked = True
@@ -299,7 +298,7 @@ def default_workers() -> int:
 
 def cache_keys(project: Project) -> set[str]:
     """Lineage cache keys the current project uses (everything else in the cache is stale)."""
-    dialect = DIALECTS.get(project.adapter, None)
+    dialect = DIALECTS.get(project.adapter)
     return {_model_key(project, u, dialect) for u, n in project.nodes.items() if n.resource_type in ("model", "snapshot") and n.compiled_code}
 
 
@@ -308,7 +307,7 @@ def build(project: Project, cache=None, workers: int | None = None) -> LineageRe
     `workers`: processes for the models not in the cache (default: cores, max 4; `INTENTFLOW_WORKERS` overrides)."""
     res = LineageResult()
     # MappingSchema built ONCE: passing the dict makes sqlglot renormalize everything for every column
-    dialect = DIALECTS.get(project.adapter, None)
+    dialect = DIALECTS.get(project.adapter)
     schema = MappingSchema(project.sqlglot_schema(), dialect=dialect)
     rel = project.by_relation()
     res.cache_hits = 0

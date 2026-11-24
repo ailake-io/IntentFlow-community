@@ -7,12 +7,12 @@ Titles are English; display them with `tr(check.title)`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
 
 from ..i18n import tr
 from ..model import Finding
 
-REGISTRY: dict[str, "Check"] = {}
+REGISTRY: dict[str, Check] = {}
 
 
 @dataclass

@@ -53,12 +53,12 @@ line-length = 160
 
 [tool.ruff.lint]
 # pyflakes (unused/undefined names, shadowing) + syntax errors + bugbear; style is not enforced on existing code
-select = ["F", "E9", "B"]
-ignore = ["B905"]   # zip(strict=) is a style choice here
+select = ["F", "E9", "B", "UP", "SIM"]
+ignore = ["B905", "SIM105"]   # zip(strict=) and contextlib.suppress are style choices here
 
 [tool.ruff.lint.per-file-ignores]
 # pytest fixtures are imported and then requested by name
-"tests/*" = ["F811", "F841", "B017"]
+"tests/*" = ["F811", "F841", "B017", "UP031", "SIM113"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

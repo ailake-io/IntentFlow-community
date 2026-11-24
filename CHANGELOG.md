@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 - Column-lineage diff between two versions: `intentflow lineage --base <target>` (`+`/`-`/`~`, `--json`), `/api/lineage/diff` and a UI panel when `dbt.base_target` is set.
 - `intentflow lineage --json` exports every column edge (OpenLineage events stay in `openlineage emit --dry-run`).
+- `INTENTFLOW_AUDIT_LOG=json|text` mirrors audit events (including scheduler errors) to stderr for log shippers.
 - Documentation site (`mkdocs.yml`, Material); CI builds it with `--strict`; GitHub Pages publishing opt-in (`PUBLISH_DOCS` variable).
 
 ### Fixed
