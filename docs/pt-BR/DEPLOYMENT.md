@@ -60,7 +60,8 @@ Conexões acima do limite são encerradas. Mantenha também limites de conexão 
 Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor de webhook numa rede, 50 usuários simultâneos, reinício e
 `kill -9` do banco, `pg_dump`/`pg_restore` e um rename pego por `check --base` (saída 1).
 
-- **Build:** `docker build --network=host -t intentflow:0.3.7 .` se o DNS do Docker não alcança o PyPI durante o build.
+- **Imagem pronta:** `docker pull ghcr.io/ailake-io/intentflow-community:0.3.8` (assinada: `cosign verify ghcr.io/ailake-io/intentflow-community:0.3.8 --certificate-identity-regexp 'release.yml' --certificate-oidc-issuer https://token.actions.githubusercontent.com`).
+- **Build:** `docker build --network=host -t intentflow:0.3.8 .` se o DNS do Docker não alcança o PyPI durante o build.
 - **Armazém e segredos:** `IF_DB_URL` e `INTENTFLOW_SECRET_KEY` como variáveis de ambiente (use seu cofre); `--store env:IF_DB_URL`.
 - **Arquivos TLS** precisam ser legíveis pelo uid `10001` (usuário da imagem), inclusive o diretório. Senão a UI sai com `PermissionError`.
 - **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
@@ -90,6 +91,9 @@ legíveis para migração; não são cifrados retroativamente sem `secrets migra
   arquivo `<armazém>.key` (modo 600, criado na inicialização do armazém em arquivo). **Guarde a chave junto do backup**: sem ela os segredos não se recuperam
   (as pessoas refazem o MFA/SSO; tokens de acesso e códigos de recuperação são hashes e não dependem dela).
 - **Armazéns antigos:** `intentflow secrets migrate` cifra o que estava em texto (idempotente). `intentflow secrets status` mostra o estado.
+- **Rotação da chave:** defina a chave nova em `INTENTFLOW_SECRET_KEY` e a(s) anterior(es) em `INTENTFLOW_SECRET_KEY_OLD` (separadas por vírgula), rode `intentflow secrets rotate` e depois remova `INTENTFLOW_SECRET_KEY_OLD`.
+- **Versão do schema:** o armazém registra a versão do schema; um IntentFlow mais antigo se recusa a abrir um armazém migrado por um mais novo (atualize em vez de voltar versão).
+- **Desligamento:** `serve`, `openlineage serve` e `watch` param de forma limpa no SIGTERM (saída 130), como no Ctrl-C.
 - **Troca de chave:** defina a nova, rode `secrets status` (falha com "chave diferente") e peça novo MFA/SSO; não há rotação automática.
 - **Fora do escopo:** a senha do DSN do PostgreSQL e as variáveis de ambiente continuam sendo responsabilidade do ambiente (gerenciador de segredos).
 
@@ -118,6 +122,10 @@ Rotas em `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam
 |---|---|
 | `INTENTFLOW_OL_TOKEN` | Token Bearer exigido pelo receptor OpenLineage (`intentflow openlineage serve`). Obrigatório com `--host` fora do loopback, junto com `--tls-cert/--tls-key` ou `--behind-proxy`. Os emissores enviam `Authorization: Bearer <token>` (ex.: `OPENLINEAGE__TRANSPORT__AUTH__API_KEY`). |
 | `INTENTFLOW_METRICS_TOKEN` | Token opcional de scrape para `/metrics` (`Authorization: Bearer <token>`), independente dos tokens de usuário e do MFA. Retorna só as métricas do projeto principal. |
+| `INTENTFLOW_API_RATE_PER_MIN` | Requisições por minuto por IP de cliente em `/api/*` (padrão 600; `0` desliga). Em memória, por processo; loopback fica isento, então atrás de um proxy no mesmo host defina `INTENTFLOW_TRUSTED_PROXIES` para valer. Responde 429. |
+| `INTENTFLOW_ACCESS_LOG` | `json` ou `text`: uma linha no stderr por requisição (cliente, método, caminho sem query string, status). Padrão desligado. |
+| `INTENTFLOW_AUDIT_LOG` | `json` ou `text`: espelha cada evento de auditoria (logins, execuções, erros do agendador, mudanças) no stderr, uma linha por evento. Padrão desligado. |
+| `INTENTFLOW_HTTP_RETRIES` | Tentativas extras nas chamadas às APIs de orquestradores/catálogos em erro de conexão, 429 e 5xx (padrão 2, backoff exponencial a partir de 0,5 s). |
 | `INTENTFLOW_WAREHOUSE_TIMEOUT_S` | `statement_timeout` do warehouse PostgreSQL/Redshift em segundos (padrão 300); as conexões também usam `connect_timeout=10`. Limita data diffs e probes disparados pela UI. |
 | `INTENTFLOW_TRUSTED_PROXIES` | IPs de proxy cujo `X-Forwarded-For` é aceito. Sem ela, `--behind-proxy` avisa: todos os clientes compartilham o IP do proxy no limite de login (10 falhas/min). |
 

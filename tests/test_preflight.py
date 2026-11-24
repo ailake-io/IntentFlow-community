@@ -1,7 +1,7 @@
 """Promotion must fail closed on incomplete evidence, independent of finding severity."""
 import copy
 import json
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import pytest
 
@@ -20,7 +20,7 @@ def artifacts(tmp_path):
     target, base = root / "target", tmp_path / "base"
     target.mkdir()
     base.mkdir()
-    meta = {"generated_at": datetime.now(timezone.utc).isoformat(), "adapter_type": "duckdb", "project_name": "shop", "invocation_id": "build-1"}
+    meta = {"generated_at": datetime.now(UTC).isoformat(), "adapter_type": "duckdb", "project_name": "shop", "invocation_id": "build-1"}
     manifest = {"metadata": meta, "nodes": {
         MODEL: {"unique_id": MODEL, "name": "orders", "resource_type": "model", "package_name": "shop", "original_file_path": "models/orders.sql",
                 "relation_name": '"db"."main"."orders"', "config": {"materialized": "table", "meta": {"owner": "finance"}}, "raw_code": "select 1 as id", "compiled_code": "select 1 as id"},

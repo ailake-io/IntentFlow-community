@@ -58,7 +58,7 @@ Enterprise has its own lock with a uv source override to sibling `../IntentFlow-
 
 ## Add Enterprise
 
-Install the authorized private extension into the same venv; the current Enterprise checkout requires `intentflow>=0.3.7` and `cryptography`. Source example with sibling checkouts:
+Install the authorized private extension into the same venv; the current Enterprise checkout requires `intentflow>=0.3.8` and `cryptography`. Source example with sibling checkouts:
 
 ```bash
 python -m pip install -e . -e ../intentflow-enterprise

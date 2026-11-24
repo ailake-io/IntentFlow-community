@@ -10,7 +10,7 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -33,7 +33,7 @@ def ts(s: str | None) -> float | None:
     except ValueError:
         return None
     if d.tzinfo is None:                 # no time zone (e.g. Mage) = UTC; `timestamp()` of a naive datetime would use the local zone
-        d = d.replace(tzinfo=timezone.utc)
+        d = d.replace(tzinfo=UTC)
     return d.timestamp()
 
 

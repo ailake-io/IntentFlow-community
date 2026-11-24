@@ -4,6 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-11-24
+
+### Added
+- Release publishes a Sigstore-signed container image to `ghcr.io/ailake-io/intentflow-community` (`<version>` and `latest`).
+- Column-lineage diff between two versions: `intentflow lineage --base <target>` (`+`/`-`/`~`, `--json`), `/api/lineage/diff` and a UI panel when `dbt.base_target` is set.
+- `intentflow lineage --json` exports every column edge (OpenLineage events stay in `openlineage emit --dry-run`).
+- `INTENTFLOW_AUDIT_LOG=json|text` mirrors audit events (including scheduler errors) to stderr for log shippers.
+- Documentation site (`mkdocs.yml`, Material); CI builds it with `--strict`; GitHub Pages publishing opt-in (`PUBLISH_DOCS` variable).
+
+### Fixed
+- pt-BR deployment guide documents the 0.3.7 settings (rate limit, access log, HTTP retries, key rotation, schema version, SIGTERM).
+
 ## [0.3.7] - 2026-11-23
 
 ### Added

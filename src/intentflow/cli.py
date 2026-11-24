@@ -240,6 +240,27 @@ def cmd_lineage(a) -> int:
         if a.coverage:
             for c in external.coverage(reads):
                 print(tr("conservative propagation: {job}  (no feeds: {datasets})", job=c["job"], datasets=", ".join(c["reads_without_feeds"])))
+    if a.base:
+        from . import lineage_api
+        d = lineage_api.diff(lineage_api.load(a.base, a.base_root, cache=st), (p, r))
+        if a.json:
+            print(json.dumps(d, indent=1))
+            return 0
+        for x in d["models_added"]:
+            print(f"+ model {x}")
+        for x in d["models_removed"]:
+            print(f"- model {x}")
+        for e in d["added"]:
+            print(f"+ {e['src']} --{e['kind']}--> {e['dst']}")
+        for e in d["removed"]:
+            print(f"- {e['src']} --{e['kind']}--> {e['dst']}")
+        for e in d["changed"]:
+            print(f"~ {e['src']} --{e['from']}→{e['to']}--> {e['dst']}")
+        return 0
+    if a.json:
+        print(json.dumps([{"src": f"{p.nodes[e.src].name}.{e.src_col}", "dst": f"{p.nodes[e.dst].name}.{e.dst_col}", "kind": e.kind,
+                           "masked": e.masked} for e in r.edges if e.src in p.nodes and e.dst in p.nodes], indent=1))
+        return 0
     if a.column:
         m, _, c = a.column.rpartition(".")
         uid = next((u for u, n in p.nodes.items() if n.name == m), None)
@@ -703,6 +724,9 @@ def main(argv=None) -> int:
     l.add_argument("--alias", help=tr("DATASET=MODEL: save an alias in intentflow.lineage.json"))
     l.add_argument("--coverage", action="store_true", help=tr("jobs whose propagation through outputs is conservative (reads without `feeds`)"))
     l.add_argument("--unmatched", action="store_true", help=tr("list external job datasets that do not match a model (missing/ambiguous)"))
+    l.add_argument("--base", help=tr("target/ of the previous version: print column-lineage changes (+ added, - removed, ~ kind changed)"))
+    l.add_argument("--base-root")
+    l.add_argument("--json", action="store_true", help=tr("JSON: every column edge, or the diff with --base"))
     l.add_argument("--impact", action="store_true", help=tr("with --column: also list the transitive downstream impact"))
     l.set_defaults(fn=cmd_lineage)
 

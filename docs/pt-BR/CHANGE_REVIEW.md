@@ -60,6 +60,13 @@ intentflow preflight --target target --root . --base baseline \
 
 Manifest e catálogo de referência precisam conter o mesmo `metadata.env.INTENTFLOW_REVISION` exato, produzido com `DBT_ENV_CUSTOM_ENV_INTENTFLOW_REVISION` ao gerar essa referência. É uma verificação de consistência de metadados. A autenticidade depende da origem confiável dos artefatos. A flag `--revision` da candidata mantém as verificações existentes. Para a UI, salve `dbt.target`, `dbt.base_target` e opcionalmente `dbt.base_revision` no store do projeto selecionado.
 
+## Diff do lineage de colunas
+
+`intentflow lineage --target target --base base/target` lista as arestas de coluna adicionadas (`+`), removidas (`-`) ou com tipo alterado
+(`~`, por exemplo `direct → derived`) e os modelos adicionados/removidos, pelo nome do modelo; `--json` imprime o mesmo como dados. Na UI,
+**Lineage e impacto** mostra o painel quando `dbt.base_target` está configurado e nenhum modelo está selecionado. `intentflow lineage --json`
+(sem `--base`) exporta todas as arestas; `intentflow openlineage emit --dry-run` imprime eventos OpenLineage para catálogos.
+
 ## Limites e validação complementar
 
 A comparação lê metadados sem executar código do projeto. Consumidores não registrados, semântica de negócio, dispatch dinâmico de macros, comportamento Python dinâmico e todas as variáveis de execução, fixtures externas e versões dos dados precisam de validação complementar. Regenere artefatos em CI confiável após alterações; fixe dependências e fixtures. A flag estrita de código cobre SQL/Python registrados e macros declaradas, com limite às informações gravadas no manifest.

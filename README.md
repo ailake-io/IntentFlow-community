@@ -79,7 +79,7 @@ intentflow openlineage serve --port 5000
 ```
 
 This installs the Community core only. Enterprise is a separate, private extension and requires customer access plus a valid license. Its
-package metadata requires `intentflow>=0.3.7` and `cryptography`; pip installs or reuses those dependencies when they are available from the
+package metadata requires `intentflow>=0.3.8` and `cryptography`; pip installs or reuses those dependencies when they are available from the
 configured package sources. If the Community distribution is provided as a separate wheel, install both wheels together. Enterprise registers
 through the `intentflow.extensions` entry point. See [EDITIONS](docs/EDITIONS.md) for package relationships and installation options.
 

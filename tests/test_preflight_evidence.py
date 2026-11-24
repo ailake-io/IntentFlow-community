@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
 import pytest
@@ -16,7 +16,7 @@ SOURCE = "source.shop.raw.orders"
 
 
 def source_evidence(artifacts):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     edit(artifacts[1], "manifest.json", lambda d: d.update(sources={SOURCE: {"resource_type": "source", "config": {"freshness": {"error_after": {"count": 1, "period": "hour"}}}}}))
     doc = {"metadata": {"generated_at": now.isoformat()}, "results": [{"unique_id": SOURCE, "status": "pass", "max_loaded_at": (now-timedelta(minutes=15)).isoformat(), "snapshotted_at": now.isoformat()}]}
     (artifacts[1]/"sources.json").write_text(json.dumps(doc))
@@ -36,7 +36,7 @@ def test_source_freshness_cannot_pass_without_current_complete_slas(artifacts, m
     elif mode == "invalid":
         edit(target,"sources.json",lambda d:d["results"][0].update(max_loaded_at="bad"))
     elif mode in ("old_data", "future_data"):
-        stamp=datetime.now(timezone.utc)+timedelta(hours=-2 if mode=="old_data" else 2)
+        stamp=datetime.now(UTC)+timedelta(hours=-2 if mode=="old_data" else 2)
         edit(target,"sources.json",lambda d:d["results"][0].update(max_loaded_at=stamp.isoformat()))
     else:
         edit(target,"sources.json",lambda d:d["results"][0].update(status="runtime error"))
@@ -48,7 +48,7 @@ def test_required_quality_checks_need_recognized_current_mapped_results(artifact
     root,target,base=artifacts
     options={"target":target,"base":base,"root":root}
     quality=tmp_path/'soda.json'
-    doc={"hasFailures":False,"hasErrors":False,"scanStartTimestamp":datetime.now(timezone.utc).isoformat(),"checks":[{"name":"has rows","table":"orders","outcome":"pass"}]}
+    doc={"hasFailures":False,"hasErrors":False,"scanStartTimestamp":datetime.now(UTC).isoformat(),"checks":[{"name":"has rows","table":"orders","outcome":"pass"}]}
     with Store() as store:
         result=preflight.run(store,options,required=['DQ001'])
         assert not result['ok']
@@ -92,7 +92,7 @@ def test_real_dbt_source_freshness_and_revision_metadata(tmp_path):
     for folder in ('models','seeds'):(root/folder).mkdir(parents=True,exist_ok=True)
     (root/'dbt_project.yml').write_text("name: fresh\nversion: '1.0'\nprofile: fresh\nmodels:\n  fresh:\n    +materialized: table\n    +meta:\n      owner: ingestion\n")
     (root/'profiles.yml').write_text("fresh:\n  target: ci\n  outputs:\n    ci:\n      type: duckdb\n      path: warehouse.duckdb\n      threads: 1\n")
-    (root/'seeds/source_input.csv').write_text('id,loaded_at\n1,'+datetime.now(timezone.utc).isoformat()+'\n')
+    (root/'seeds/source_input.csv').write_text('id,loaded_at\n1,'+datetime.now(UTC).isoformat()+'\n')
     (root/'models/events.sql').write_text("-- depends_on: {{ ref('source_input') }}\nselect id,loaded_at from {{ source('raw','events') }}\n")
     (root/'models/schema.yml').write_text("""version: 2
 sources:

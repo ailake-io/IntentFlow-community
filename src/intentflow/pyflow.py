@@ -41,7 +41,7 @@ class Frame:
     ind: set = field(default_factory=set)            # {(dataset, column)} used only in filter/join/grouping
     opaque: bool = False
 
-    def copy(self) -> "Frame":
+    def copy(self) -> Frame:
         return Frame({k: set(v) for k, v in self.cols.items()}, set(self.whole), set(self.ind), self.opaque)
 
     def resolve(self, name: str) -> set:
