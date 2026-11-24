@@ -39,3 +39,8 @@ nav:
       - pt-BR/PILOT_OFFER.md
       - pt-BR/REVIEW_2026-10-13.md
 markdown_extensions: [admonition, tables, toc]
+
+# Links to repo files outside docs/ (CONTRIBUTING, src/) are valid on GitHub, not in the site.
+validation:
+  links:
+    not_found: info
