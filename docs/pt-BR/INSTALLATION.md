@@ -58,7 +58,7 @@ Enterprise tem um lock próprio com override uv para o checkout irmão `../Inten
 
 ## Adicionar Enterprise
 
-Instale a extensão privada autorizada no mesmo venv; o checkout Enterprise atual exige `intentflow>=0.3.7` e `cryptography`. Exemplo com checkouts lado a lado:
+Instale a extensão privada autorizada no mesmo venv; o checkout Enterprise atual exige `intentflow>=0.3.8` e `cryptography`. Exemplo com checkouts lado a lado:
 
 ```bash
 python -m pip install -e . -e ../intentflow-enterprise

@@ -57,3 +57,25 @@ jobs:
           python-version: "3.13"
       - run: pip install build && python -m build
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+
+  image:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # push to ghcr.io
+      id-token: write   # Sigstore keyless signing
+    steps:
+      - uses: actions/checkout@v6
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+      - name: Build, push and sign ghcr.io image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          img=ghcr.io/${GITHUB_REPOSITORY,,}
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker build --label org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY \
+            -t "$img:${GITHUB_REF_NAME#v}" -t "$img:latest" .
+          docker push -q "$img:${GITHUB_REF_NAME#v}" && docker push -q "$img:latest"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$img:${GITHUB_REF_NAME#v}")
+          cosign sign --yes "$digest"
