@@ -33,7 +33,7 @@ python -m pip install /caminho/wheels/intentflow-*.whl
 intentflow --version
 ```
 
-Instalar pelo nome (`python -m pip install intentflow`) exige um índice configurado contendo a distribuição/versão pretendida. Existir uma release no GitHub não comprova publicação no PyPI. O teste local de wheels não cobre acesso ao índice privado de clientes.
+Instalar pelo nome (`python -m pip install intentdataflow`) exige um índice configurado contendo a distribuição/versão pretendida. Existir uma release no GitHub não comprova publicação no PyPI. O teste local de wheels não cobre acesso ao índice privado de clientes.
 
 ## Dependências opcionais
 
@@ -58,7 +58,7 @@ Enterprise tem um lock próprio com override uv para o checkout irmão `../Inten
 
 ## Adicionar Enterprise
 
-Instale a extensão privada autorizada no mesmo venv; o checkout Enterprise atual exige `intentflow>=0.3.9` e `cryptography`. Exemplo com checkouts lado a lado:
+Instale a extensão privada autorizada no mesmo venv; o checkout Enterprise atual exige `intentdataflow>=0.3.10` e `cryptography`. Exemplo com checkouts lado a lado:
 
 ```bash
 python -m pip install -e . -e ../intentflow-enterprise

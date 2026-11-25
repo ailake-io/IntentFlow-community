@@ -33,7 +33,7 @@ python -m pip install /path/to/wheels/intentflow-*.whl
 intentflow --version
 ```
 
-Installing by name (`python -m pip install intentflow`) requires a configured index containing the intended distribution/version. The existence of a GitHub release does not establish publication on PyPI. Customer/private-index access is not covered by local wheel tests.
+Installing by name (`python -m pip install intentdataflow`) requires a configured index containing the intended distribution/version. The existence of a GitHub release does not establish publication on PyPI. Customer/private-index access is not covered by local wheel tests.
 
 ## Optional dependencies
 
@@ -58,7 +58,7 @@ Enterprise has its own lock with a uv source override to sibling `../IntentFlow-
 
 ## Add Enterprise
 
-Install the authorized private extension into the same venv; the current Enterprise checkout requires `intentflow>=0.3.9` and `cryptography`. Source example with sibling checkouts:
+Install the authorized private extension into the same venv; the current Enterprise checkout requires `intentdataflow>=0.3.10` and `cryptography`. Source example with sibling checkouts:
 
 ```bash
 python -m pip install -e . -e ../intentflow-enterprise

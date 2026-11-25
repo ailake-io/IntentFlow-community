@@ -28,7 +28,7 @@ A coluna de verificação reúne rodadas históricas de conectores; não é o re
 | **Argo Workflows** 3.4 | workflows → execuções (por template/cron) | **Real:** k3d (Kubernetes em Docker) + Argo 3.4.17, `argo-server --auth-mode=server` |
 | **Mage** (OSS) | `pipeline_runs` → execuções; login por sessão (`MAGE_USER`/`MAGE_PASSWORD`) | **Real:** `mageai/mageai` em contêiner com `tests/mage_project` |
 | **dbt Cloud** (API v2) | runs de jobs; artefatos do último run bem-sucedido viram `dbt.target` (`dbt-cloud pull`, ou `dbt_cloud.job_id` na verificação) | Servidor HTTP local com o formato documentado; **nunca contra o dbt Cloud real** |
-| **SQLFluff** 4.4 | `LINT001`: regras de correção/desempenho sobre o SQL compilado (`pip install intentflow[lint]`) | **Real:** biblioteca instalada; cache por hash do SQL |
+| **SQLFluff** 4.4 | `LINT001`: regras de correção/desempenho sobre o SQL compilado (`pip install intentdataflow[lint]`) | **Real:** biblioteca instalada; cache por hash do SQL |
 | **Kubernetes** 1.30 | pods `OOMKilled` e memória vs limite (`kubectl top`, precisa do metrics-server) → checks de cluster | **Real:** kind 1.30 com pod que estoura memória (em k8s <1.28 + swap no host o OOM não reproduz) |
 | **Prometheus** (fonte) | séries de memória (cAdvisor, node_exporter, qualquer consulta PromQL) → checks de cluster | **Real:** `prom/prometheus` |
 | **Prometheus** (saída) | `GET /metrics` autenticado: achados abertos, execuções, última verificação | Endpoint testado (formato de exposição); scrape pelo Prometheus não testado |
@@ -77,20 +77,20 @@ Testes de coleta de estado em Flink, Dagster ou Kubernetes não verificam, por s
 | SQLMesh | `--target caminho/do/projeto` (ou `sqlmesh_export.json`); `INTENTFLOW_SQLMESH_PYTHON` aponta o Python que tem `sqlmesh` |
 | GX / Soda | `intentflow config set dq.results 'pasta,arquivo.json'` |
 | Airbyte / Fivetran / Spark / Databricks | `config set airbyte.url`, `fivetran.url` (`https://api.fivetran.com`), `spark.url`, `databricks.jobs_host`, ou `runs --airbyte … --spark …` |
-| Kafka | `config set kafka.bootstrap host:9092`, `kafka.schema_registry http://…`, opcional `kafka.groups`; `pip install intentflow[kafka]`; limite: `policy kafka_lag_max` |
+| Kafka | `config set kafka.bootstrap host:9092`, `kafka.schema_registry http://…`, opcional `kafka.groups`; `pip install intentdataflow[kafka]`; limite: `policy kafka_lag_max` |
 | Contratos | `config set contracts.dir pasta` |
 | Warehouse | `config set warehouse.type trino\|clickhouse\|redshift\|snowflake\|bigquery\|databricks\|postgres\|duckdb` + variáveis de ambiente do motor (sem `type`: vale `warehouse.duckdb`/`warehouse.postgres_env`) |
 | Argo / Mage | `config set argo.url`, `argo.namespace`, `mage.url` |
 | dbt Cloud | `config set dbt_cloud.account_id N`, `dbt_cloud.job_id N`, `dbt_cloud.host`; `DBT_CLOUD_TOKEN`; `intentflow dbt-cloud runs|pull` |
 | Kubernetes / Prometheus | `config set kubernetes.enabled true` (+ `kubernetes.context`, `kubernetes.namespace`); `config set prometheus.url http://prom:9090` (`prometheus.queries` aceita consultas próprias em JSON) |
-| Lint de SQL | `pip install intentflow[lint]`; `config set lint.enabled true` (desligado por padrão: é lento); regras por `policy.lint_rules` |
+| Lint de SQL | `pip install intentdataflow[lint]`; `config set lint.enabled true` (desligado por padrão: é lento); regras por `policy.lint_rules` |
 | Elementary | `config set elementary.schema analytics_elementary` (usa o warehouse configurado) |
-| Delta / Iceberg | `pip install intentflow[lakehouse]`; `config set lakehouse.tables 'pasta_delta,metadata.json'`; limites `policy.small_file_count`/`small_file_bytes` |
+| Delta / Iceberg | `pip install intentdataflow[lakehouse]`; `config set lakehouse.tables 'pasta_delta,metadata.json'`; limites `policy.small_file_count`/`small_file_bytes` |
 | Mais execuções | `config set kafka_connect.url`, `flink.url`, `luigi.url`, `mlflow.url`, `rundeck.url` (+ `rundeck.project`) |
 | Alertas | sinks `pagerduty`, `opsgenie`, `jira`, `teams`, `gitlab`, `bitbucket`, `azure_devops` em `notify.sinks` (ver [DEPLOYMENT](DEPLOYMENT.md)) |
 | Métricas | `GET /metrics` (Prometheus, com `Authorization: Bearer`) · `intentflow otel-push --endpoint http://collector:4318` |
 | Warehouses | `warehouse.type`: `mysql`, `sqlserver`, `athena`, além dos anteriores |
-| AWS | `pip install intentflow[aws]`; `config set aws.region us-east-1`, `aws.glue true`, `aws.stepfunctions true`, `aws.athena true` (credenciais pela cadeia padrão do boto3) |
+| AWS | `pip install intentdataflow[aws]`; `config set aws.region us-east-1`, `aws.glue true`, `aws.stepfunctions true`, `aws.athena true` (credenciais pela cadeia padrão do boto3) |
 | Azure Data Factory | `config set azure.data_factory SUB/RG/FABRICA`; `AZURE_TOKEN` |
 | Catálogos | `config set catalog.glue true` e/ou `catalog.unity HOST` (+ `catalog.include`); a segunda coleta em diante já compara |
 | Catálogo | `intentflow openlineage emit --url http://catalogo --target …` (`--dry-run` mostra os eventos) |

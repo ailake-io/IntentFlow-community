@@ -22,7 +22,7 @@ def client(service: str, region: str | None = None, endpoint_url: str | None = N
     try:
         import boto3  # type: ignore
     except ImportError as e:
-        raise RuntimeError(tr("install `boto3` (pip install intentflow[aws])")) from e
+        raise RuntimeError(tr("install `boto3` (pip install intentdataflow[aws])")) from e
     kw = {"region_name": region or os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")}
     if endpoint_url:
         kw["endpoint_url"] = endpoint_url

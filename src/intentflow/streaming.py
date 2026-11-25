@@ -64,7 +64,7 @@ def consumer_lag(bootstrap: str, groups: list[str] | None = None) -> list[tuple[
     try:
         from kafka import KafkaAdminClient, KafkaConsumer
     except ImportError as e:
-        raise RuntimeError(tr("install `kafka-python-ng` (pip install intentflow[kafka]) to measure lag")) from e
+        raise RuntimeError(tr("install `kafka-python-ng` (pip install intentdataflow[kafka]) to measure lag")) from e
     cfg: dict = {"bootstrap_servers": bootstrap.split(","), "request_timeout_ms": 15000}
     if os.environ.get("KAFKA_USER"):
         cfg.update(security_protocol="SASL_PLAINTEXT", sasl_mechanism="PLAIN", sasl_plain_username=os.environ["KAFKA_USER"],

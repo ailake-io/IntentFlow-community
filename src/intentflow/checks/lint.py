@@ -1,4 +1,4 @@
-"""SQL lint with SQLFluff over each model's compiled SQL (optional: `pip install intentflow[lint]`).
+"""SQL lint with SQLFluff over each model's compiled SQL (optional: `pip install intentdataflow[lint]`).
 
 Only rules that point to correctness/performance risk, not style (layout and capitalization are left out). Customizable with
 `policy.lint_rules` (list of codes, e.g. ["AM04","RF02"]). Results are cached by SQL hash.

@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with: {python-version: "3.12"}
-      - run: pip install intentflow dbt-duckdb
+      - run: pip install intentdataflow dbt-duckdb
       - run: dbt build && dbt docs generate
       - name: Checks preventivos
         run: |

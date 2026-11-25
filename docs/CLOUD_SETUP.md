@@ -50,7 +50,7 @@ grant role INTENTFLOW_RO to user INTENTFLOW_SVC;
 ```
 
 **Variables:** `SNOWFLAKE_ACCOUNT` (`orgname-accountname`), `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD`, optional `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_ROLE`.
-`pip install intentflow[snowflake]`.
+`pip install intentdataflow[snowflake]`.
 
 **Turn on:** `intentflow config set warehouse.type snowflake`.
 
@@ -77,7 +77,7 @@ gcloud iam service-accounts keys create key.json --iam-account=intentflow-ro@YOU
 ```
 (Prefer Workload Identity or `gcloud auth application-default login` to a key file when you can.)
 
-**Variables:** `GOOGLE_APPLICATION_CREDENTIALS` (key path), `BIGQUERY_PROJECT`, `BIGQUERY_REGION` (default `us`). `pip install intentflow[bigquery]`.
+**Variables:** `GOOGLE_APPLICATION_CREDENTIALS` (key path), `BIGQUERY_PROJECT`, `BIGQUERY_REGION` (default `us`). `pip install intentdataflow[bigquery]`.
 
 **Turn on:** `intentflow config set warehouse.type bigquery`.
 
@@ -98,7 +98,7 @@ The plan uses a *dry run* (bytes that would be read); the estimated cost shows u
 3. For spill: `GRANT SELECT ON system.query.history` and enable the `system.query` schema (metastore admin).
 4. For Jobs: `CAN VIEW` on the desired jobs.
 
-**Variables:** `DATABRICKS_HOST` (without `https://`), `DATABRICKS_HTTP_PATH` (of the SQL warehouse), `DATABRICKS_TOKEN`. `pip install intentflow[databricks]`
+**Variables:** `DATABRICKS_HOST` (without `https://`), `DATABRICKS_HTTP_PATH` (of the SQL warehouse), `DATABRICKS_TOKEN`. `pip install intentdataflow[databricks]`
 (the current lock uses connector 4.9.0 and oauthlib 4.0.1; optional-extra audit status is described in [DEPLOYMENT](DEPLOYMENT.md#container)).
 
 **Turn on:**
@@ -207,7 +207,7 @@ intentflow openlineage emit --url http://localhost:8080 --target <project> --dry
 
 Implemented; **AWS verified only against the `moto` emulator**, Azure only with a local server.
 
-**AWS** — `pip install intentflow[aws]`. Credentials: the default boto3 chain. Minimum read policy:
+**AWS** — `pip install intentdataflow[aws]`. Credentials: the default boto3 chain. Minimum read policy:
 ```json
 {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":[
   "glue:GetJobs","glue:GetJobRuns","glue:GetDatabases","glue:GetTables","glue:GetTable",

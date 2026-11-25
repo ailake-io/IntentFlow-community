@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/intentflow
+      url: https://pypi.org/p/intentdataflow
     permissions:
       contents: read
     steps:
@@ -61,7 +61,7 @@ jobs:
         run: |
           [ -n "$TWINE_PASSWORD" ] || { echo "::notice::PYPI_API_TOKEN not set, skipping PyPI"; exit 0; }
           pip install build twine && python -m build && twine check dist/*
-          twine upload --skip-existing dist/*
+          twine upload --verbose --skip-existing dist/*
 
   image:
     needs: build
