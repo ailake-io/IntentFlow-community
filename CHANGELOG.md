@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-11-25
+
 ### Changed
 - PyPI upload uses the `PYPI_API_TOKEN` repository secret (twine); skipped while unset. Replaces the `PUBLISH_PYPI` variable + trusted publisher.
 
