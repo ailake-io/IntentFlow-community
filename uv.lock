@@ -1295,7 +1295,7 @@ wheels = [
 ]
 
 [[package]]
-name = "intentflow"
+name = "intentdataflow"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
