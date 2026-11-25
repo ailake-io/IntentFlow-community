@@ -30,7 +30,7 @@ The verification column combines historical connector runs; it is not the result
 | **Argo Workflows** 3.4 | workflows → runs | **Real:** k3d + Argo 3.4.17 |
 | **Mage** (OSS) | `pipeline_runs` → runs; session login | **Real:** `mageai/mageai` with `tests/mage_project` |
 | **dbt Cloud** (API v2) | job runs; artifacts of the last successful run become `dbt.target` (`dbt-cloud pull`) | Local HTTP server with the documented format; **never against the real dbt Cloud** |
-| **SQLFluff** 4.4 | `LINT001` over the compiled SQL (`pip install intentflow[lint]`) | **Real:** installed library; cache by SQL hash |
+| **SQLFluff** 4.4 | `LINT001` over the compiled SQL (`pip install intentdataflow[lint]`) | **Real:** installed library; cache by SQL hash |
 | **Kubernetes** 1.30 | `OOMKilled` pods and memory vs limit (`kubectl top`) → cluster checks | **Real:** kind 1.30 with a pod that runs out of memory |
 | **Prometheus** (source) | memory series (cAdvisor, node_exporter, any PromQL query) → cluster checks | **Real:** `prom/prometheus` |
 | **Prometheus** (output) | authenticated `GET /metrics`: open findings, runs, last check | Endpoint tested (exposition format) |
@@ -113,19 +113,19 @@ The verification column combines historical connector runs; it is not the result
 | SQLMesh | `--target path/to/project` (or `sqlmesh_export.json`); `INTENTFLOW_SQLMESH_PYTHON` points to the Python that has `sqlmesh` |
 | GX / Soda | `intentflow config set dq.results 'folder,file.json'` |
 | Airbyte / Fivetran / Spark / Databricks | `config set airbyte.url`, `fivetran.url` (`https://api.fivetran.com`), `spark.url`, `databricks.jobs_host`, or `runs --airbyte … --spark …` |
-| Kafka | `config set kafka.bootstrap host:9092`, `kafka.schema_registry http://…`, optional `kafka.groups`; `pip install intentflow[kafka]`; limit: `policy kafka_lag_max` |
+| Kafka | `config set kafka.bootstrap host:9092`, `kafka.schema_registry http://…`, optional `kafka.groups`; `pip install intentdataflow[kafka]`; limit: `policy kafka_lag_max` |
 | Contracts | `config set contracts.dir folder` |
 | Warehouse | `config set warehouse.type trino\|clickhouse\|redshift\|snowflake\|bigquery\|databricks\|postgres\|duckdb\|mysql\|sqlserver\|athena` + the engine's environment variables |
 | Argo / Mage | `config set argo.url`, `argo.namespace`, `mage.url` |
 | dbt Cloud | `config set dbt_cloud.account_id N`, `dbt_cloud.job_id N`, `dbt_cloud.host`; `DBT_CLOUD_TOKEN`; `intentflow dbt-cloud runs\|pull` |
 | Kubernetes / Prometheus | `config set kubernetes.enabled true` (+ `kubernetes.context`, `kubernetes.namespace`); `config set prometheus.url http://prom:9090` |
-| SQL lint | `pip install intentflow[lint]`; `config set lint.enabled true` (off by default: it is slow); rules in `policy.lint_rules` |
+| SQL lint | `pip install intentdataflow[lint]`; `config set lint.enabled true` (off by default: it is slow); rules in `policy.lint_rules` |
 | Elementary | `config set elementary.schema analytics_elementary` (uses the configured warehouse) |
-| Delta / Iceberg | `pip install intentflow[lakehouse]`; `config set lakehouse.tables 'delta_folder,metadata.json'`; limits `policy.small_file_count`/`small_file_bytes` |
+| Delta / Iceberg | `pip install intentdataflow[lakehouse]`; `config set lakehouse.tables 'delta_folder,metadata.json'`; limits `policy.small_file_count`/`small_file_bytes` |
 | More runs | `config set kafka_connect.url`, `flink.url`, `luigi.url`, `mlflow.url`, `rundeck.url` (+ `rundeck.project`) |
 | Alerts | `notify add-sink` with `slack`, `webhook`, `email`, `github`; Enterprise adds `pagerduty`, `opsgenie`, `jira`, `teams`, `gitlab`, `bitbucket`, `azure_devops` |
 | Metrics | `GET /metrics` (Prometheus, with `Authorization: Bearer`) · `intentflow otel-push --endpoint http://collector:4318` |
-| AWS | `pip install intentflow[aws]`; `config set aws.region us-east-1`, `aws.glue true`, `aws.stepfunctions true`, `aws.athena true` |
+| AWS | `pip install intentdataflow[aws]`; `config set aws.region us-east-1`, `aws.glue true`, `aws.stepfunctions true`, `aws.athena true` |
 | Azure Data Factory | `config set azure.data_factory SUB/RG/FACTORY`; `AZURE_TOKEN` |
 | Catalogs | `config set catalog.glue true` and/or `catalog.unity HOST` (+ `catalog.include`); comparing starts on the second collection |
 | Lineage catalog | `intentflow openlineage emit --url http://catalog --target …` (`--dry-run` shows the events) |

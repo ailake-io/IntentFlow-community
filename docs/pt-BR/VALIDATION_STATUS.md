@@ -6,7 +6,7 @@ Este documento registra evidências das rodadas de novembro. Números abaixo per
 
 ## Código, instalação e CI
 
-- Versões atuais: Community `0.3.7`, Enterprise `0.3.7`, exigindo `intentflow>=0.3.7` e `cryptography`; o Enterprise segue a versão do Community. As evidências das seções datadas abaixo foram coletadas nos checkouts da data (Community `0.3.5`, Enterprise `0.3.4` até 20/11/2026).
+- Versões atuais: Community `0.3.7`, Enterprise `0.3.7`, exigindo `intentdataflow>=0.3.7` e `cryptography`; o Enterprise segue a versão do Community. As evidências das seções datadas abaixo foram coletadas nos checkouts da data (Community `0.3.5`, Enterprise `0.3.4` até 20/11/2026).
 - Community funciona sozinho; Enterprise é plugin instalado no mesmo ambiente Python e depende de uma licença válida para habilitar recursos.
 - Wheels dos dois checkouts foram construídos e instalados juntos em um venv limpo com Python 3.14.6; `pip check` e `intentflow --version` passaram. Isso não verifica acesso ao índice privado de clientes.
 - CI em `main`: Python 3.11, 3.13 e 3.14. Actions usam Node 24 (`checkout@v6`, `setup-python@v6`; Community também `setup-java@v5`).

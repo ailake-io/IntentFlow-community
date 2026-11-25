@@ -4,6 +4,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-11-25
+
+### Changed
+- PyPI distribution renamed to `intentdataflow` (`intentflow` is blocked as too similar to `intent-flow`). Import package and the `intentflow` command are unchanged: `pip install intentdataflow`.
+
 ## [0.3.9] - 2026-11-25
 
 ### Changed

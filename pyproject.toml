@@ -1,5 +1,5 @@
 [project]
-name = "intentflow"
+name = "intentdataflow"
 dynamic = ["version"]
 description = "Control layer for data pipelines: column lineage, preventive checks, orchestrator visibility and impact of external jobs"
 requires-python = ">=3.11"

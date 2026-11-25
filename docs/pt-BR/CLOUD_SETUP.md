@@ -50,7 +50,7 @@ grant role INTENTFLOW_RO to user INTENTFLOW_SVC;
 ```
 
 **Variáveis:** `SNOWFLAKE_ACCOUNT` (formato `orgname-accountname`), `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD`, opcionais `SNOWFLAKE_WAREHOUSE`,
-`SNOWFLAKE_ROLE`. `pip install intentflow[snowflake]`.
+`SNOWFLAKE_ROLE`. `pip install intentdataflow[snowflake]`.
 
 **Ligar:** `intentflow config set warehouse.type snowflake`.
 
@@ -78,7 +78,7 @@ gcloud iam service-accounts keys create key.json --iam-account=intentflow-ro@SEU
 (Prefira Workload Identity ou `gcloud auth application-default login` a arquivo de chave, se puder.)
 
 **Variáveis:** `GOOGLE_APPLICATION_CREDENTIALS` (caminho da chave), `BIGQUERY_PROJECT`, `BIGQUERY_REGION` (padrão `us`; use `eu`,
-`southamerica-east1`…). `pip install intentflow[bigquery]`.
+`southamerica-east1`…). `pip install intentdataflow[bigquery]`.
 
 **Ligar:** `intentflow config set warehouse.type bigquery`.
 
@@ -100,7 +100,7 @@ O plano usa *dry run* (bytes que seriam lidos); o custo estimado aparece no chec
 4. Para Jobs: permissão `CAN VIEW` nos jobs desejados.
 
 **Variáveis:** `DATABRICKS_HOST` (sem `https://`), `DATABRICKS_HTTP_PATH` (do SQL warehouse), `DATABRICKS_TOKEN`.
-`pip install intentflow[databricks]`.
+`pip install intentdataflow[databricks]`.
 
 **Ligar:**
 ```bash
@@ -229,7 +229,7 @@ Se o endpoint responder 404, me diga a versão do DataHub e o caminho do OpenLin
 
 Implementados; **AWS verificado só contra o emulador `moto`** (API real do boto3, servidor emulado), Azure só com servidor local.
 
-**AWS** — `pip install intentflow[aws]`. Credenciais: cadeia padrão do boto3 (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, perfil ou papel).
+**AWS** — `pip install intentdataflow[aws]`. Credenciais: cadeia padrão do boto3 (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, perfil ou papel).
 Política mínima de leitura:
 ```json
 {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":[
