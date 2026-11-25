@@ -57,7 +57,7 @@ class Box:
             return v
         if self._f is None:
             if self._persistent:
-                raise RuntimeError(tr("encryption unavailable: install intentflow[secrets] and set INTENTFLOW_SECRET_KEY for PostgreSQL"))
+                raise RuntimeError(tr("encryption unavailable: install intentdataflow[secrets] and set INTENTFLOW_SECRET_KEY for PostgreSQL"))
             return v
         return PREFIX + self._f.encrypt(str(v).encode()).decode()
 

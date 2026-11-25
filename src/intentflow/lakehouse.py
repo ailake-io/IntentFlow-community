@@ -1,4 +1,4 @@
-"""Delta Lake and Apache Iceberg tables: small files and schema evolution (optional: `pip install intentflow[lakehouse]`).
+"""Delta Lake and Apache Iceberg tables: small files and schema evolution (optional: `pip install intentdataflow[lakehouse]`).
 
 `lakehouse.tables`: list (or comma-separated text) of paths/URIs. Delta is detected by `_delta_log/`; Iceberg by a
 `*.metadata.json` (pass the latest metadata file, or the table folder with `metadata/`).
