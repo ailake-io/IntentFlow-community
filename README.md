@@ -16,8 +16,8 @@ warehouses) and:
 - groups findings into incidents by root cause and routes them by owner (Slack, webhook, e-mail, PR comment);
 - shows in one screen what is running, failing, at risk and being fixed.
 
-The core is open source (Apache-2.0). SSO, per-project governance, governed fixes, AI and corporate integrations are part of
-**IntentFlow Enterprise**: [EDITIONS](docs/EDITIONS.md).
+Everything is open source (Apache-2.0), including SSO, per-project governance, governed fixes, AI suggestions and corporate
+integrations (formerly the separate Enterprise package; see [EDITIONS](docs/EDITIONS.md)).
 
 ## Problems covered
 
@@ -78,10 +78,7 @@ intentflow user add maria --role admin             # team mode: token login, rol
 intentflow openlineage serve --port 5000
 ```
 
-This installs the Community core only. Enterprise is a separate, private extension and requires customer access plus a valid license. Its
-package metadata requires `intentdataflow>=0.3.10` and `cryptography`; pip installs or reuses those dependencies when they are available from the
-configured package sources. If the Community distribution is provided as a separate wheel, install both wheels together. Enterprise registers
-through the `intentflow.extensions` entry point. See [EDITIONS](docs/EDITIONS.md) for package relationships and installation options.
+SSO sign-in needs the `secrets` extra (`pip install intentdataflow[secrets]`); governed fixes validate in Docker (see [VALIDATION_RECOVERY](docs/VALIDATION_RECOVERY.md)).
 
 ### Language
 
@@ -93,7 +90,7 @@ Finding ids do not depend on the language, so switching never reopens findings.
 
 `intentflow ui` (light/dark theme): overview with indicators, incidents, findings (filters, details with recommendation, acknowledge,
 false positive), lineage and impact graph, data diff, pipelines, cluster/memory, integrations, settings by form, team and audit, and a
-guided welcome screen the first time. With Enterprise: fixes with step by step (proposed → approved → validated → applied),
+guided welcome screen the first time, fixes with step by step (proposed → approved → validated → applied),
 AI suggestions, SSO and per-project roles.
 
 ## How to measure the lineage on YOUR project

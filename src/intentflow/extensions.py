@@ -1,4 +1,4 @@
-"""Extension point: packages register a module under the `intentflow.extensions` entry-point group.
+"""Extension point: the built-in team features (`intentflow.enterprise.ext`) load first; other packages register a module under the `intentflow.extensions` entry-point group.
 
 A module may define any of these hooks (all optional):
   FEATURES: set[str]                                  shown to the UI in /api/me
@@ -20,8 +20,12 @@ from importlib.metadata import entry_points
 
 @cache
 def loaded() -> tuple:
-    out = []
+    from .enterprise import ext as builtin     # team features ship in the core
+    out = [builtin]
     for ep in entry_points(group="intentflow.extensions"):
+        if ep.value.startswith("intentflow_enterprise"):     # merged into the core in 0.4.0: never load it twice
+            print("warning: intentflow-enterprise is now built in; uninstall it", file=sys.stderr)
+            continue
         try:
             out.append(ep.load())
         except Exception as e:      # a broken extension must not take the core down

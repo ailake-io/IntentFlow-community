@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-26
+
+### Changed
+- The former private Enterprise package is merged into the core under Apache-2.0 (`intentflow.enterprise`): SSO/OIDC, per-project roles,
+  governed fixes with sandbox validation and recovery, AI suggestions and Jev triage, Jira/PagerDuty/Opsgenie sinks. No license key;
+  `INTENTFLOW_LICENSE`/`INTENTFLOW_LICENSE_FILE` are ignored. An installed `intentflow-enterprise` is skipped with a warning: uninstall it.
+- Docs: AI and VALIDATION_RECOVERY guides moved in; EDITIONS describes the single edition.
+
 ## [0.3.10] - 2026-11-25
 
 ### Changed

@@ -16,8 +16,8 @@ OpenLineage, warehouses) e:
 - mostra numa tela o que está rodando, falhando, em risco e sendo corrigido;
 - traça a linhagem de coluna, inclusive de jobs Spark/Python/SQL fora do projeto, e mostra o que quebra se uma coluna mudar.
 
-O núcleo é open source (Apache-2.0). SSO, governança por projeto, correções governadas, IA e integrações corporativas fazem parte do
-**IntentFlow Enterprise**: [EDITIONS](docs/pt-BR/EDITIONS.md).
+Tudo é open source (Apache-2.0), inclusive SSO, governança por projeto, correções governadas, sugestões de IA e integrações
+corporativas (antes o pacote separado Enterprise; veja [EDITIONS](docs/pt-BR/EDITIONS.md)).
 
 ## Problemas cobertos
 
@@ -80,11 +80,7 @@ intentflow user add maria --role admin            # liga o modo equipe: login po
 intentflow openlineage serve --port 5000
 ```
 
-Isso instala somente o núcleo Community. O Enterprise é uma extensão separada e privada, disponível a clientes autorizados e ativada por uma
-licença válida. Os metadados do pacote exigem `intentdataflow>=0.3.10` e `cryptography`; o pip instala ou reutiliza essas dependências quando elas
-estão disponíveis nas origens configuradas. Se a distribuição Community for fornecida como wheel separado, instale os dois wheels juntos. A
-extensão é descoberta pelo entry point `intentflow.extensions`. Veja [EDITIONS](docs/pt-BR/EDITIONS.md) para a relação entre os pacotes e as
-opções de instalação.
+O login SSO precisa do extra `secrets` (`pip install intentdataflow[secrets]`); correções governadas validam em Docker (veja [VALIDATION_RECOVERY](docs/pt-BR/VALIDATION_RECOVERY.md)).
 
 ### Idioma
 
@@ -94,7 +90,7 @@ idioma: trocar de idioma não reabre achados.
 
 Na **UI** (`intentflow ui`, tema claro/escuro automático): visão geral com indicadores, incidentes, achados (filtros, detalhes com
 recomendação, reconhecer, falso positivo), linhagem e impacto, diff de dados, pipelines, cluster/memória, integrações, configuração por
-formulário, equipe, auditoria e tela de boas-vindas guiada. Com Enterprise: correções com passo a passo (proposta → aprovada → validada →
+formulário, equipe, auditoria e tela de boas-vindas guiada, correções com passo a passo (proposta → aprovada → validada →
 aplicada), sugestões por IA, SSO e papéis por projeto.
 
 ## Como medir a linhagem no SEU projeto
@@ -124,7 +120,7 @@ dbt 1.12 com DuckDB **e** PostgreSQL 18 · SQLMesh 0.236 · Airflow 2.10 e **3.1
 - **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a suíte (Python 3.11, 3.13 e 3.14) e a integração com PostgreSQL e Mailpit. Os demais testes de integração
   (Airflow, Kestra, Trino, Keycloak…) ficam pulados sem os serviços.
 - **Nuvem:** Snowflake, Databricks (SQL e Jobs), Redshift e Fivetran foram testados **só com respostas simuladas**; BigQuery, com o emulador (sem `INFORMATION_SCHEMA.JOBS`). Airflow 3.1 (API v2 com JWT) foi verificado em contêiner real, com um migrador 2 → 3 (`intentflow airflow3`). dbt Cloud, PagerDuty/Opsgenie/Jira/Teams, GitLab/Bitbucket/Azure DevOps, Airbyte Cloud: implementados, só com servidor simulado. AWS (Glue, Step Functions, Athena, Glue Catalog) foi verificado só no emulador `moto`; Azure Data Factory e Unity Catalog, só simulados. Como ligar cada um: [CLOUD_SETUP](docs/pt-BR/CLOUD_SETUP.md).
-- **Correções (Enterprise):** regras para renomear colunas, expandir `SELECT *`, definir dono (DBT003) e `unique_key` (DBT002) e sugestões por LLM, sempre com aprovação humana e validação em contêiner sem rede.
+- **Correções:** regras para renomear colunas, expandir `SELECT *`, definir dono (DBT003) e `unique_key` (DBT002) e sugestões por LLM, sempre com aprovação humana e validação em contêiner sem rede.
 - **Falsos positivos:** a taxa por check é medida a partir do seu feedback; ainda não há dado real de uso.
 - **Jobs externos:** a análise de Python é heurística (não executa o código); código dinâmico, UDFs e `mapInPandas` deixam a saída conservadora.
 - **Traduções:** os achados ficam gravados no idioma do processo que rodou a verificação.
@@ -132,9 +128,8 @@ dbt 1.12 com DuckDB **e** PostgreSQL 18 · SQLMesh 0.236 · Airflow 2.10 e **3.1
 
 ## Validação isolada e recuperação
 
-Correções governadas e a validação isolada fazem parte do IntentFlow Enterprise; exigem o pacote privado no mesmo ambiente Python do núcleo e
-uma licença válida. Veja o [guia de instalação Enterprise](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/INSTALLATION.md)
-e a documentação de [validação e recuperação](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/VALIDATION_RECOVERY.md).
+Correções governadas validam a mudança num contêiner sem rede antes de aplicar, com recuperação após falha. Veja
+[validação e recuperação](docs/pt-BR/VALIDATION_RECOVERY.md) e [IA](docs/pt-BR/AI.md).
 
 ## Revisão de segurança, confiabilidade e desempenho
 

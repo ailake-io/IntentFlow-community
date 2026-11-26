@@ -2,7 +2,7 @@
 
 [English](../INSTALLATION.md)
 
-A distribuição Python se chama `intentflow`; o repositório público é `IntentFlow-community`. Community funciona sem Enterprise. Exige Python >=3.11; a CI atual cobre 3.11, 3.13 e 3.14. O Dockerfile padrão usa Python 3.12. Veja [VALIDATION_STATUS](VALIDATION_STATUS.md) para cobertura medida e pendências.
+A distribuição Python se chama `intentdataflow` (import e comando: `intentflow`); o repositório é `IntentFlow-community`. Exige Python >=3.11; a CI atual cobre 3.11, 3.13 e 3.14. O Dockerfile padrão usa Python 3.12. Veja [VALIDATION_STATUS](VALIDATION_STATUS.md) para cobertura medida e pendências.
 
 ## Pelo código-fonte
 
@@ -22,7 +22,7 @@ Abra http://127.0.0.1:8787. Para exemplos dbt e testes, instale também o extra 
 python -m pip install -e '.[dev,secrets]'
 ```
 
-A instalação editável usa este checkout. Ela não instala o pacote privado Enterprise.
+A instalação editável usa este checkout.
 
 ## Pelo wheel de uma release
 
@@ -54,18 +54,6 @@ Segredos persistentes em PostgreSQL também exigem `INTENTFLOW_SECRET_KEY`. SQLi
 
 O `uv.lock` Community fixa dependências, incluindo extras opcionais. O Dockerfile instala só `secrets` e `postgres` com `uv sync --locked`. A imagem contém apenas Community e ainda tem achados do SO pendentes; veja [VALIDATION_STATUS](VALIDATION_STATUS.md). Mantenha pyproject.toml e lock consistentes.
 
-Enterprise tem um lock próprio com override uv para o checkout irmão `../IntentFlow-community`. Esse override vale para desenvolvimento pelo código e não muda os metadados publicados de dependências.
+## Funções de equipe
 
-## Adicionar Enterprise
-
-Instale a extensão privada autorizada no mesmo venv; o checkout Enterprise atual exige `intentdataflow>=0.3.10` e `cryptography`. Exemplo com checkouts lado a lado:
-
-```bash
-python -m pip install -e . -e ../intentflow-enterprise
-export INTENTFLOW_LICENSE_FILE=/caminho/licenca.txt
-intentflow --help
-```
-
-Uma licença válida habilita a extensão. Reabra o processo após instalar/atualizar o pacote. A licença é verificada offline e o resultado em cache é atualizado aproximadamente a cada 60 segundos. Aplicação/recuperação governada exige Linux atualmente; validação dbt local também precisa de Docker e da imagem sandbox separada.
-
-O [guia de instalação Enterprise](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/INSTALLATION.md) exige acesso ao repositório privado.
+SSO, papéis por projeto, correções governadas, sugestões de IA e sinks corporativos vêm no mesmo pacote (antes Enterprise), sem licença. SSO precisa do extra `secrets`. Aplicar/recuperar correções exige Linux; a validação local do dbt também precisa de Docker e da imagem do sandbox, veja [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md) e [IA](AI.md).
