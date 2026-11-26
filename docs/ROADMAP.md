@@ -7,7 +7,7 @@
 Lineage and impact (UI and API), dbt `run_results.json`, performance (cache, 1,000 models in 24 s cold), data diff in the UI,
 SLA/freshness/checks in the UI, Airflow/Kestra/Prefect/Dagster for real, real OpenLineage from Airflow and Spark, cloud dialects (fixtures),
 store concurrency, packaging, basic accessibility, external jobs (Spark, Python, SQL) in the impact, `intentflow risks`,
-open core split (Apache-2.0 core + Enterprise extension with an offline license), English and Portuguese in CLI, UI and docs.
+single Apache-2.0 package (the Enterprise extension merged into the core in 0.4.0), English and Portuguese in CLI, UI and docs.
 
 CI in `.github/workflows/ci.yml` (unit on Python 3.11/3.13/3.14, integration with PostgreSQL and Mailpit, real Spark, real `dbt-ol`).
 Synthetic scale: 5,000 models in 11 s (4 processes), 0.6 s cached.
@@ -28,7 +28,7 @@ How to connect each cloud service: [CLOUD_SETUP](CLOUD_SETUP.md).
 | Real Airbyte Cloud, Slack, GitHub, DataHub/OpenMetadata | Accounts/tokens; Airbyte OSS, Marquez, Mattermost and SMTP already verified |
 | dbt Cloud, PagerDuty, Opsgenie, Jira, Teams, Bitbucket, Azure DevOps | Test account/token (implemented; simulated server only) |
 | AWS (Glue, Step Functions, Athena, catalog) and Azure Data Factory | Account and read-only role (implemented; emulator/simulated only) |
-| LLM-assisted fixes (Enterprise) | Authorized model and data; only worth it if it beats the rules on real cases |
+| LLM-assisted fixes | Authorized model and data; only worth it if it beats the rules on real cases |
 
 GitLab was exercised on a local self-hosted instance in an earlier round; hosted customer environments remain unverified.
 
@@ -40,7 +40,7 @@ Unreleased: [change review](CHANGE_REVIEW.md) now compares tests, schema/interfa
 
 ## Product decisions still open
 
-Already settled: team users, roles, MFA; SSO/OIDC and per-project roles (Enterprise); built-in HTTPS (`--tls-cert`) or behind a proxy
+Already settled: team users, roles, MFA; SSO/OIDC and per-project roles; built-in HTTPS (`--tls-cert`) or behind a proxy
 ([DEPLOYMENT](DEPLOYMENT.md)); open core license ([EDITIONS](EDITIONS.md)); English first with Portuguese.
 
 Open: where it runs by default (notebook × team server × hosted cloud); maintaining releases and customer distribution (the public core repository already exists).

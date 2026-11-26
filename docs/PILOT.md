@@ -79,11 +79,9 @@ time intentflow lineage --target target --column model.column    # 2nd time (cac
 ```
 Write down the number of models and columns and both times.
 
-## 7. Fixes (optional, 20 min, Enterprise)
+## 7. Fixes (optional, 20 min)
 
-This step requires the private Enterprise extension to be installed in the same Python environment as Community and a valid license; see the
-[Enterprise installation guide](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/INSTALLATION.md). The sandbox image and worker
-setup are documented in Enterprise's `VALIDATION_RECOVERY` guide.
+The sandbox image and worker setup are in [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md).
 
 In `intentflow ui` → Findings: **Suggest fix** on a DBT002 (enter the key) and on a DBT003 (enter the owner). Look at the diff, **do not apply it in
 production**; `fix validate --mode build` requires the sandbox Docker image.

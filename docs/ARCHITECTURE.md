@@ -7,7 +7,7 @@ Current validation evidence and remaining work: [VALIDATION_STATUS](VALIDATION_S
 ## Principle
 
 A control layer **next to** the existing tools. It never runs a transformation of its own.
-Read-oriented collectors; code changes only through an approved proposal (Enterprise).
+Read-oriented collectors; code changes only through an approved proposal.
 Connection credentials come from the environment; MFA/SSO secrets and AI keys can be persisted encrypted (see `DEPLOYMENT.md`).
 **No YAML configuration files:** sources, policies, routes and outputs live in the store (`settings` table) and are edited through the CLI or UI.
 
@@ -20,7 +20,7 @@ dbt/SQLMesh (manifest/catalog) · Airflow (REST, DAGs) · Kestra (REST, flows) �
       │ SQLite/PG store    │  findings (lifecycle) · runs · samples · history · proposals · audit
       └─────────▲──────────┘
                 │
-   Pluggable checks  ──►  findings  ──►  CLI (CI/gate)  ·  UI  ·  (Enterprise) governed proposals
+   Pluggable checks  ──►  findings  ──►  CLI (CI/gate)  ·  UI  ·  governed proposals
 ```
 
 ## Modules (`src/intentflow`)
@@ -48,8 +48,8 @@ dbt/SQLMesh (manifest/catalog) · Airflow (REST, DAGs) · Kestra (REST, flows) �
 | `extensions` | Extension point (`intentflow.extensions` entry points): CLI commands, web routes, sessions, outputs, integration cards. |
 | `cli` | `check`, `gate`, `diff`, `lineage`, `risks`, `runs`, `monitor`, `watch`, `notify`, `openlineage`, `overview`, `ui`, `user`, `config`, `policy`, `ack`, `fp`, `stats`, `prune`… |
 
-**IntentFlow Enterprise** (separate package) adds `proposals`, `file_transaction`, `dbt_sandbox` (governed fixes), `llm`, `llm_fix`, `jev` (AI),
-`oidc` (SSO), per-project roles/scopes, multiple projects and corporate outputs, through the extension hooks: [EDITIONS](EDITIONS.md).
+`intentflow.enterprise` (built in; formerly a separate package) adds `proposals`, `file_transaction`, `dbt_sandbox` (governed fixes), `llm`, `llm_fix`, `jev` (AI),
+`oidc` (SSO), per-project roles/scopes, multiple projects and corporate outputs, through the same extension hooks other packages can use.
 
 ## Checks: three triggers, three costs
 
@@ -66,7 +66,7 @@ A finding carries: a stable id, severity (by downstream impact), evidence, affec
   linear-time parameter rendering and an evaluation budget for Python analysis; error messages never echo the content.
 - The UI uses loopback by default. External exposure requires team mode and TLS or a declared proxy; `Host`, origin and the `X-IntentFlow` header
   are checked. Request bodies have a limit and a timeout. The page sends a nonce-based Content-Security-Policy, and HSTS over HTTPS; TLS handshakes run in request threads with a 15 s timeout.
-- Enterprise fixes: applying requires an approval and a validation bound to the same content; validation runs in Docker without network.
+- Governed fixes: applying requires an approval and a validation bound to the same content; validation runs in Docker without network.
 
 Evidence and open items: [2026-10-13 review (Portuguese)](pt-BR/REVIEW_2026-10-13.md).
 

@@ -1,4 +1,4 @@
-# Validation status — 2026-11-23
+# Validation status — 2026-11-26
 
 [Português](pt-BR/VALIDATION_STATUS.md)
 
@@ -6,14 +6,13 @@ This page records November validation evidence. Counts refer to the described co
 
 ## Code, installation and CI
 
-- Current versions: Community `0.3.7`, Enterprise `0.3.7`, requiring `intentdataflow>=0.3.7` and `cryptography`; Enterprise follows the Community version. Evidence in the dated sections below was collected on the checkouts of its date (Community `0.3.5`, Enterprise `0.3.4` until 2026-11-20).
-- Community runs independently. Enterprise is a plugin in the same Python environment, with a valid license required to enable features.
-- Both checkout wheels were built and installed together in a clean Python 3.14.6 venv; `pip check` and `intentflow --version` passed. Customer private-index access was not verified.
-- Main CI covers Python 3.11, 3.13 and 3.14. Actions use Node 24 (`checkout@v6`, `setup-python@v6`; Community also `setup-java@v5`).
-- Separate local Python 3.13.11 and 3.14.6 runs: Community **287 passed / 44 skipped**; Enterprise **120 passed / 16 skipped**. Installed extras differ from the container images.
-- Enterprise PostgreSQL 16 run: **120 passed / 16 skipped**, with a disposable `INTENTFLOW_SECRET_KEY`.
+- Current version: `0.4.0`, a single package (`intentdataflow` on PyPI, `ghcr.io/ailake-io/intentflow-community` image). The former Enterprise
+  package is merged into the core (`intentflow.enterprise`, Apache-2.0, no license). Dated sections below describe the checkouts of their date,
+  when Community and Enterprise were separate.
+- Main CI covers Python 3.11, 3.13 and 3.14. Actions use Node 24 (`checkout@v6`, `setup-python@v6`, `setup-java@v5`).
+- Local run on 2026-11-26 (Python 3.13): **573 passed / 54 skipped**, including the former Enterprise suite (`tests/test_ee_*.py`).
+  Skips: services not provisioned locally (Keycloak, GitLab, Ollama, cloud emulators, Docker sandbox image).
 - Community CI also passed PostgreSQL/Mailpit, Spark 3.5 and `dbt-ol`; the latter two use separate Python 3.12 jobs. Core compatibility with 3.14 does not establish compatibility of external runtimes with 3.14.
-- Enterprise CI passes on all three versions; its workflow does not provision Keycloak or the dbt sandbox. Real Keycloak was tested separately: **8 passed**, after fixing the assertions' language.
 
 ## Enterprise browser flow and recovery
 

@@ -79,3 +79,19 @@ def _close_pg_pools():
     from intentflow.store import close_pools
     close_pools()
 
+
+@pytest.fixture
+def sandbox_image():
+    """Explicit integration: needs Docker and the local image; never pulls during tests."""
+    import os
+    import stat
+    from intentflow.enterprise.dbt_sandbox import DEFAULT_IMAGE
+    docker = shutil.which("docker")
+    socket = os.environ.get("INTENTFLOW_DBT_DOCKER_SOCKET", "/var/run/docker.sock")
+    if not docker or not Path(socket).exists() or not stat.S_ISSOCK(Path(socket).stat().st_mode):
+        pytest.skip("local Docker unavailable for isolated validation")
+    image = os.environ.get("INTENTFLOW_DBT_IMAGE", DEFAULT_IMAGE)
+    r = subprocess.run([docker, "--host", "unix://" + socket, "image", "inspect", image], capture_output=True, timeout=15)
+    if r.returncode:
+        pytest.skip("local dbt image missing; see docs/VALIDATION_RECOVERY.md")
+    return image

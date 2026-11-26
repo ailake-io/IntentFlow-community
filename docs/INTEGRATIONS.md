@@ -2,13 +2,12 @@
 
 [Português](pt-BR/INTEGRATIONS.md)
 
-Items marked **(Enterprise)** need IntentFlow Enterprise ([EDITIONS](EDITIONS.md)).
 
 The verification column combines historical connector runs; it is not the result of the latest CI run. Check [VALIDATION_STATUS](VALIDATION_STATUS.md) for dated results, skips and production limitations.
 
 | Integration | Use | Verification |
 |---|---|---|
-| **dbt** (core 1.12) + **DuckDB** | manifest/catalog, sandbox `parse`/`build` validation (Enterprise) | Real projects (`dbt_shop`, `dbt_lab`) in automated tests |
+| **dbt** (core 1.12) + **DuckDB** | manifest/catalog, sandbox `parse`/`build` validation | Real projects (`dbt_shop`, `dbt_lab`) in automated tests |
 | **dbt** + **PostgreSQL 18** | another dialect: lineage, probes, JSON `EXPLAIN`, data diff | Local container, automated test (`INTENTFLOW_PG_URL`) |
 | **Airflow 2.10** (REST v1, basic auth) | runs, pools, health; DAG lint | **Real instance** in a container (`INTENTFLOW_AIRFLOW_URL`) |
 | **Airflow 3.1** (REST v2, JWT through `POST /auth/token`) | runs, pools, health; lint and **2 → 3 migration** (`intentflow airflow3`) | **Real instance** `apache/airflow:3.1.0` (`INTENTFLOW_AIRFLOW3_URL`); DAGs rewritten by the migrator ran on it |
@@ -35,9 +34,9 @@ The verification column combines historical connector runs; it is not the result
 | **Prometheus** (source) | memory series (cAdvisor, node_exporter, any PromQL query) → cluster checks | **Real:** `prom/prometheus` |
 | **Prometheus** (output) | authenticated `GET /metrics`: open findings, runs, last check | Endpoint tested (exposition format) |
 | **OpenTelemetry** (output) | `otel-push`: same metrics over OTLP/HTTP | **Real:** OpenTelemetry Collector 0.110 |
-| **GitLab** 17.5 **(Enterprise)** | merge request note (`gitlab` output) | **Real:** `gitlab/gitlab-ce` in a container |
-| **Bitbucket Cloud / Azure DevOps (Enterprise)** | PR comment | Local HTTP server with the documented format |
-| **PagerDuty / Opsgenie / Jira / Teams (Enterprise)** | incident outputs (`dedup_key`/`alias` = incident id) | Local HTTP server; **never against the real services** |
+| **GitLab** 17.5 | merge request note (`gitlab` output) | **Real:** `gitlab/gitlab-ce` in a container |
+| **Bitbucket Cloud / Azure DevOps** | PR comment | Local HTTP server with the documented format |
+| **PagerDuty / Opsgenie / Jira / Teams** | incident outputs (`dedup_key`/`alias` = incident id) | Local HTTP server; **never against the real services** |
 | **Elementary** | `ELM001` reads `<schema>.elementary_test_results` | Documented schema created in real DuckDB |
 | **Delta Lake / Apache Iceberg** | `LAKE001`: small files and incompatible schema between versions | **Real:** tables written with `deltalake` and `pyiceberg` |
 | **dbt semantic layer** (MetricFlow) | semantic models, metrics and saved queries enter the graph; impact reaches metrics | **Real:** `dbt parse` on dbt 1.12 |
@@ -49,9 +48,9 @@ The verification column combines historical connector runs; it is not the result
 | **AWS Glue / Step Functions / Athena** (boto3) | job runs, executions, queries; `AthenaWarehouse` | **Emulated:** `moto`; real AWS not tested |
 | **Azure Data Factory** | `queryPipelineRuns` (last 24 h, paginated) | Local HTTP server; **never against Azure** |
 | **Glue Data Catalog / Unity Catalog** | schema snapshot per collection; `CAT001` compares with the previous one | Glue: `moto`; Unity: local HTTP server. Hive Metastore **not implemented** |
-| **LLM: Anthropic / OpenAI / Gemini (Enterprise)** | suggest fix edits (`fix-ai`, "Suggest fix") | Format verified on a local server; **never with a real key** |
-| **Local LLM (Ollama) (Enterprise)** | same, without leaving the machine | **Real:** Ollama + `qwen2.5:3b` |
-| **Jev (TypeSafe) (Enterprise)** | finding triage and risk gate | Simulated server with the documented format |
+| **LLM: Anthropic / OpenAI / Gemini** | suggest fix edits (`fix-ai`, "Suggest fix") | Format verified on a local server; **never with a real key** |
+| **Local LLM (Ollama)** | same, without leaving the machine | **Real:** Ollama + `qwen2.5:3b` |
+| **Jev (TypeSafe)** | finding triage and risk gate | Simulated server with the documented format |
 | **Prefect** (REST) / **Dagster** (GraphQL) | runs and state | **Real** local servers |
 | **Kestra** | runs, flows; flow lint | **Real server** in a container (`INTENTFLOW_KESTRA_URL`) |
 | **OpenLineage** (RunEvent 1.x) | runs, inputs/outputs, column lineage; HTTP receiver `/api/v1/lineage` | **Real Airflow and Spark 3.5.3** (`openlineage-spark` 1.24.2, column edge received) |
@@ -101,7 +100,7 @@ Credentials, always through the environment: `AIRFLOW_USER`/`AIRFLOW_PASSWORD` o
 `SCHEMA_REGISTRY_USER`/`SCHEMA_REGISTRY_PASSWORD`, `OPENLINEAGE_API_KEY`, `TRINO_*`, `CLICKHOUSE_*`, `REDSHIFT_URL`, `ARGO_TOKEN`/`ARGO_NAMESPACE`,
 `MAGE_API_KEY`/`MAGE_USER`/`MAGE_PASSWORD`/`MAGE_TOKEN`, `DBT_CLOUD_TOKEN`, `RUNDECK_TOKEN`, `MLFLOW_TRACKING_TOKEN`, `MYSQL_*`, `MSSQL_*`,
 `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, `SNOWFLAKE_*`, `BIGQUERY_PROJECT` + Google credentials, `DATABRICKS_*`,
-`GITHUB_TOKEN`, `SMTP_HOST`/`SMTP_PORT`, `INTENTFLOW_UI_TOKEN`; Enterprise outputs: `GITLAB_TOKEN`, `BITBUCKET_TOKEN`, `AZURE_DEVOPS_PAT`,
+`GITHUB_TOKEN`, `SMTP_HOST`/`SMTP_PORT`, `INTENTFLOW_UI_TOKEN`; Corporate outputs: `GITLAB_TOKEN`, `BITBUCKET_TOKEN`, `AZURE_DEVOPS_PAT`,
 `PAGERDUTY_ROUTING_KEY`, `OPSGENIE_API_KEY`, `JIRA_USER`/`JIRA_TOKEN`, `TEAMS_URL`. Nothing is written to disk; the store keeps only variable **names**.
 
 ## Turning each integration on
@@ -123,7 +122,7 @@ The verification column combines historical connector runs; it is not the result
 | Elementary | `config set elementary.schema analytics_elementary` (uses the configured warehouse) |
 | Delta / Iceberg | `pip install intentdataflow[lakehouse]`; `config set lakehouse.tables 'delta_folder,metadata.json'`; limits `policy.small_file_count`/`small_file_bytes` |
 | More runs | `config set kafka_connect.url`, `flink.url`, `luigi.url`, `mlflow.url`, `rundeck.url` (+ `rundeck.project`) |
-| Alerts | `notify add-sink` with `slack`, `webhook`, `email`, `github`; Enterprise adds `pagerduty`, `opsgenie`, `jira`, `teams`, `gitlab`, `bitbucket`, `azure_devops` |
+| Alerts | `notify add-sink` with `slack`, `webhook`, `email`, `github`; plus `pagerduty`, `opsgenie`, `jira`, `teams`, `gitlab`, `bitbucket`, `azure_devops` |
 | Metrics | `GET /metrics` (Prometheus, with `Authorization: Bearer`) · `intentflow otel-push --endpoint http://collector:4318` |
 | AWS | `pip install intentdataflow[aws]`; `config set aws.region us-east-1`, `aws.glue true`, `aws.stepfunctions true`, `aws.athena true` |
 | Azure Data Factory | `config set azure.data_factory SUB/RG/FACTORY`; `AZURE_TOKEN` |

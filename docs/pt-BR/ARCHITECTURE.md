@@ -34,7 +34,7 @@ dbt (manifest/catalog) · Airflow (REST, DAGs) · Kestra (REST, flows) · wareho
 | `monitoring` | Amostras de memória (host, Docker, pools do Airflow, spill) e previsão de esgotamento. |
 | `lineage` | Linhagem **direta** (coluna a coluna) e **indireta** (coluna usada em JOIN/filtro/agrupamento/ordenação/janela/CASE afeta o modelo inteiro). Medida em projeto real por `lineage_oracle` (perturba dados e compara). Colunas de saída são **inferidas do SELECT** compilado (não só do YAML); pai sem aresta de coluna cai para dependência de modelo (`opaque`), nunca para "nada". Reporta o que **não** resolveu e a taxa. Cache por modelo (hash do SQL, dialeto e esquema dos pais): base e head de um PR compartilham o cache, então só o modelo alterado é recalculado. Modelos fora do cache vão para N processos (`spawn`, padrão 4, `INTENTFLOW_WORKERS`); em processo com threads fica serial. |
 | `store` | SQLite (arquivo) ou PostgreSQL (`postgresql://`, `env:VAR`); mesma API, `copy_store` migra entre eles. Achados: abertos → reconhecidos (com validade) → resolvidos automaticamente. |
-| `extensions` / `i18n` | Ponto de extensão (o IntentFlow Enterprise adiciona `proposals`, `llm_fix`, `jev`, `oidc`, papéis por projeto e saídas corporativas) e traduções (`tr()`, `locale/pt.json`). |
+| `extensions` / `i18n` | Ponto de extensão (o módulo embutido `intentflow.enterprise` adiciona `proposals`, `llm_fix`, `jev`, `oidc`, papéis por projeto e saídas corporativas) e traduções (`tr()`, `locale/pt.json`). |
 | `overview` / `web` | Visão única e UI local (loopback, anti-CSRF, anti DNS rebinding). |
 | `runner` | Orquestra uma verificação (CLI, UI e agendador): fontes e políticas vêm do armazém. |
 | `incidents` / `notify` | Agrupa achados por causa raiz; roteia por dono/severidade para Slack, webhook, e-mail, PR; anti-spam de 24 h. |
@@ -62,7 +62,7 @@ Um achado traz: id estável, severidade (por impacto a jusante), evidência, nó
 - A UI usa loopback por padrão. Exposição externa exige equipe e TLS ou proxy declarado; há verificação de `Host`, origem e cabeçalho `X-IntentFlow`. Corpos de requisição têm limite e timeout. A página envia Content-Security-Policy com nonce e HSTS em HTTPS; o handshake TLS roda na thread da requisição, com timeout de 15 s.
 - Aprovar registra autorização para aplicar o diff; a validação `build` é separada e escreve somente no ambiente temporário de demonstração.
 - `file_transaction` usa lock compartilhado/exclusivo por projeto, journal com fsync, estados intermediários, rename por arquivo e recuperação explícita/automática. O snapshot dbt respeita o lock e recusa ler durante/interrupção de uma escrita. Leitores externos ainda podem observar parte de um lote em andamento se não respeitarem o lock; atomicidade visível a qualquer leitor exige layout versionado com ponteiro de geração.
-- A implementação de demonstração usa DuckDB; não comprova semântica de outros warehouses. Guia: VALIDATION_RECOVERY (documentação do Enterprise).
+- A implementação de demonstração usa DuckDB; não comprova semântica de outros warehouses. Guia: [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md).
 
 Evidências e pendências: [revisão de 13/10/2026](REVIEW_2026-10-13.md).
 

@@ -18,8 +18,8 @@ Preserve o `target/run_results.json` do build antes de `dbt docs generate`: a ge
 | SCH002 | Mudança de tipo de coluna, com consumidores | pre-merge | static | testado |
 | SCH003 | Diff de esquema cego: falta `catalog.json` na base ou na cabeça, então renomeações/remoções não são vistas | pre-merge | static | testado |
 | DBT001 | Modelo consumido sem teste `unique` | pre-merge | static | testado |
-| DBT002 | Incremental sem `unique_key` (não idempotente). Correção por regra (Enterprise): a pessoa informa a chave (a UI sugere colunas `id`/`*_id`); valida formato e existência da coluna | pre-merge | static | testado |
-| DBT003 | Modelo sem dono (`meta.owner`). Correção por regra (Enterprise): a pessoa informa o dono | continuous | static | testado |
+| DBT002 | Incremental sem `unique_key` (não idempotente). Correção por regra: a pessoa informa a chave (a UI sugere colunas `id`/`*_id`); valida formato e existência da coluna | pre-merge | static | testado |
+| DBT003 | Modelo sem dono (`meta.owner`). Correção por regra: a pessoa informa o dono | continuous | static | testado |
 | DBT004 | PII propagada sem hash/máscara a modelo não autorizado | pre-merge | static | testado |
 | DBT005 | Modelo com ≥ 3 consumidores sem `contract.enforced` | pre-merge | static | testado |
 | DBTR001 | Teste do dbt falhando/em aviso (do `run_results.json`) | continuous | statistical | testado (falha real do dbt) |

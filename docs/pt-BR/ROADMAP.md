@@ -34,8 +34,8 @@ DBTR003 agora cobre descendentes pulados após falha de teste, em uma correção
 
 ## O que falta e é decisão de produto
 
-Já resolvido: usuários, papéis e MFA; SSO/OIDC e papéis por projeto (Enterprise); HTTPS próprio (`--tls-cert`) ou atrás de proxy
-([DEPLOYMENT](DEPLOYMENT.md)); licença open core com o pacote Enterprise separado ([EDITIONS](EDITIONS.md)); inglês como idioma
+Já resolvido: usuários, papéis e MFA; SSO/OIDC e papéis por projeto; HTTPS próprio (`--tls-cert`) ou atrás de proxy
+([DEPLOYMENT](DEPLOYMENT.md)); pacote único Apache-2.0 (o Enterprise foi incorporado na 0.4.0); inglês como idioma
 principal, com português.
 
 Em aberto: onde roda por padrão (notebook × servidor da equipe × nuvem hospedada); manter releases e distribuição para clientes (o repositório público do núcleo já existe).

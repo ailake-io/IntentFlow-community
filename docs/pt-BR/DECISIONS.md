@@ -16,7 +16,7 @@
 | Python | Ecossistema (SQLGlot, dbt, Airflow, drivers de warehouse) |
 | Leitura por padrão; escrita só por proposta aprovada, validada em sandbox e auditada | Segurança e confiança em correções automáticas |
 | Credenciais de conexão por ambiente; MFA/SSO e chaves opcionais de IA no armazém | Novos segredos persistentes exigem `cryptography` e chave disponível; conferir `secrets status` e migrar valores legados |
-| Operação local disponível; integrações, notificações e IA externa enviam conteúdo quando configuradas/acionadas | Ver os limites de privacidade na documentação de IA do Enterprise; nesta revisão só foram usados dados sintéticos e recursos locais |
+| Operação local disponível; integrações, notificações e IA externa enviam conteúdo quando configuradas/acionadas | Ver os limites de privacidade em [IA](AI.md); nesta revisão só foram usados dados sintéticos e recursos locais |
 | Adaptadores de nuvem existem mas não foram exercitados contra contas reais | Não há credenciais fornecidas; declarar a lacuna em vez de supor que funciona |
 | Sem arquivos YAML próprios (decisão do usuário) | Configuração e políticas no armazém, geridas por CLI/UI; reduz atrito e arquivos a versionar |
 | Correções por regra só para o que é mecânico ou decisão humana informada (rename, `*`, dono, `unique_key`); nenhuma edita YAML | Edição textual de YAML corre o risco de duplicar o patch do modelo (o dbt falha); fica para quando houver um editor estrutural |
@@ -26,7 +26,7 @@
 | LLM e Jev opcionais para sugerir e triar; aprovação continua humana | Correções por regra e por IA passam por validação vinculada ao conteúdo; serviços reais de IA não foram exercitados nesta revisão |
 
 A validação de propostas usa contêiner local sem rede e perfil DuckDB temporário. Aplicação e rollback usam journal durável e lock por projeto.
-Essa etapa foi solicitada pelo usuário após a revisão; hoje faz parte do IntentFlow Enterprise.
+Essa etapa foi solicitada pelo usuário após a revisão; hoje faz parte do pacote principal.
 
 ## Pendente de decisão do usuário
 
@@ -48,7 +48,6 @@ Essa etapa foi solicitada pelo usuário após a revisão; hoje faz parte do Inte
 
 | Decisão | Motivo |
 |---|---|
-| Núcleo Apache-2.0 + IntentFlow Enterprise (licença comercial, pacote separado por entry point) | Adoção pelo núcleo grátis; receita pelo que serve à empresa (SSO, governança por projeto, correções, IA, integrações corporativas) |
+| Pacote único Apache-2.0 (Enterprise incorporado na 0.4.0) | Adoção primeiro: um produto, um CI, sem licença; receita, se houver, por suporte ou hospedagem |
 | Login por token, papéis e MFA ficam no núcleo | Segurança não é recurso pago |
-| Licença Enterprise verificada offline (Ed25519) | Sem telefonar para casa; funciona em rede fechada |
 | Inglês como idioma principal; português por catálogo (`tr()` no Python, `T()` na UI) | Alcance internacional sem perder o público brasileiro; o id do achado não depende do idioma |

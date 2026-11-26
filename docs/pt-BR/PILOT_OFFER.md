@@ -33,8 +33,8 @@ descobre depois do incidente.
 
 **Critério de sucesso combinado na abertura:** ao menos um risco real que vocês não conheciam, e falso positivo abaixo de 50%.
 
-**Investimento:** [valor fixo] · **Depois do piloto:** IntentFlow open source no CI sem custo, ou edição Enterprise
-(modo equipe, SSO, correção governada, suporte), ver [EDITIONS](EDITIONS.md).
+**Investimento:** [valor fixo] · **Depois do piloto:** IntentFlow open source (todas as funções, inclusive SSO, correção governada e IA)
+sem custo, com suporte pago opcional.
 
 ## Modelo de relatório
 

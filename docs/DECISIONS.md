@@ -19,7 +19,7 @@
 | Python | Ecosystem (SQLGlot, dbt, Airflow, warehouse drivers) |
 | Read-only by default; writes only through an approved, sandbox-validated and audited proposal | Safety and trust in automatic fixes |
 | Connection credentials through the environment; MFA/SSO and optional AI keys in the store | New persistent secrets require `cryptography` and an available key; check `secrets status` and migrate legacy values |
-| Local operation available; integrations, notifications and external AI send content when configured/triggered | See the privacy limits in the Enterprise AI documentation |
+| Local operation available; integrations, notifications and external AI send content when configured/triggered | See the privacy limits in [AI](AI.md) |
 | Cloud adapters exist but were not exercised against real accounts | No credentials were provided; state the gap instead of assuming it works |
 | No YAML files of its own (user decision) | Settings and policies in the store, managed through the CLI/UI; less friction and fewer files to version |
 | Rule-based fixes only for what is mechanical or an informed human decision (rename, `*`, owner, `unique_key`); none edits YAML | Textual YAML edits risk duplicating the model patch (dbt fails); wait for a structural editor |
@@ -48,7 +48,6 @@
 
 | Decision | Reason |
 |---|---|
-| Apache-2.0 core + IntentFlow Enterprise (commercial license, separate package through an entry point) | Adoption through the free core; revenue from what serves a company (SSO, per-project governance, fixes, AI, corporate integrations) |
+| Single Apache-2.0 package (Enterprise merged in 0.4.0) | Adoption first: one product, one CI, no license gate; revenue, if any, from support or hosting |
 | Token login, roles and MFA stay in the core | Security is not a paid feature |
-| Enterprise license checked offline (Ed25519) | No calling home; works on closed networks |
 | English as the main language; Portuguese through a catalog (`tr()` in Python, `T()` in the UI) | International reach without losing the Brazilian audience; finding ids do not depend on the language |
