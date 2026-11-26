@@ -1,4 +1,4 @@
-# Validation status — 2026-11-23
+# Validation status — 2026-11-26
 
 [Português](pt-BR/VALIDATION_STATUS.md)
 

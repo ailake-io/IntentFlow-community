@@ -1,4 +1,4 @@
-# Estado de validação — 23/11/2026
+# Estado de validação — 26/11/2026
 
 [English](../VALIDATION_STATUS.md)
 
