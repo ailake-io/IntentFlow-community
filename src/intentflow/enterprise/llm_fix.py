@@ -8,6 +8,7 @@ text and evidence without data samples. Never data rows.
 from __future__ import annotations
 
 import difflib
+from collections import Counter
 import hashlib
 import json
 import re
@@ -100,7 +101,8 @@ def extract_json(text: str) -> dict:
 _REF = re.compile(r"\{\{\s*(?:ref|source)\s*\(")
 _JINJA = re.compile(r"\{\{|\{%")
 # constructs that read the environment, run SQL at parse time or add hooks: an AI edit never introduces them
-_RISKY = re.compile(r"env_var\s*\(|run_query\s*\(|\bpost_hook\b|\bpre_hook\b|on-run-|\{%-?\s*(?:do|call|statement)\b|\bexec\s*\(|\beval\s*\(|\badapter\s*\.|\bmodules\s*\.", re.I)
+_RISKY = re.compile(r"env_var\s*\(|run_query\s*\(|\b(?:post|pre)[_-]hook\b|on-run-|sql_header|\{%-?\s*(?:do|call|statement|set)\b|\bexec\s*\(|\beval\s*\("
+                    r"|\badapter\s*\.|\bmodules\s*\.|\bcontext\s*\[|\*\*\s*\{|\bvar\s*\(|\blog\s*\(|\bapi\s*\.|\breturn\s*\(", re.I)
 
 
 def guards(name: str, before: str, after: str) -> tuple[list[str], list[str]]:
@@ -108,7 +110,7 @@ def guards(name: str, before: str, after: str) -> tuple[list[str], list[str]]:
     reject, warn = [], []
     if len(_REF.findall(after)) < len(_REF.findall(before)):
         reject.append(tr("{file}: the edit removes a `ref()`/`source()` (it would break dbt lineage)", file=name))
-    if len(_RISKY.findall(after)) > len(_RISKY.findall(before)):
+    if Counter(m.lower() for m in _RISKY.findall(after)) - Counter(m.lower() for m in _RISKY.findall(before)):   # any new construct, even if another was removed
         reject.append(tr("{file}: the edit adds env_var/run_query/hooks or similar; an AI edit may not introduce them", file=name))
     lost = len(_JINJA.findall(before)) - len(_JINJA.findall(after))
     if lost > 0:

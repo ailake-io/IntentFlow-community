@@ -2,6 +2,7 @@
 import base64
 import threading
 import time
+import pytest
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -80,3 +81,20 @@ def test_llm_has_no_default_model(tmp_path):
         llm.chat(st, "s", "u", key="k")
 
 
+
+
+def test_ai_guard_rejects_swapped_or_hyphenated_risky_constructs():
+    from intentflow.enterprise.llm_fix import guards
+    before = "select {{ env_var('A') }} from {{ ref('x') }}"
+    swapped = "{{ config(post_hook=\"drop table t\") }} select 1 from {{ ref('x') }}"      # removes one construct, adds another
+    assert guards("m.sql", before, swapped)[0]
+    assert guards("m.sql", "select 1 from {{ ref('x') }}", "{{ config(**{'post-hook': 'x'}) }} select 1 from {{ ref('x') }}")[0]
+    assert not guards("m.sql", before, before.replace("select", "select distinct"))[0]
+
+
+def test_oidc_http_refuses_non_http_schemes():
+    from intentflow.enterprise import oidc
+    with pytest.raises(oidc.SSOError, match="http"):
+        oidc.http_get_json("file:///etc/passwd")
+    with pytest.raises(oidc.SSOError, match="http"):
+        oidc.http_post_form("ftp://x/y", {})

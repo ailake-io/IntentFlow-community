@@ -100,12 +100,20 @@ def _opener(allow_internal: bool):
 _OPENERS = {False: _opener(False), True: _opener(True)}
 
 
+def _http_only(url: str) -> None:
+    """build_opener keeps file:, ftp: and data: handlers: refuse every scheme but http(s)."""
+    if urllib.parse.urlsplit(url).scheme.lower() not in ("http", "https"):
+        raise SSOError("only http(s) URLs are allowed")
+
+
 def http_get_json(url: str, timeout: float = 10.0, allow_internal: bool = False):
+    _http_only(url)
     with _OPENERS[allow_internal].open(urllib.request.Request(url, headers={"Accept": "application/json"}), timeout=timeout) as r:
         return json.loads(r.read())
 
 
 def http_post_form(url: str, data: dict, headers: dict | None = None, timeout: float = 10.0, allow_internal: bool = False):
+    _http_only(url)
     req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode(), method="POST",
                                  headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json", **(headers or {})})
     with _OPENERS[allow_internal].open(req, timeout=timeout) as r:
@@ -164,12 +172,13 @@ class OIDC:
 
     def discovery(self) -> dict:
         if self._disc is None:
-            self._disc = self.get(self.issuer + "/.well-known/openid-configuration")
-            if self._disc.get("issuer", "").rstrip("/") != self.issuer:
+            disc = self.get(self.issuer + "/.well-known/openid-configuration")
+            if disc.get("issuer", "").rstrip("/") != self.issuer:
                 raise SSOError("provider issuer does not match the configuration")
             for k in ("authorization_endpoint", "token_endpoint", "jwks_uri", "end_session_endpoint"):
-                if self._disc.get(k):
-                    self._check_endpoint(k, self._disc[k])
+                if disc.get(k):
+                    self._check_endpoint(k, disc[k])
+            self._disc = disc                    # cached only once every check passed
         return self._disc
 
     def start(self) -> tuple[str, dict]:
