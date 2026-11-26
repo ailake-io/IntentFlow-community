@@ -14,7 +14,7 @@ Há dois modos, escolhidos automaticamente:
 | Papel | Pode |
 |---|---|
 | `viewer` (leitor) | Ver achados, linhagem, pipelines, cluster, correções e auditoria |
-| `engineer` (engenheiro) | Tudo do leitor + reconhecer, marcar falso positivo, atribuir, comentar, rodar verificações e diff de dados; com Enterprise, criar/validar/aprovar/aplicar/reverter correções |
+| `engineer` (engenheiro) | Tudo do leitor + reconhecer, marcar falso positivo, atribuir, comentar, rodar verificações e diff de dados; criar/validar/aprovar/aplicar/reverter correções |
 | `admin` | Tudo + configuração, políticas e gestão da equipe |
 
 Configurações que fazem o servidor alcançar hosts, ler caminhos ou usar segredos do ambiente (`notify.sinks`, `*.url`, `*.host`, `*_env`,
@@ -53,7 +53,7 @@ Conexões acima do limite são encerradas. Mantenha também limites de conexão 
 - **Retenção:** `intentflow --store ... prune --days 90`: amostras, histórico, auditoria, execuções, achados resolvidos, jobs/arestas OpenLineage, sessões expiradas, tentativas de login e marcadores de notificação antigos. Com `dbt.target` configurado, também remove do cache de linhagem as entradas que o projeto atual não usa mais.
 - **Rotação de token:** `intentflow user rotate NOME` (ou "Novo token" na UI).
 - **Idioma:** `INTENTFLOW_LANG=pt` deixa a CLI e os achados do `watch` em português; a UI segue o navegador e o seletor de cada pessoa.
-- **Vários projetos:** um armazém por projeto (`--store` ou `INTENTFLOW_STORE`); suba uma UI por armazém. Vários projetos num servidor, com papel por projeto, é Enterprise (abaixo).
+- **Vários projetos:** um armazém por projeto (`--store` ou `INTENTFLOW_STORE`); suba uma UI por armazém. Vários projetos num servidor, com papel por projeto: veja abaixo.
 
 ## Checklist de implantação em contêiner (verificado numa execução simulando produção)
 
@@ -66,12 +66,12 @@ Verificado com Docker: PostgreSQL 16, UI com TLS, agendador `watch` e receptor d
 - **Arquivos TLS** precisam ser legíveis pelo uid `10001` (usuário da imagem), inclusive o diretório. Senão a UI sai com `PermissionError`.
 - **Agendador:** rode `watch` em contêiner próprio com `--restart unless-stopped`. Ele reconecta após reinício ou queda do banco (um ciclo que
   falha vai para a auditoria como `watch_error`); a UI abre uma conexão por requisição e não precisa reiniciar.
-- **Correções (Enterprise):** o diretório do projeto precisa ser **gravável** pelo uid `10001` (o journal fica em `.intentflow-transactions`).
+- **Correções:** o diretório do projeto precisa ser **gravável** pelo uid `10001` (o journal fica em `.intentflow-transactions`).
   A validação precisa do Docker CLI e do socket, que a imagem enxuta não tem: defina `INTENTFLOW_VALIDATION=remote` no contêiner da UI e rode `intentflow validate-worker` num host ou runner de CI com Docker e o mesmo
-  armazém (docs Enterprise: VALIDATION_RECOVERY). Sem worker ou Docker a validação fica na fila ou falha fechada, e `apply` é recusado.
+  armazém ([VALIDATION_RECOVERY](VALIDATION_RECOVERY.md)). Sem worker ou Docker a validação fica na fila ou falha fechada, e `apply` é recusado.
 - **Gate de CI:** `check --base` precisa do `catalog.json` do build da cabeça (`dbt docs generate`); só `parse` deixa as colunas desconhecidas e o rename não é visto.
 - **Backups:** `pg_dump -Fc` e `pg_restore` num banco limpo reproduzem usuários, achados e auditoria.
-- **Voltar ao núcleo:** o mesmo armazém abre com a imagem só do núcleo; as funções Enterprise desligam e os dados ficam.
+- **Voltar ao núcleo:** uma imagem anterior abre o mesmo armazém desde que a versão do schema não seja mais antiga que a do armazém.
 
 ## Notificações por e-mail (SMTP)
 
@@ -104,15 +104,15 @@ Em `notify.sinks` (configuração, não arquivo): cada sink tem `name`, `type` e
 | `type` | Campos | Segredo (variável) |
 |---|---|---|
 | `slack` / `webhook` | `url_env` | URL do webhook |
-| `teams` (Enterprise) | `url_env` (padrão `TEAMS_URL`) | URL do fluxo de webhook do Teams (Adaptive Card) |
+| `teams` | `url_env` (padrão `TEAMS_URL`) | URL do fluxo de webhook do Teams (Adaptive Card) |
 | `email` | `to`, `from`, `tls`, `tls_verify`, `allow_insecure_auth` | `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD` |
-| `pagerduty` (Enterprise) | `routing_key_env`, `source`, `url` | `PAGERDUTY_ROUTING_KEY` (usa o id do incidente como `dedup_key`) |
-| `opsgenie` (Enterprise) | `api`, `token_env` | `OPSGENIE_API_KEY` (alias = id do incidente; prioridade P1–P5 pela severidade) |
-| `jira` (Enterprise) | `url`, `project`, `issue_type`, `labels`, `user_env`, `token_env` | `JIRA_USER`, `JIRA_TOKEN` (abre uma issue por envio; REST v2) |
+| `pagerduty` | `routing_key_env`, `source`, `url` | `PAGERDUTY_ROUTING_KEY` (usa o id do incidente como `dedup_key`) |
+| `opsgenie` | `api`, `token_env` | `OPSGENIE_API_KEY` (alias = id do incidente; prioridade P1–P5 pela severidade) |
+| `jira` | `url`, `project`, `issue_type`, `labels`, `user_env`, `token_env` | `JIRA_USER`, `JIRA_TOKEN` (abre uma issue por envio; REST v2) |
 | `github` | `repo`, `pr`, `api` | `GITHUB_TOKEN` |
-| `gitlab` (Enterprise) | `project` (id ou `grupo/projeto`), `mr`, `api` | `GITLAB_TOKEN` |
-| `bitbucket` (Enterprise) | `workspace`, `repo`, `pr`, `api` | `BITBUCKET_TOKEN` |
-| `azure_devops` (Enterprise) | `org`, `project`, `repo`, `pr`, `api` | `AZURE_DEVOPS_PAT` |
+| `gitlab` | `project` (id ou `grupo/projeto`), `mr`, `api` | `GITLAB_TOKEN` |
+| `bitbucket` | `workspace`, `repo`, `pr`, `api` | `BITBUCKET_TOKEN` |
+| `azure_devops` | `org`, `project`, `repo`, `pr`, `api` | `AZURE_DEVOPS_PAT` |
 
 Rotas em `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam: o mesmo incidente com a mesma severidade só reenvia após 24 h.
 
@@ -150,10 +150,8 @@ Backups SQLite (`intentflow backup`) também gravam `<destino>.key` (0600) quand
 O `Dockerfile` instala dependências Python a partir de `uv.lock` (`uv sync --locked`); mantenha o lock atualizado junto com
 `pyproject.toml`. As imagens-base de Python e uv estão fixadas por digest no Dockerfile.
 
-Esta imagem contém somente o núcleo Community; ela não instala `intentflow-enterprise`. Os recursos Enterprise exigem um artefato Enterprise
-autorizado instalado no mesmo ambiente Python do núcleo e uma licença válida no runtime. Monte uma imagem específica do cliente que instale o
-artefato autorizado durante o build; não copie a licença para a imagem. O [guia de instalação do Enterprise](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/pt-BR/INSTALLATION.md)
-explica dependências e implantação em contêiner (é necessário acesso ao repositório de clientes).
+A imagem traz todas as funções, inclusive SSO, papéis por projeto e correções governadas, sem licença. A validação governada
+também precisa de acesso ao Docker para o worker do sandbox, veja [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md).
 
 ```bash
 docker build -t intentflow .
@@ -176,7 +174,7 @@ Com MFA ativo: o login exige token **e** código de 6 dígitos (RFC 6238, toler�
 o token isolado deixa de abrir a API. Para automação (CI, scripts) use um usuário de serviço **sem** MFA e papel mínimo.
 O navegador guarda uma **sessão** (12 h) em cookie `HttpOnly`/`SameSite=Strict`, nunca o token de longa duração; "sair" a invalida.
 
-## Login único (SSO / OpenID Connect) — Enterprise
+## Login único (SSO / OpenID Connect)
 
 ```bash
 export INTENTFLOW_SSO_SECRET=...           # segredo do cliente: só por variável de ambiente
@@ -219,7 +217,7 @@ mapper *Group Membership*, `full path` desligado, claim `groups`).
 sessão local. **Não há** logout por canal de retorno (back-channel): sair em outra aplicação do provedor não derruba a sessão aqui
 antes de ela expirar (12 h).
 
-## Vários projetos no mesmo servidor, com papel por projeto — Enterprise
+## Vários projetos no mesmo servidor, com papel por projeto
 
 ```bash
 intentflow --store /srv/if/main.db project add crm /srv/if/crm.db
@@ -281,7 +279,7 @@ alta, nem várias réplicas da UI (o cache e o limite de login são por processo
 - Cookies do Keycloak em desenvolvimento vêm com `Secure`; navegadores os aceitam em `127.0.0.1`/`localhost`, clientes HTTP simples não.
 - **MFA é TOTP** (apps autenticadores) com códigos de recuperação de uso único; não há WebAuthn/chaves físicas. Perdeu dispositivo e códigos: um admin
   executa `intentflow user mfa-disable NOME` e a pessoa recadastra.
-- **Papéis são por projeto**; dentro dele, escopos por caminho (`intentflow access scope`, Enterprise) limitam escritas a pastas: o escopo vale para todos os arquivos que uma correção alteraria, não só o do achado. Leitura não é restrita por escopo.
+- **Papéis são por projeto**; dentro dele, escopos por caminho (`intentflow access scope`) limitam escritas a pastas: o escopo vale para todos os arquivos que uma correção alteraria, não só o do achado. Leitura não é restrita por escopo.
 - **Logout por canal de retorno (back-channel)** e renovação de grupos via refresh token estão implementados e testados com Keycloak; provedores sem refresh token só reavaliam grupos no próximo login.
 - **Limite de tentativas de login por IP** (10/min, persistente). Atrás de proxy, defina `INTENTFLOW_TRUSTED_PROXIES` (IPs/CIDRs) para
   que `X-Forwarded-For` só seja aceito desses endereços.
@@ -291,4 +289,4 @@ alta, nem várias réplicas da UI (o cache e o limite de login são por processo
 
 ## Validação de propostas e recuperação
 
-Faz parte do IntentFlow Enterprise; a documentação fica no pacote Enterprise.
+Veja [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md).

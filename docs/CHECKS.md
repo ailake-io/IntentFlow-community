@@ -18,8 +18,8 @@ Preserve the build's `target/run_results.json` before `dbt docs generate`: docum
 | OL003 | External job reads a PII column (or an unmasked derivative); `pii_allowed_jobs` in the policy allows it | pre-merge | static | tested |
 | OL004 | Spark job with the default application name (`pyspark_shell`): different jobs get mixed up | pre-merge | static | tested |
 | DBT001 | Consumed model without a `unique` test | pre-merge | static | tested |
-| DBT002 | Incremental without `unique_key` (not idempotent). Rule-based fix (Enterprise): the person enters the key | pre-merge | static | tested |
-| DBT003 | Model without an owner (`meta.owner`). Rule-based fix (Enterprise): the person enters the owner | continuous | static | tested |
+| DBT002 | Incremental without `unique_key` (not idempotent). Rule-based fix: the person enters the key | pre-merge | static | tested |
+| DBT003 | Model without an owner (`meta.owner`). Rule-based fix: the person enters the owner | continuous | static | tested |
 | DBT004 | PII propagated without hash/mask to a non-authorized model | pre-merge | static | tested |
 | DBT005 | Model with ≥ 3 consumers without `contract.enforced` | pre-merge | static | tested |
 | DBTR001 | dbt test failing/warning (from `run_results.json`) | continuous | statistical | tested (real dbt failure) |
@@ -53,7 +53,7 @@ BIZ001 reports missing/skipped/stale execution of dbt tests tagged `business_rul
 | SQL015 | Join key with types of different families (number × text etc.) | tested |
 
 Every rule SQL001–SQL013 has a planted model in `examples/dbt_lab` and a test that fires it, plus a check that clean models raise no false
-positive. SQL001 and SCH001 produce deterministic fixes (`expand_star`, `rename_column`) applied through Enterprise.
+positive. SQL001 and SCH001 produce deterministic fixes (`expand_star`, `rename_column`) applied through governed fixes.
 
 ## Orchestration and other sources
 

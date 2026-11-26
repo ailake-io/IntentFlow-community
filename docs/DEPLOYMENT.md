@@ -14,7 +14,7 @@ There are two modes, picked automatically:
 | Role | Can |
 |---|---|
 | `viewer` | See findings, lineage, pipelines, cluster, fixes and audit |
-| `engineer` | Everything a viewer can + acknowledge, mark false positive, assign, comment, run checks and data diffs; with Enterprise, create/validate/approve/apply/roll back fixes |
+| `engineer` | Everything a viewer can + acknowledge, mark false positive, assign, comment, run checks and data diffs; create/validate/approve/apply/roll back fixes |
 | `admin` | Everything + settings, policies and team management |
 
 Settings that make the server reach hosts, read paths or use environment secrets (`notify.sinks`, `*.url`, `*.host`, `*_env`, warehouse and
@@ -54,7 +54,7 @@ Excess connections are closed. Keep connection and rate limits enabled at the re
 - **Token rotation:** `intentflow user rotate NAME` (or "New token" in the UI).
 - **Language:** `INTENTFLOW_LANG=pt` for Portuguese in the CLI and in findings produced by `watch`; the UI follows each person's browser and selector.
 - **Several projects:** one store per project (`--store` or `INTENTFLOW_STORE`) and one UI per store; serving several projects from one
-  server with per-project roles is Enterprise (below).
+  server with per-project roles is covered below.
 
 ## Container deployment checklist (verified in a production-like run)
 
@@ -67,12 +67,12 @@ Verified with Docker: PostgreSQL 16, the UI over TLS, a `watch` scheduler and a 
 - **TLS files** must be readable by uid `10001` (the image user), including their directory. Otherwise the UI exits with `PermissionError`.
 - **Scheduler:** run `watch` as its own container with `--restart unless-stopped`. It reconnects after a database restart or crash
   (a cycle that fails is audited as `watch_error`); the UI opens a connection per request and needs no restart.
-- **Fixes (Enterprise):** the project directory must be **writable** by uid `10001` (the fix journal lives in `.intentflow-transactions`).
+- **Fixes:** the project directory must be **writable** by uid `10001` (the fix journal lives in `.intentflow-transactions`).
   Validation needs the Docker CLI and socket, which the slim image does not have: set `INTENTFLOW_VALIDATION=remote` on the UI container and run `intentflow validate-worker` on a host or CI runner that has Docker and the same
-  store (Enterprise docs: VALIDATION_RECOVERY). Without a worker or Docker the validation stays queued or fails closed, and `apply` is refused.
+  store. Without a worker or Docker the validation stays queued or fails closed, and `apply` is refused.
 - **CI gate:** `check --base` needs `catalog.json` for the head build (`dbt docs generate`); `parse` alone leaves columns unknown and the rename is not seen.
 - **Backups:** `pg_dump -Fc` and `pg_restore` into a clean database reproduce users, findings and audit.
-- **Rollback to the core:** the same store opens with the core-only image; Enterprise features switch off and the data stays.
+- **Rollback to the core:** an older image opens the same store as long as its schema version is not older than the store's.
 
 ## E-mail notifications (SMTP)
 
@@ -104,13 +104,13 @@ In `notify.sinks` (settings, not a file): each output has `name`, `type` and env
 | `slack` / `webhook` | `url_env` | webhook URL |
 | `email` | `to`, `from`, `tls`, `tls_verify`, `allow_insecure_auth` | `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD` |
 | `github` | `repo`, `pr`, `api` | `GITHUB_TOKEN` |
-| `teams` (Enterprise) | `url_env` (default `TEAMS_URL`) | Teams webhook flow URL (Adaptive Card) |
-| `pagerduty` (Enterprise) | `routing_key_env`, `source`, `url` | `PAGERDUTY_ROUTING_KEY` (incident id as `dedup_key`) |
-| `opsgenie` (Enterprise) | `api`, `token_env` | `OPSGENIE_API_KEY` |
-| `jira` (Enterprise) | `url`, `project`, `issue_type`, `labels`, `user_env`, `token_env` | `JIRA_USER`, `JIRA_TOKEN` |
-| `gitlab` (Enterprise) | `project` (id or `group/project`), `mr`, `api` | `GITLAB_TOKEN` |
-| `bitbucket` (Enterprise) | `workspace`, `repo`, `pr`, `api` | `BITBUCKET_TOKEN` |
-| `azure_devops` (Enterprise) | `org`, `project`, `repo`, `pr`, `api` | `AZURE_DEVOPS_PAT` |
+| `teams` | `url_env` (default `TEAMS_URL`) | Teams webhook flow URL (Adaptive Card) |
+| `pagerduty` | `routing_key_env`, `source`, `url` | `PAGERDUTY_ROUTING_KEY` (incident id as `dedup_key`) |
+| `opsgenie` | `api`, `token_env` | `OPSGENIE_API_KEY` |
+| `jira` | `url`, `project`, `issue_type`, `labels`, `user_env`, `token_env` | `JIRA_USER`, `JIRA_TOKEN` |
+| `gitlab` | `project` (id or `group/project`), `mr`, `api` | `GITLAB_TOKEN` |
+| `bitbucket` | `workspace`, `repo`, `pr`, `api` | `BITBUCKET_TOKEN` |
+| `azure_devops` | `org`, `project`, `repo`, `pr`, `api` | `AZURE_DEVOPS_PAT` |
 
 Routes in `notify.routes`: `{sink, min_severity, owner, check_prefix}`. Anti-spam: the same incident with the same severity is only resent after 24 h.
 
@@ -146,10 +146,8 @@ SQLite backups (`intentflow backup`) also write `<dest>.key` (0600) when the sto
 The `Dockerfile` installs Python dependencies from `uv.lock` (`uv sync --locked`); keep the lock in sync with `pyproject.toml`. The Python and uv
 base images are pinned by digest.
 
-This image contains the Community core only; it does not install `intentflow-enterprise`. Enterprise features require an authorized Enterprise
-artifact installed into the same Python environment as the core, plus a valid runtime license. Build a customer-specific image that adds the
-authorized artifact during the image build; do not copy the license into the image. See the [Enterprise installation guide](https://github.com/ailake-io/intentflow-enterprise/blob/main/docs/INSTALLATION.md)
-for package dependencies and container deployment (customer repository access required).
+The image contains every feature, including SSO, per-project roles and governed fixes; no license is needed. Governed
+validation also needs Docker access for the sandbox worker, see [VALIDATION_RECOVERY](VALIDATION_RECOVERY.md).
 
 ```bash
 docker build -t intentflow .
@@ -167,7 +165,7 @@ With MFA on, login requires the token **and** a 6-digit code (RFC 6238, ±1 step
 opens the API. For automation use a service user **without** MFA and a minimal role. The browser keeps a **session** (12 h) in an
 `HttpOnly`/`SameSite=Strict` cookie, never the long-lived token; "log out" invalidates it.
 
-## Single sign-on (SSO / OpenID Connect) — Enterprise
+## Single sign-on (SSO / OpenID Connect)
 
 ```bash
 export INTENTFLOW_SSO_SECRET=...           # client secret: only through an environment variable
@@ -202,7 +200,7 @@ group map, and an explicit per-project `none` set by an admin is never lifted by
 "Log out" on an SSO session ends the local session **and** redirects to the provider's `end_session_endpoint` with `id_token_hint`. Back-channel
 logout and group refresh through the refresh token are implemented and tested with Keycloak.
 
-## Several projects on one server, with roles per project — Enterprise
+## Several projects on one server, with roles per project
 
 ```bash
 intentflow --store /srv/if/main.db project add crm /srv/if/crm.db
@@ -250,7 +248,7 @@ Not measured with thousands of users, a high-latency remote database or several 
 ## Limits
 
 - **SSO verified against a real Keycloak 26** and in the browser. **Not** exercised with Entra ID, Okta or Google.
-- **Roles are per project**; inside one, path scopes (`intentflow access scope`, Enterprise) limit writes to folders. The scope is checked against every file a fix would change, not only the finding's file. Reading is not restricted by scope.
+- **Roles are per project**; inside one, path scopes (`intentflow access scope`) limit writes to folders. The scope is checked against every file a fix would change, not only the finding's file. Reading is not restricted by scope.
 - **MFA is TOTP** with single-use recovery codes; no WebAuthn. Lost device and codes: an admin runs `intentflow user mfa-disable NAME`.
 - **Login attempt limit per IP** (10/min, persistent). Behind a proxy set `INTENTFLOW_TRUSTED_PROXIES` so `X-Forwarded-For` is only accepted from them.
 - **Warehouse connection secrets** stay in server environment variables (shared by every project in the same process).

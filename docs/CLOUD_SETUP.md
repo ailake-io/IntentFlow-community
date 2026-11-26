@@ -27,7 +27,7 @@ General rules:
 | Fivetran | last sync per connector | simulated | [5](#5-fivetran) |
 | Airbyte Cloud | sync runs | **real OSS (abctl)**; Cloud only differs in URL/token, not tested | [6](#6-airbyte-cloud) |
 | dbt Cloud | runs and artifacts | implemented; **simulated server only** | [7](#7-dbt-cloud) |
-| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps (Enterprise) | alerts and PR comments | implemented; **simulated servers**; GitLab also tested on a real local instance | [8](#8-alerts-enterprise) |
+| PagerDuty / Teams / Jira / Opsgenie / GitLab / Bitbucket / Azure DevOps | alerts and PR comments | implemented; **simulated servers**; GitLab also tested on a real local instance | [8](#8-alerts) |
 | DataHub / OpenMetadata / Atlan | catalog | OpenLineage emitter verified on Marquez | [9](#9-catalogs) |
 | AWS (Glue, Step Functions, Athena) / Azure Data Factory | orchestration, queries, catalog | implemented; **AWS on the emulator only**, Azure simulated | [10](#10-aws-and-azure) |
 
@@ -176,7 +176,7 @@ intentflow dbt-cloud pull --job 67890 --dest ./target  # artifacts of the last s
 intentflow check                                       # without a local dbt.target it uses the job artifacts
 ```
 
-## 8. Alerts (Enterprise)
+## 8. Alerts
 
 All implemented as outputs (fields and variables in [DEPLOYMENT](DEPLOYMENT.md#alerts-and-prs-outputs)); tested with a local server (GitLab also with a real instance).
 

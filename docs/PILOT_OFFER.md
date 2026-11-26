@@ -32,8 +32,8 @@ Sales material for the paid pilot. The technical step-by-step guide is [PILOT](P
 
 **Success criterion agreed at kickoff:** at least one real risk you did not know about, and false positives below 50%.
 
-**Investment:** [fixed price] · **After the pilot:** open source IntentFlow in CI at no cost, or the Enterprise edition (SSO, per-project
-governance, governed fixes, AI, support), see [EDITIONS](EDITIONS.md).
+**Investment:** [fixed price] · **After the pilot:** open source IntentFlow (all features, including SSO, governed fixes and AI) at no cost,
+with optional paid support.
 
 ## Report template
 

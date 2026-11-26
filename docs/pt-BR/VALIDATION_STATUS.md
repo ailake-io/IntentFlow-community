@@ -6,14 +6,13 @@ Este documento registra evidências das rodadas de novembro. Números abaixo per
 
 ## Código, instalação e CI
 
-- Versões atuais: Community `0.3.7`, Enterprise `0.3.7`, exigindo `intentdataflow>=0.3.7` e `cryptography`; o Enterprise segue a versão do Community. As evidências das seções datadas abaixo foram coletadas nos checkouts da data (Community `0.3.5`, Enterprise `0.3.4` até 20/11/2026).
-- Community funciona sozinho; Enterprise é plugin instalado no mesmo ambiente Python e depende de uma licença válida para habilitar recursos.
-- Wheels dos dois checkouts foram construídos e instalados juntos em um venv limpo com Python 3.14.6; `pip check` e `intentflow --version` passaram. Isso não verifica acesso ao índice privado de clientes.
-- CI em `main`: Python 3.11, 3.13 e 3.14. Actions usam Node 24 (`checkout@v6`, `setup-python@v6`; Community também `setup-java@v5`).
-- Rodadas locais com Python 3.13.11 e 3.14.6: Community **287 aprovados / 44 ignorados**; Enterprise **120 aprovados / 16 ignorados**. São rodadas distintas, com extras instalados diferentes dos usados nas imagens.
-- Rodada Enterprise em PostgreSQL 16: **120 aprovados / 16 ignorados**, com `INTENTFLOW_SECRET_KEY` descartável.
+- Versão atual: `0.4.0`, pacote único (`intentdataflow` no PyPI, imagem `ghcr.io/ailake-io/intentflow-community`). O antigo pacote
+  Enterprise foi incorporado ao núcleo (`intentflow.enterprise`, Apache-2.0, sem licença). As seções datadas abaixo descrevem os checkouts
+  da data, quando Community e Enterprise eram separados.
+- CI em `main`: Python 3.11, 3.13 e 3.14. Actions usam Node 24 (`checkout@v6`, `setup-python@v6`, `setup-java@v5`).
+- Rodada local em 26/11/2026 (Python 3.13): **573 aprovados / 54 ignorados**, incluindo a antiga suíte Enterprise (`tests/test_ee_*.py`).
+  Ignorados: serviços não provisionados localmente (Keycloak, GitLab, Ollama, emuladores de nuvem, imagem do sandbox Docker).
 - CI Community também passou com PostgreSQL/Mailpit, Spark 3.5 e `dbt-ol` (estes dois últimos em Python 3.12, em jobs separados). Compatibilidade do núcleo com 3.14 não garante compatibilidade de runtimes externos com 3.14.
-- CI Enterprise passa nas três versões; Keycloak e sandbox não são preparados por esse workflow. Keycloak real foi testado separadamente: **8 aprovados** após alinhar as asserções de idioma.
 
 ## Interface Enterprise e recuperação
 

@@ -116,7 +116,7 @@ Meltano não entrou: não há API de servidor para ler execuções (o estado fic
 
 ## Fora do escopo atual
 
-Execução gerenciada de pipelines, Microsoft Fabric nativo e escrita automática em warehouses. SQLMesh, Redshift e Spark já têm integrações de leitura com os limites descritos na tabela. Correções por LLM fazem parte do Enterprise.
+Execução gerenciada de pipelines, Microsoft Fabric nativo e escrita automática em warehouses. SQLMesh, Redshift e Spark já têm integrações de leitura com os limites descritos na tabela.
 
 ## Subir o Airflow com OpenLineage para o receptor (local)
 
