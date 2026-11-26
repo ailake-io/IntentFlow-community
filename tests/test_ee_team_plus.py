@@ -336,6 +336,16 @@ def test_sso_require_group_denies_unmapped_people(sso):
     assert sso_login(base)[0][0] == 302
 
 
+def test_sso_require_group_ignores_groups_mapped_to_none(sso):
+    st, base = sso
+    st.add_user("maria", "engineer", email="maria@exemplo.com")
+    st.set_setting("sso.group_map", [{"group": "dados-admin", "role": "admin"}, {"group": "crm-bloq", "role": "none", "project": "crm"}])
+    st.set_setting("sso.require_group", True)
+    IdP.claims_override = {"groups": ["crm-bloq"]}
+    (s, body, _), _, _ = sso_login(base)
+    assert s == 403 and "authorized group" in body.decode()
+
+
 def test_single_logout_returns_provider_url_with_id_token_hint(sso):
     st, base = sso
     st.add_user("maria", "engineer", email="maria@exemplo.com")

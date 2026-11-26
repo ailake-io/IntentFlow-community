@@ -201,7 +201,8 @@ def _sso_callback(h, prim: Store, q: dict):
         return h._send(403, tr("SSO: e-mail missing or not verified"), "text/plain", cookies=[clear])
     gmap = prim.get_setting("sso.group_map", []) or []
     g_role, g_proj = oidc_mod.map_groups(claims, prim.get_setting("sso.group_claim", "groups"), gmap)
-    if gmap and prim.get_setting("sso.require_group", False) and g_role is None and not g_proj:
+    granting = {p: r for p, r in g_proj.items() if r != "none"}     # a group mapped to `none` authorizes nothing
+    if gmap and prim.get_setting("sso.require_group", False) and g_role in (None, "none") and not granting:
         prim.audit("sso", "login_denied", {"email": email, "reason": "no mapped group"})
         return h._send(403, tr("SSO: your account is not in any authorized group."), "text/plain", cookies=[clear])
     rec = next((u for u in prim.users_admin() if (u.get("email") or "").lower() == email or u["name"].lower() == email), None)

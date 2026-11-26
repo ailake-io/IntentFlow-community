@@ -12,6 +12,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
   `INTENTFLOW_LICENSE`/`INTENTFLOW_LICENSE_FILE` are ignored. An installed `intentflow-enterprise` is skipped with a warning: uninstall it.
 - Docs: AI and VALIDATION_RECOVERY guides moved in; EDITIONS describes the single edition.
 
+
+
 ## [0.3.10] - 2026-11-25
 
 ### Changed
